@@ -59,11 +59,11 @@ bus  = 62
 ; Sequence of modules, logic of MITM/FUZZ and etc
 [MITM]
 
-hw_USBtin = {'action':'read','pipe':2}                      ; read from first HW module to PIPE number 2
-hw_USBtin~2 = {'action':'read'}                             ; read from second HW module to PIPE number 1 (default is 1)
-mod_firewall = {'white_list':[112,113],'pipe':2}            ;block messages with ID 112,113 from PIPE number 2
-hw_USBtin~2!2 = {'action':'write','pipe':2,'id':77}           ; write via second HW module messages from PIPE number 2
-hw_USBtin!2 =  {'action':'write','pipe':1,'id':78}            ; write via first HW module messages from PIPE number 1 (not firewalled)
+hw_USBtin = {'action':'read','pipe':2}            ; read from first HW module to PIPE number 2
+hw_USBtin~2 = {'action':'read'}                  ; read from second HW module to PIPE number 1 (default is 1)
+mod_firewall = {'white_list':[112,113],'pipe':2} ;block messages with ID 112,113 from PIPE number 2
+hw_USBtin~2!2 = {'action':'write','pipe':2,'id':77}  ; write via second HW module messages from PIPE number 2
+hw_USBtin!2 =  {'action':'write','pipe':1,'id':78} ; write via first HW module messages from PIPE number 1 (not firewalled)
 -------
 This config make possible full MITM with with help of two USBtin devices. 
 P.S CANBus Triple support up to 3 CAN buses, so with that hardare it will be enough only one IO module! (but speed is lower than USBtin)
