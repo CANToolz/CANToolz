@@ -1,0 +1,67 @@
+======
+CANSploit
+======
+
+CANSploit is a framework for analysing CAN networks and devices.
+This tool based on different modules which can be assmbled in pipe together and 
+can be used for security researchers and testers for black-box analyses. 
+
+Using a Hardware
+===============
+
+CANSploit can work with CAN network by using next harware:
+  1) USBtin http://www.fischl.de/usbtin/
+  2) CANBus Triple https://canb.us/
+  
+Modules
+===============
+
+hw_CANBusTriple  - IO module for CANBus Triple HW
+hw_USBtin.py	   - IO module forUSBtin
+mod_firewall     - module for blocking CAN message by ID
+mod_fuzz1        - Simple 'Proxy' fuzzer  (1 byte) 
+mod_printMessage - printing CAN messages
+mod_uniqPrint    - CAN messages statistic (with .csv file output)
+gen_ping.py	     - generating CAN messages with chosen IDs (ECU/Service descovery)
+
+
+P.S. of course we are working on supporting other types of I/O hardware and modules. Please join us!  
+Main idea that community can produce different modules that can be usefull for community
+
+Dependences 
+===============
+    pip install pyserial
+
+
+Usage Examples
+===============
+
+Simple MITM with CAN firewall 
+-------
+
+can_sploit.cfg
+-------
+
+[hw_USBtin]
+port = auto         ; Serial port
+debug = 1           ; debug level (default 0)
+speed = 500         ; bus speed (500, 1000)
+
+[hw_USBtin~2]
+port = auto         ; Serial port
+debug = 1           ; debug level (default 0)
+speed = 50         ; bus speed (500, 1000)
+bus  = 620
+
+[mod_firewall]
+
+; Sequence of modules, logic of MITM/FUZZ and etc
+[MITM]
+
+hw_USBtin = {'action':'read','pipe':2} 
+mod_firewall = {'white_list':[112,113]}            ;block ID 112,113
+hw_USBtin~2 = {'action':'write','pipe':2,'id':77} 
+ 
+
+
+
