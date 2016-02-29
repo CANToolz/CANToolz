@@ -27,13 +27,9 @@ class hw_CANBusTriple(CANModule):
       action - read or write. Will write/read to/from bus
       pipe -  integer, 1 or 2 - from which pipe to read or write 
           If you use both buses(and different), than you need only one pipe configured...
-    
-    Console interrupts:
-       Write to serial port of CANBus Triple device
-       
-       Example - send CAN to bus_2 (console input): c 1 020200ff112233445566778808
-       More commands: http://docs.canb.us/firmware/api.html
-    
+          
+      Example: {'action':'read','pipe':2} 
+          
     P.S. this device still does not support 29-bit IDs... so they will be ignored on R/W
     
     """
@@ -243,21 +239,23 @@ class hw_CANBusTriple(CANModule):
             data=self.readAll()
             
             self.dprint (1,"CANBus Triple device detected, version: "+self.readJSON(self.getInfo())['version'])
-            
             self._readBusCmd="\x03"+str(struct.pack("B", int(self._readBus)))
             self._writeBusCmd="\x02"+str(struct.pack("B", int(self._writeBus))) # named _writeBus but just bus_2... TODO refactor to right names 
+            self._cmdList['t']=["Send direct command to the device, like 02010011112233440000000008",1," <cmd> ",self.devWrite]
 
-    def rawWrite(self, data):
+    def devWrite(self, data):
         self.dprint (1,"CMD: "+data)
         self._serialPort.write(data.decode('hex'))
+        return ""
         
     def doEffect(self, CANMsg,args={}): # read full packet from serial port
-        if args['action']=='read':
-            CANMsg=self.doRead(CANMsg)
-        elif args['action']=='write':
-            self.doWrite(CANMsg)
-        else:
-            dprint(1, 'Command '+args['action']+' not implemented 8(')
+        if 'action' in args:
+            if args['action']=='read':
+                CANMsg=self.doRead(CANMsg)
+            elif args['action']=='write':
+                self.doWrite(CANMsg)
+            else:
+                dprint(1, 'Command '+args['action']+' not implemented 8(')
         return CANMsg
         
      

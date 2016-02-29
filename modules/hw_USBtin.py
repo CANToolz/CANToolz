@@ -26,13 +26,9 @@ class hw_USBtin(CANModule):
       action - read or write. Will write/read to/from bus
       pipe -  integer, 1 or 2 - from which pipe to read or write 
           If you use both buses(and different), than you need only one pipe configured...
-    
-    Console interrupts:
-       Write to serial port of CANBus Triple device
-       
-       Example - send CAN  (console input): c 6 t0ff81122334455667788
-
-    
+        
+        Example: {'action':'read','pipe':2} 
+   
     """
     
     _serialPort=None
@@ -120,20 +116,23 @@ class hw_USBtin(CANModule):
             #print str(self._serialPort)
             self.dprint(1, "PORT: "+self._COMPort)
             self.dprint(1, "Speed: "+str(self._currentSpeed))
-         
             self.dprint (1,"USBtin device found!")
             
-    def rawWrite(self, data):
+            self._cmdList['t']=["Send direct command to the device, like t0010411223344",1," <cmd> ",self.devWrite]
+            
+    def devWrite(self, data):
         self.dprint (1,"CMD: "+data)
         self._serialPort.write(data+"\r")
+        return ""
         
     def doEffect(self, CANMsg,args={}): # read full packet from serial port
-        if args['action']=='read':
-            CANMsg=self.doRead(CANMsg)
-        elif args['action']=='write':
-            self.doWrite(CANMsg)
-        else:
-            dprint(1,'Command '+args['action']+' not implemented 8(')
+        if 'action' in args:
+            if args['action']=='read':
+                CANMsg=self.doRead(CANMsg)
+            elif args['action']=='write':
+                self.doWrite(CANMsg)
+            else:
+                dprint(1,'Command '+args['action']+' not implemented 8(')
         return CANMsg
         
      
@@ -143,8 +142,9 @@ class hw_USBtin(CANModule):
         if self._serialPort.inWaiting()>0:
             while not CANMsg.CANData and not CANMsg.debugData: 
                 byte=self._serialPort.read(1)
+                #print byte
                 if byte=="":
-                    break;
+                   break;
                     
                 data += byte
 

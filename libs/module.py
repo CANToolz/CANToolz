@@ -1,3 +1,5 @@
+import re
+import threading
 '''
 Generic class for modules
 '''  
@@ -7,9 +9,21 @@ class CANModule:
     name="Abstract CANSploit module"
     help="No help available"
     id = 0
-    outbuf=""
+
     version=0.0
     
+    _cmdList={}   # Command list (doInit section)
+    
+    _active=True  # Enabled/Disabled
+    
+    _block=threading.Event()  # Blocking mode (using events)
+        
+    def doActivate(self):
+        if self._active:
+            self._active=False
+        else:
+            self._active=True
+        return "Active status: "+str(self._active)
         
     def dprint(self,level,msg):
         str = self.__class__.__name__+ ": " + msg
@@ -17,7 +31,16 @@ class CANModule:
             print str
         
     def rawWrite(self,string): # Used for direct input
-        self.dprint(1,"Not supported")
+        self._block.wait(3)
+        self._block.clear()
+        if string[0] in self._cmdList:
+            cmd = self._cmdList[string[0]]
+            if len(string)>2:
+                ret=cmd[3](string[2:])
+            else:
+                ret=cmd[3]()
+        self._block.set()        
+        return ret
         
     def doEffect(self, CANMsg=None,args={}): # Effect (could be fuzz operation, sniff, filter or whatever)
         return CANMsg
@@ -26,7 +49,10 @@ class CANModule:
         return self.name 
         
     def getHelp(self):
-        return self.help
+        retText="\nModule "+self.__class__.__name__+": "+self.name+"\n"+self.help+"\n\nConsole commands:\n"
+        for cmd,dat in self._cmdList.iteritems():
+            retText+="\t"+cmd+" "+dat[2]+"\t\t - "+dat[0]+"\n"
+        return retText
         
     def __init__(self, params={}):
         if 'debug' in params:
@@ -35,7 +61,15 @@ class CANModule:
             self.DEBUG=0
         
         if 'bus' in params:
-            self._bus=int(params['debug'])
+            self._bus=int(params['bus'])
+            
+        if 'active' in params:
+            if params['active']=="False" or params['active']=="false" or  params['active']=="0" or params['active']=="-1":
+                self._active=False
+            else:
+                self._active=True
+            
+        self._cmdList={'h':["List of supported commands",0,"",self.getHelp],'s':["Stop/Activate current module",0,"",self.doActivate]}
         
         self.doInit(params)
         

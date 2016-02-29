@@ -27,7 +27,7 @@ class CANSploit:
             print self.__class__.__name__+": "+msg  
             
     def __init__(self):
-        self._version = "0.1b"           # version
+        self._version = "0.9b"           # version
         self._enabledList=[]             # queue of active modules with params
         self._pipes   = [None,None]      # two pipes with CANMessages
         self._type = {}                  # Pointers on instances here
@@ -47,32 +47,34 @@ class CANSploit:
             self._pipes[0]=CANSploitMessage() # Prepare empty message
             self._pipes[1]=CANSploitMessage() # Prepare empty message
             for  name,module,params,pipe in self._enabledList: # Each module
-               
-                # Input from USER
-                if  self._raw.is_set() and params['id'] == self._idc: 
-                    module.rawWrite(self._cmd)
-                    self._idc=-1
-                    self._raw.clear()
-                    
                 #  Handle CAN message
-                self._pipes[pipe]=module.doEffect(self._pipes[pipe],params)   # doEffect on CANMessage 
-
+                if module._active:
+                    module._block.wait(3)
+                    module._block.clear()    
+                    self._pipes[pipe]=module.doEffect(self._pipes[pipe],params)   # doEffect on CANMessage 
+                    module._block.set() 
+            
         #Here when STOP            
         for name,module,params,pipe in self._enabledList:
             module.doStop()
             
-    def callRaw(self,idc,cmd):
-        self._idc=idc
-        self._cmd=str(cmd)
-        self._raw.set()
+    # Call module command        
+    def callModule(self, mod,params): 
+        x=self.findModule(mod)
+        if x>=0:
+            ret = self._enabledList[x][1].rawWrite(params)
+        else:
+            ret = "Module "+mod+" not loaded!"
+        return ret
         
     # Enable loop        
     def startLoop(self):
         self._stop.clear()
-        self._raw.clear()
+
         
         for name,module,params,pipe in self._enabledList:
             module.doStart()
+            module._block.set()
                     
         self._thread = threading.Thread(target=self.mainLoop)
                 
@@ -91,8 +93,8 @@ class CANSploit:
             params['pipe']=1
             pipe=0
         
-        if 'id' not in params:
-            params['id']=self._type[mod.split("!")[0]].id
+        #if 'enabled' not in params:
+        #    params['enabled']=True
             
         return [params,  pipe]
     
@@ -139,7 +141,7 @@ class CANSploit:
             return self._enabledList[x][2][key]
         return None
     
-    # Get all modules and parameters   
+    # Get all modules and parameters    
     def getModulesList(self):
         return self._enabledList
     

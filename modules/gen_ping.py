@@ -16,38 +16,32 @@ class gen_ping(CANModule):
     end_id   = 1000 
     
     Module parameters:  
-       body   -  data HEX that will be used in CAN for discovery
-    
-    Console interrupts:
-       0 or False - stop
-       1 or other values will continue
-       
-       Example (console input): c 7 1  -- start ping
+       body   -  data HEX that will be used in CAN for discovery (by default body is 0000000000000000)
+       {'body':'001122334455667788'}
     """
     
     _i=0
     id=7
-    _start=False
+    _active=False
     fzb=[]
     
     def counter(self):
-        if self._i>=len(self.fzb):
+        ret=self._i
+        if self._i==(len(self.fzb)-1):
             self._i=0
-            self._start=False
+            self._active=False
             self.dprint(1,"Loop finished")
         self._i+=1
-        return self._i-1
+        return ret
         
-    def rawWrite(self,data):
-        if data=="false" or data=="0" or data=="False" or data[0]=="-":
-            self._start=False
-        else:
-            self._start=True  
             
     def doInit(self, params):
         if 'start_id' in params  and 'end_id' in params:
             for i in range(int(params['start_id']),int(params['end_id'])):
                 self.fzb.append(i)   
+        else:
+            for i in range(0,1):
+                self.fzb.append(i)
                 
     def doPing(self,data,CANMsg):
         
@@ -64,19 +58,15 @@ class gen_ping(CANModule):
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
     def doEffect(self, CANMsg,args={}): 
-        if (self._start):
-            
-            if 'body' in args:
-                try:
-                    data =args['body'].decode('hex')
-                except:
-                    data = data="\x00"*8
-            else:
-                data="\x00"*8
-                CANMsg=self.doPing(data,CANMsg)
+        if 'body' in args:
+            try:
+                data =args['body'].decode('hex')[:8]
+            except:
+                data = data="\x00"*8
         else:
-            CANMsg.CANData=False # block all other, this is gen module
-            CANMsg.debugData=False
+            data="\x00"*8
+        
+        CANMsg=self.doPing(data,CANMsg)
             
         return CANMsg
 

@@ -12,6 +12,7 @@ from libs.module import *
 ######################################################
 #      Main Code Monkey    Alyosha Sintsov           #
 #                              aka @asintsov         #
+#      alex.sintsov@gmail.com                        #
 ######################################################
 #                                                    #
 # Want to be there as contributor?                   #
@@ -130,7 +131,11 @@ class UserInterface:
                 i=0
                 print
                 for name,module,params,pipe in modz:
-                    print "Module "+name+": "+str(params)+""
+                    tab1="\t"
+                    tab2="\t"
+                    tab1+= "\t" *(28/len(str(name)))
+                    tab2+= "\t" *(28/len(str(params)))
+                    print "Module "+name+tab1+str(params)+tab2+"Enabled: "+str(module._active)
                     if i<total-1:
                         print "\t||\t"
                         print "\t||\t"
@@ -153,14 +158,16 @@ class UserInterface:
                     print "Wrong format for EDIT command"
                     
             elif input[0:4] == 'cmd ' or input[0:2] == 'c ':
-                match=re.match(r"(cmd|c)\s+(\d+)\s+(.*)",input,re.IGNORECASE)
+                match=re.match(r"(cmd|c)\s+([\w~!]+)\s+(.*)",input,re.IGNORECASE)
                 if match:
-                    _idc =  int(match.group(2).strip())
+                    _mod =  str(match.group(2).strip())
                     _paramz = match.group(3).strip()
-                    try:
-                        self.CANEngine.callRaw(_idc,str(_paramz))
-                    except Exception as e:
-                        print "CMD input error: "+str(e)
+                    if 1==1:
+                    #try:
+                        text=self.CANEngine.callModule(_mod,str(_paramz))
+                        print text
+                    #except Exception as e:
+                    #    print "CMD input error: "+str(e)
                         
             elif input == 'help' or input == 'h':
                 print

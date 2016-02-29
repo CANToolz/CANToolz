@@ -18,18 +18,13 @@ class mod_fuzz1(CANModule):
       byte  - byte index form 1 to 8, that should be fuzzed
       
       Example: {'fuzz':[133,111],'byte':1}
-    
-    Console interrupts:
-       0 or False - stop fuzzing
-       1 or other values will enable fuzzing again
-       
-       Example (console input): c 4 f // c 4 fasle // c 4 0
+
     """
     
     _i=0
     fzb=[]
     id=2
-    _fuzz=True 
+    _active=True 
     
     version=1.0
     
@@ -44,15 +39,9 @@ class mod_fuzz1(CANModule):
         for i in range(0,255):
             self.fzb.append(i)
             
-    def rawWrite(self,data):
-        if data=="false" or data=="0" or data=="False" or data[0]=="-":
-            self._fuzz=False
-        else:
-            self._fuzz=True   
-            
     # Change one byte to random        
     def doFuzz(self, CANMsg, shift):
-        if shift > 0 and shift < 9 and self._fuzz:
+        if shift > 0 and shift < 9:
             CANMsg.CANFrame._data[shift-1]=self.fzb[self.counter()]
             CANMsg.CANFrame.parseParams()
             self.dprint(2,"Message "+str(CANMsg.CANFrame._id)+" has been fuzzed (BUS = "+str(CANMsg._bus)+")")

@@ -30,7 +30,10 @@ Main idea that community can produce different modules that can be usefull for a
 
 
 # Usage Examples
-
+   See more use-cases inside examples folder:
+        - MITM with firewall
+        - replay discovery
+        - ping discovery
 ## Simple MITM with CAN firewall
 
 1. Put config file `can_sploit.cfg`
@@ -54,10 +57,11 @@ Main idea that community can produce different modules that can be usefull for a
         hw_USBtin = {'action':'read','pipe':2}            ; read from first HW module to PIPE number 2
         hw_USBtin~2 = {'action':'read'}                  ; read from second HW module to PIPE number 1 (default is 1)
         mod_firewall = {'white_list':[112,113],'pipe':2} ;block messages with ID 112,113 from PIPE number 2
-        hw_USBtin~2!2 = {'action':'write','pipe':2,'id':77}  ; write via second HW module messages from PIPE number 2
-        hw_USBtin!2 =  {'action':'write','pipe':1,'id':78} ; write via first HW module messages from PIPE number 1 (not firewalled)
+        hw_USBtin~2!2 = {'action':'write','pipe':2}  ; write via second HW module messages from PIPE number 2
+        hw_USBtin!2 =  {'action':'write','pipe':1} ; write via first HW module messages from PIPE number 1 (not firewalled)
 
 This config make possible full MITM with with help of two USBtin devices.
+
 
 P.S CANBus Triple support up to 3 CAN buses, so with that hardware it will be enough only one IO module! (but speed is lower than USBtin)
 
@@ -97,46 +101,46 @@ P.S CANBus Triple support up to 3 CAN buses, so with that hardware it will be en
         >> v
         Loaded queue of modules:
 
-        Module hw_USBtin: {'action': 'read', 'pipe': 2, 'id': 6}
+        Module hw_USBtin: {'action': 'read', 'pipe': 2}
                 ||
                 ||
                 \/
-        Module hw_USBtin~2: {'action': 'read', 'pipe': 1, 'id': 6}
+        Module hw_USBtin~2: {'action': 'read', 'pipe': 1}
                 ||
                 ||
                 \/
-        Module mod_firewall: {'pipe': 2, 'white_list': [112, 113], 'id': 4}
+        Module mod_firewall: {'pipe': 2, 'white_list': [112, 113]}
                 ||
                 ||
                 \/
-        Module hw_USBtin~2!2: {'action': 'write', 'pipe': 2, 'id': 77}
+        Module hw_USBtin~2!2: {'action': 'write', 'pipe': 2}
                 ||
                 ||
                 \/
-        Module hw_USBtin!2: {'action': 'write', 'pipe': 1, 'id': 78}
+        Module hw_USBtin!2: {'action': 'write', 'pipe': 1}
         >> e mod_firewall {'white_list': [112, 113,114,115],'pipe':2}
         Edited module: mod_firewall
-        Added  params: {'pipe': 2, 'white_list': [112, 113, 114, 115], 'id': 4}
+        Added  params: {'pipe': 2, 'white_list': [112, 113, 114, 115]}
         >> v
         Loaded queue of modules:
 
-        Module hw_USBtin: {'action': 'read', 'pipe': 2, 'id': 6}
+        Module hw_USBtin: {'action': 'read', 'pipe': 2}
                 ||
                 ||
                 \/
-        Module hw_USBtin~2: {'action': 'read', 'pipe': 1, 'id': 6}
+        Module hw_USBtin~2: {'action': 'read', 'pipe': 1}
                 ||
                 ||
                 \/
-        Module mod_firewall: {'pipe': 2, 'white_list': [112, 113, 114, 115], 'id': 4}
+        Module mod_firewall: {'pipe': 2, 'white_list': [112, 113, 114, 115]}
                 ||
                 ||
                 \/
-        Module hw_USBtin~2!2: {'action': 'write', 'pipe': 2, 'id': 77}
+        Module hw_USBtin~2!2: {'action': 'write', 'pipe': 2}
                 ||
                 ||
                 \/
-        Module hw_USBtin!2: {'action': 'write', 'pipe': 1, 'id': 78}
+        Module hw_USBtin!2: {'action': 'write', 'pipe': 1}
         >> s
 
 That's it for now. Will update this file later with more config, and examples how to use this tool!
