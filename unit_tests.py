@@ -1,6 +1,6 @@
-import sys,os
+import sys
+import os
 import unittest
-import collections
 import time
 
 class ModUniqPrintTests(unittest.TestCase):
