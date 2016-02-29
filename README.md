@@ -41,34 +41,34 @@ Main idea that community can produce different modules that can be usefull for a
 
 Let's see how it looks like from the console...
 
- python cansploit.py -c can_replay_discovery.conf
- hw_USBtin: Init phase started...
- hw_USBtin: Port found: COM14
- hw_USBtin: PORT: COM14
- hw_USBtin: Speed: 500
- hw_USBtin: USBtin device found! 
- >> s                            ; start main loop 
- >> c gen_replay g               ; collect CAN traffic
- True
- >> c gen_replay g               ; after some time when 'action' finished stop collecting traffic
- False
- >> c gen_replay p               ; see amount of collected packets (you can use mod_uniqPrint additional for more info) .. a lot of things there
- >> 28790
- >> e gen_replay {'pipe':2}      ; switch to pipe 2
- >> c gen_replay 0-14000         ; let's replay firsts half.. does action happen?
- >> True
- >> c gen_replay 14000-28790     ; if not then second half...
- >> True
- >> c gen_replay 14000-20000     ; And continue our 'binary' search
- >> True
- >> c gen_replay 18000-20000     ; And continue our 'binary' search
- >> True
- >> c gen_replay 18000-19000    ; And continue our 'binary' search
- >> True
- .....
- >> c gen_replay 18500-18550    ; here we are...
- >> True
- >> c gen_replay d 18500-18550  ; dump chosen range into a file
+python cansploit.py -c can_replay_discovery.conf
+hw_USBtin: Init phase started...
+hw_USBtin: Port found: COM14
+hw_USBtin: PORT: COM14
+hw_USBtin: Speed: 500
+hw_USBtin: USBtin device found! 
+>> s                            ; start main loop 
+>> c gen_replay g               ; collect CAN traffic
+True
+>> c gen_replay g               ; after some time when 'action' finished stop collecting traffic
+False
+>> c gen_replay p               ; see amount of collected packets (you can use mod_uniqPrint additional for more info) .. a lot of hings there
+>> 28790
+>> e gen_replay {'pipe':2}      ; switch to pipe 2
+>> c gen_replay 0-14000         ; let's replay firsts half.. does action happen?
+>> True
+>> c gen_replay 14000-28790     ; if not then second half...
+>> True
+>> c gen_replay 14000-20000     ; And continue our 'binary' search
+>> True
+>> c gen_replay 18000-20000     ; And continue our 'binary' search
+>> True
+>> c gen_replay 18000-19000    ; And continue our 'binary' search
+>> True
+.....
+>> c gen_replay 18500-18550    ; here we are...
+>> True
+>> c gen_replay d 18500-18550  ; dump chosen range into a file
  
 ------------ can_replay_discovery.conf -----------------
 [hw_USBtin]
