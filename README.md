@@ -32,13 +32,13 @@ Main idea that community can produce different modules that can be usefull for a
 
 # Usage Examples
    See more use-cases inside examples folder:
-        - MITM with firewall
-        - replay discovery
-        - ping discovery
+    - MITM with firewall
+    - replay discovery
+    - ping discovery
 
-
-        This example just like "Using can-utils to Find the Door-Unlock Control" 
-        from great book: "The Car Hacker’s Handbook The Car Hacker’s Handbook A Guide for the Penetration Tester" by Chris Evans         
+## Example from  The Car Hacker’s Handbook The Car Hacker’s Handbook A Guide for the Penetration Tester
+    This example just like "Using can-utils to Find the Door-Unlock Control" 
+    from great book: "The Car Hacker’s Handbook The Car Hacker’s Handbook A Guide for the Penetration Tester" by Chris Evans         
 
 
 Let's see how it looks like from the console...
