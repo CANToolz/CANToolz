@@ -35,8 +35,10 @@ Main idea that community can produce different modules that can be usefull for a
         - MITM with firewall
         - replay discovery
         - ping discovery
-##  This example just like "Using can-utils to Find the Door-Unlock Control" 
-    from great book: "The Car Hacker’s Handbook The Car Hacker’s Handbook A Guide for the Penetration Tester" by Chris Evans         
+
+
+        This example just like "Using can-utils to Find the Door-Unlock Control" 
+        from great book: "The Car Hacker’s Handbook The Car Hacker’s Handbook A Guide for the Penetration Tester" by Chris Evans         
 
 
 Let's see how it looks like from the console...
