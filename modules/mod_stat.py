@@ -3,7 +3,7 @@ from libs.can import *
 import collections
 
 
-class mod_uniqPrint(CANModule):
+class mod_stat(CANModule):
     name="Service discovery and statistic"
     
     help="""
@@ -13,7 +13,7 @@ class mod_uniqPrint(CANModule):
     
     Init parameters: 
     
-    [mod_uniqPrint]
+    [mod_stat]
     file = stats.csv     ; file to save output
     count = 200          ; update file after each <count> messages 
     format = csv         ; format to save, csv or text
