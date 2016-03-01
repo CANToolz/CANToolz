@@ -26,7 +26,7 @@ class mod_stat(CANModule):
     _counter=0
     _chkCounter=0
     _bodyList=None
-    _logFile=True
+    _logFile=False
     ISOList=None
     _format=0 # 0 - plain text, 1 - CSV
     _formats={'CSV':1,'text':0,'csv':1,'txt':0}
@@ -35,19 +35,19 @@ class mod_stat(CANModule):
     version=1.0
     _alert=False
     
-    def doStart(self):
+    def doOpenFiles(self):
         if self._logFile:
             try:
                 self._file = open(self._fname, 'w')
             except:
                 self.dprint(2,"can't open log")
                 
-    def doStop(self):
-        if self._logFile:
-            try:
-                self._file.close()
-            except:
-                self.dprint(2,"can't open log")
+    #def doStop(self):
+    #    if self._logFile:
+    #        try:
+    #            self._file.close()
+    #        except:
+    #            self.dprint(2,"can't open log")
             
     def doInit(self,params={}):
         self._bodyList=collections.OrderedDict()
@@ -64,12 +64,14 @@ class mod_stat(CANModule):
                 self._format=self._formats[params['format']]
                 
             self._cmdList['f']=["Print table to configured file",0,"",self.cmdFlashFile] 
+            self.doOpenFiles()
             
         self._cmdList['p']=["Print current table",0,"",self.stdPrint]
         self._cmdList['c']=["Clean table, remove alerts",0,"",self.cmdClean]
         self._cmdList['m']=["Enable alert mode and insert mark into the table",1,"<ID>",self.addMark]   
         self._cmdList['a']=["Analyses of captured traffic",0,"",self.doAnal] 
-        self._cmdList['i']=["Dump ISO to file",0,"",self.doDumpISO] 
+        self._cmdList['i']=["Dump ISO to file",1," <filename> ",self.doDumpISO] 
+        self._cmdList['r']=["Dump ISO to replay format",1," <filename>",self.doDumpReplay] 
     
     def doAnal(self):
         retStr="ISO TP Messages:\n"
@@ -77,9 +79,9 @@ class mod_stat(CANModule):
             messageISO=ISOTPMessage(id)
             for (lenX,msg,bus,mod),cnt in lst.iteritems():
                 ret=messageISO.addCAN(CANMessage.initInt(id,len(msg),[struct.unpack("B",x)[0] for x in msg]))
-                if ret<0:
+                if ret<1:
                     break
-                if messageISO._finished:
+                elif messageISO._finished:
                     if id not in self.ISOList:
                         self.ISOList[id]=[]
                     self.ISOList[id].append((bus, messageISO._length, messageISO._data))
@@ -87,12 +89,37 @@ class mod_stat(CANModule):
                     retStr+="\tID "+str(id)+" and length "+str(messageISO._length)+"\n"
                     break
         return retStr  
+    
+    def doDumpReplay(self,name):
+        _name=None
+        try:
+            _name = open(name.strip(), 'w')
         
-    def doDumpISO(self):
+            
+            for id,lst in self._bodyList.iteritems():
+                for (lenX,msg,bus,mod),cnt in lst.iteritems():     
+                    _name.write(str(id)+":"+str(lenX)+":"+msg.encode('hex')+"\n") 
+            _name.close()
+        except:
+            self.dprint(2,"can't open log")
+            
+    def doDumpISO(self, name):
+        _name=None
+        try:
+            _name = open(name.strip(), 'w')
+        except:
+            self.dprint(2,"can't open log")
         if self._format==0:
-            self.stdISOFile()
+            try:
+                self.stdISOFile(_name)
+            except:
+                self.dprint(2,"can't open log")
         elif self._format==1:
-            self.stdISOFileCSV()   
+            try:
+                self.stdISOFileCSV(_name)
+            except:
+                self.dprint(2,"can't open log")
+        _name.close()        
         return ""
         
     def stdFile(self):  
@@ -111,17 +138,17 @@ class mod_stat(CANModule):
                 self._file.write(str(bus)+"\t"+str(id)+"\t"+str(lenX)+modx+msg.encode('hex')+sp+'\t'+str(cnt)+"\n")
         return ""          
 
-    def stdISOFile(self):  
+    def stdISOFile(self,_name):  
     
         self._file.seek(0)
         self._file.truncate()
         self._file.write("")
         for id,lst in self.ISOList.iteritems():
             for (bus,length,data) in lst:
-                self._file.write("\nPacket ID: "+str(id)+"\nBUS:\t"+str(bus)+"\nLength:\t"+str(length)+"\n----------HEX-----------\n"+''.join(struct.pack("!B",b) for b in data).encode('hex')+'\n----------ASCII--------------\n'+''.join(struct.pack("!B",b) for b in data)+'\n----------------------\n\n')
+                _name.write("\nPacket ID: "+str(id)+"\nBUS:\t"+str(bus)+"\nLength:\t"+str(length)+"\n----------HEX-----------\n"+''.join(struct.pack("!B",b) for b in data).encode('hex')+'\n----------ASCII--------------\n'+''.join(struct.pack("!B",b) for b in data)+'\n----------------------\n\n')
         return ""        
 
-    def stdISOFileCSV(self):  
+    def stdISOFileCSV(self,_name):  
     
         self._file.seek(0)
         self._file.truncate()
@@ -129,7 +156,7 @@ class mod_stat(CANModule):
         self._file.write("")
         for id,lst in self.ISOList.iteritems():
             for (bus,length,data) in lst:
-                self._file.write(str(bus)+","+str(id)+","+str(length)+","+''.join(struct.pack("!B",b) for b in data).encode('hex')+","+''.join(struct.pack("!B",b) for b in data)+"\n")
+                _name.write(str(bus)+","+str(id)+","+str(length)+","+''.join(struct.pack("!B",b) for b in data).encode('hex')+","+''.join(struct.pack("!B",b) for b in data)+"\n")
         return ""        
         
  
@@ -165,9 +192,16 @@ class mod_stat(CANModule):
         
     def cmdFlashFile(self):
         if self._format==0:
-            self.stdFile()
+            try:
+                self.stdFile()
+            except:
+                self.dprint(2,"can't open log")
+            
         elif self._format==1:
-            self.stdFileCSV()   
+            try:
+                self.stdFileCSV()
+            except:
+                self.dprint(2,"can't open log")
         return ""    
         
     def cmdClean(self):
@@ -194,10 +228,8 @@ class mod_stat(CANModule):
                 self._counter+=1
                 if self._counter>=self._chkCounter:
                     self._counter=0
-                    if self._format==0:
-                        self.stdFile()   # Lof to file stats
-                    if self._format==1:    
-                        self.stdFileCSV() 
+                    self.cmdFlashFile()
+                    
                         
         return CANMsg
 
