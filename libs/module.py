@@ -31,6 +31,7 @@ class CANModule:
             print str
         
     def rawWrite(self,string): # Used for direct input
+        ret=""
         self._block.wait(3)
         self._block.clear()
         if string[0] in self._cmdList:

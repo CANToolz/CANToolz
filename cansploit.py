@@ -7,7 +7,7 @@ from libs.module import *
         
 ######################################################
 #                                                    # 
-# CANSploit v 0.1b                                   #
+# CANSploit v 0.9b                                   #
 #             ... or can't?                          #
 ######################################################
 #      Main Code Monkey    Alyosha Sintsov           #

@@ -24,11 +24,14 @@ class CANMessage():
         
     @classmethod     
     def initInt(self,id,length,data):   # Init    
-    
+        if length > 8:
+            length = 8
         if id >= 0 and id <= 0x7FF: 
             extended = False
         elif id > 0x7FF and id < 0x1FFFFFFF:
             extended = True
+        else:
+            id = 0
    
         return CANMessage(id,length,data,extended,1)  
 

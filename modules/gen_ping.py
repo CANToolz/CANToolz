@@ -1,5 +1,6 @@
 from libs.module import *
 from libs.can import *
+from libs.isotp import *
 
 class gen_ping(CANModule):
     name="Sending CAN pings"
@@ -7,66 +8,84 @@ class gen_ping(CANModule):
     help="""
     
     This module doing ID buteforce.
-    (combine with mod_uniqPrint for example)
+    (combine with mod_stat for example)
     
-    Init parameters:  
-    
-    [gen_ping]
-    start_id = 1
-    end_id   = 1000 
-    
+   
     Module parameters:  
-       body   -  data HEX that will be used in CAN for discovery (by default body is 0000000000000000)
-       {'body':'001122334455667788'}
+       body           -  data HEX that will be used in CAN for discovery (by default body is 0000000000000000)
+       mode           -  by default CAN, but also support ISOTP
+       range          -  [0,1000] - ID range
+       {'body':'0011223344556677889900aabbccddeeff','mode':'isotp'}
     """
     
-    _i=0
-    id=7
     _active=False
-    fzb=[]
+    _init=False
+
+    iso=[]
     
-    def counter(self):
-        ret=self._i
-        if self._i==(len(self.fzb)-1):
-            self._i=0
+    def getLast(self):
+        if self.iso==[]:
             self._active=False
-            self.dprint(1,"Loop finished")
-        self._i+=1
-        return ret
-        
+            return None
             
-    def doInit(self, params):
-        if 'start_id' in params  and 'end_id' in params:
-            for i in range(int(params['start_id']),int(params['end_id'])):
-                self.fzb.append(i)   
+        return self.iso.pop()
+        
+    def doActivate(self):
+        if self._active:
+            self._active=False
+            self.iso=[] 
         else:
-            for i in range(0,1):
-                self.fzb.append(i)
+            self._init=True
+            self._active=True
+            
+        return "Active status: "+str(self._active)
+                                
+    def doPing(self,data,ISOMode,params):
+        CANMsgF=None
+        if ISOMode:
+            if self._init:
+                _data=[struct.unpack("B",x)[0] for x in data]
+                if 'range' in params:
+                    for i in range(int(params['range'][0]),int(params['range'][1])):
+                        self.iso.extend(ISOTPMessage.generateCAN(i,_data))
+                self.iso.reverse()
+                self._init=False
+        else:
+            if self._init:
+                _data=[struct.unpack("B",x)[0] for x in data]
+                if 'range' in params:
+                    for i in range(int(params['range'][0]),int(params['range'][1])):
+                        self.iso.append(CANMessage.initInt(i,len(_data),_data[:8]))
+                self._init=False
                 
-    def doPing(self,data,CANMsg):
+        CANMsgF=self.getLast() 
         
-        _data=[struct.unpack("B",x)[0] for x in data]
-        CANMsg.CANFrame=CANMessage.initInt(self.fzb[self.counter()],8,_data)
-        CANMsg.CANData=True
-        CANMsg.debugData=False
-        
-        return CANMsg
+        return CANMsgF
         
     def doStart(self):
-        self._i=0
-         
-
-    # Effect (could be fuzz operation, sniff, filter or whatever)
+        self.iso=[] 
+        
     def doEffect(self, CANMsg,args={}): 
         if 'body' in args:
             try:
-                data =args['body'].decode('hex')[:8]
+                data = args['body'].decode('hex')
             except:
-                data = data="\x00"*8
+                data = "\x00"*8
         else:
             data="\x00"*8
         
-        CANMsg=self.doPing(data,CANMsg)
+        ISOMode = False
+        
+        # Simple CAN or ISO
+        if 'mode' in args:
+            ISOMode = True if (args['mode'] == 'ISO' or args['mode'] == 'iso' or args['mode'] == 'ISOTP' or args['mode'] == 'isotp') else False
+            
+        CANMsg.CANFrame=self.doPing(data, ISOMode,args) # get frame
+        
+        if CANMsg.CANFrame:
+            CANMsg.CANData=True
+        else:
+            CANMsg.CANData=False
             
         return CANMsg
 

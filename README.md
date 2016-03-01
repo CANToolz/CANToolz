@@ -18,9 +18,9 @@ CANSploit can work with CAN network by using next harware:
 - mod_firewall     - module for blocking CAN message by ID
 - mod_fuzz1        - Simple 'Proxy' fuzzer  (1 byte)
 - mod_printMessage - printing CAN messages
-- mod_uniqPrint    - CAN messages statistic (with .csv file output)
-- gen_ping	   - generating CAN messages with chosen IDs (ECU/Service descovery)
-- gen_replay	   - save and replay packets
+- mod_stat         - CAN messages statistic (with .csv file output)
+- gen_ping         - generating CAN messages with chosen IDs (ECU/Service descovery)
+- gen_replay       - save and replay packets
 
 P.S. of course we are working on supporting other types of I/O hardware and modules. Please join us!
 Main idea that community can produce different modules that can be usefull for all of us 8)
@@ -53,7 +53,7 @@ Let's see how it looks like from the console...
     True
     >> c gen_replay g               ; after some time when 'action' finished stop collecting traffic
     False
-    >> c gen_replay p               ; see amount of collected packets (you can use mod_uniqPrint additional for more info) .. a lot of hings there
+    >> c gen_replay p               ; see amount of collected packets (you can use mod_stat additional for more info) .. a lot of hings there
     >> 28790
     >> e gen_replay {'pipe':2}      ; switch to pipe 2
     >> c gen_replay 0-14000         ; let's replay firsts half.. does action happen?
@@ -82,7 +82,7 @@ Let's see how it looks like from the console...
     debug = 1
 
     ; Load stat module. We need it to detect new IDs
-    [mod_uniqPrint]
+    [mod_stat]
 
     ; Now let's describe the logic of this test and MITM example
     [MITM]

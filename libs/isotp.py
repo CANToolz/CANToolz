@@ -1,4 +1,5 @@
-import can
+from libs.can import *
+
 '''
 dirty ISOTP impl
 ISO 15765-2
@@ -21,7 +22,7 @@ class ISOTPMessage():
     
     
     def __init__(self,id=0,length=0,data=[],finished=False): # Init EMPTY message
-        delf._id=id
+        self._id=id
         self._data=data
         self._length=length
         self._data=data
@@ -36,11 +37,13 @@ class ISOTPMessage():
         sz      = (CANMsg._data[0] & 0x0F)
         
         if pciType == self.SingleFrame: # Single frame
-            if sz >= 0 and sz < 8:
+            if sz > 0 and sz < 8:
                 self._data=CANMsg._data[1:sz+1]
                 self._length=sz
-                self._finished=True
-                return 0
+                if sz+1 == CANMsg._length:
+                    self._finished=True
+                    return 1
+                return -7
             else:
                 return -1
         elif pciType == self.FirstFrame:     # First frame 
@@ -98,11 +101,11 @@ class ISOTPMessage():
             
             while  bytes != _length: # Rest
                 sent = min(_length-bytes,7)
-                CANMsgList.append(CANMessage.initInt(id,8,[ _seq + 0x20 ] + data[1:sent]))
+                CANMsgList.append(CANMessage.initInt(id,1+sent,[ seq + 0x20 ] + data[bytes:bytes+sent]))
                 bytes+=sent
                 seq+=1
                 if seq  > 0xF:
-                    self._seq = 0 
+                    seq = 0 
         
         return CANMsgList        
                 

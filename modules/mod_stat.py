@@ -1,5 +1,6 @@
 from libs.module import *
 from libs.can import *
+from libs.isotp import *
 import collections
 
 
@@ -21,17 +22,19 @@ class mod_stat(CANModule):
     """
     
     _file=None
-    _fname=None
+    _fname="mod_stat.txt"
     _counter=0
     _chkCounter=0
     _bodyList=None
-    _logFile=False
+    _logFile=True
+    ISOList=None
     _format=0 # 0 - plain text, 1 - CSV
     _formats={'CSV':1,'text':0,'csv':1,'txt':0}
     id=3
     _active=True
     version=1.0
     _alert=False
+    
     def doStart(self):
         if self._logFile:
             try:
@@ -48,6 +51,7 @@ class mod_stat(CANModule):
             
     def doInit(self,params={}):
         self._bodyList=collections.OrderedDict()
+        self.ISOList=collections.OrderedDict()
         if 'file' in params:
             self._logFile=True
             self._fname=params['file']
@@ -62,15 +66,40 @@ class mod_stat(CANModule):
             self._cmdList['f']=["Print table to configured file",0,"",self.cmdFlashFile] 
             
         self._cmdList['p']=["Print current table",0,"",self.stdPrint]
-        self._cmdList['c']=["Clean table, remove alerts",0,"",self.cmdFlashFile]
+        self._cmdList['c']=["Clean table, remove alerts",0,"",self.cmdClean]
         self._cmdList['m']=["Enable alert mode and insert mark into the table",1,"<ID>",self.addMark]   
-            
-                
+        self._cmdList['a']=["Analyses of captured traffic",0,"",self.doAnal] 
+        self._cmdList['i']=["Dump ISO to file",0,"",self.doDumpISO] 
+    
+    def doAnal(self):
+        retStr="ISO TP Messages:\n"
+        for id,lst in self._bodyList.iteritems():
+            messageISO=ISOTPMessage(id)
+            for (lenX,msg,bus,mod),cnt in lst.iteritems():
+                ret=messageISO.addCAN(CANMessage.initInt(id,len(msg),[struct.unpack("B",x)[0] for x in msg]))
+                if ret<0:
+                    break
+                if messageISO._finished:
+                    if id not in self.ISOList:
+                        self.ISOList[id]=[]
+                    self.ISOList[id].append((bus, messageISO._length, messageISO._data))
+                    self.dprint(1,"ISO-TP Message detected, with ID "+str(id)+" and length "+str(messageISO._length))
+                    retStr+="\tID "+str(id)+" and length "+str(messageISO._length)+"\n"
+                    break
+        return retStr  
+        
+    def doDumpISO(self):
+        if self._format==0:
+            self.stdISOFile()
+        elif self._format==1:
+            self.stdISOFileCSV()   
+        return ""
+        
     def stdFile(self):  
     
         self._file.seek(0)
         self._file.truncate()
-        self._file.write("BUS\tLEN\tID\t\tMESSAGE\t\t\tCOUNT\n")
+        self._file.write("BUS\tID\tLEN\t\tMESSAGE\t\t\tCOUNT\n")
         self._file.write("")
         for id,lst in self._bodyList.iteritems():
             for (lenX,msg,bus,mod),cnt in lst.iteritems():
@@ -79,21 +108,43 @@ class mod_stat(CANModule):
                 else:
                     modx="\t\t"
                 sp=" "*(16-len(msg)*2)       
-                self._file.write(str(bus)+"\t"+str(lenX)+"\t"+str(id)+modx+msg.encode('hex')+sp+'\t'+str(cnt)+"\n")
+                self._file.write(str(bus)+"\t"+str(id)+"\t"+str(lenX)+modx+msg.encode('hex')+sp+'\t'+str(cnt)+"\n")
         return ""          
-                
+
+    def stdISOFile(self):  
+    
+        self._file.seek(0)
+        self._file.truncate()
+        self._file.write("")
+        for id,lst in self.ISOList.iteritems():
+            for (bus,length,data) in lst:
+                self._file.write("\nPacket ID: "+str(id)+"\nBUS:\t"+str(bus)+"\nLength:\t"+str(length)+"\n----------HEX-----------\n"+''.join(struct.pack("!B",b) for b in data).encode('hex')+'\n----------ASCII--------------\n'+''.join(struct.pack("!B",b) for b in data)+'\n----------------------\n\n')
+        return ""        
+
+    def stdISOFileCSV(self):  
+    
+        self._file.seek(0)
+        self._file.truncate()
+        self._file.write("BUS,ID,LENGTH,MESSAGE,ASCII\n")
+        self._file.write("")
+        for id,lst in self.ISOList.iteritems():
+            for (bus,length,data) in lst:
+                self._file.write(str(bus)+","+str(id)+","+str(length)+","+''.join(struct.pack("!B",b) for b in data).encode('hex')+","+''.join(struct.pack("!B",b) for b in data)+"\n")
+        return ""        
+        
+ 
     def stdFileCSV(self):  
         self._file.seek(0)
         self._file.truncate()
-        self._file.write("BUS,LENGTH,ID,MESSAGE,COUNT\n")
+        self._file.write("BUS,ID,LENGTH,MESSAGE,COUNT\n")
         for id,lst in self._bodyList.iteritems():
             for (len,msg,bus,mod),cnt in lst.iteritems():
-                self._file.write(str(bus)+","+str(len)+","+str(id)+","+msg.encode('hex')+','+str(cnt)+"\n")
+                self._file.write(str(bus)+","+str(id)+","+str(len)+","+msg.encode('hex')+','+str(cnt)+"\n")
         return ""    
         
     def stdPrint(self):  
         table = "\n"
-        table += "BUS\tLEN\tID\t\tMESSAGE\t\t\tCOUNT"
+        table += "BUS\tID\tLENGTH\t\tMESSAGE\t\t\tCOUNT"
         table += "\n"    
         for id,lst in self._bodyList.iteritems():
             for (lenX,msg,bus,mod),cnt in lst.iteritems():
@@ -102,7 +153,7 @@ class mod_stat(CANModule):
                 else:
                     modx="\t\t"
                 sp=" "*(16-len(msg)*2)   
-                table += str(bus)+"\t"+str(lenX)+"\t"+str(id)+modx+msg.encode('hex')+sp+'\t'+str(cnt)+"\n"
+                table += str(bus)+"\t"+str(id)+"\t"+str(lenX)+modx+msg.encode('hex')+sp+'\t'+str(cnt)+"\n"
         table+=""
         return table
     
@@ -119,9 +170,10 @@ class mod_stat(CANModule):
             self.stdFileCSV()   
         return ""    
         
-    def cmdFlashFile(self):
+    def cmdClean(self):
         self._bodyList=collections.OrderedDict()
         self._alert=False
+        self.ISOList=collections.OrderedDict()
         return ""  
         
     # Effect (could be fuzz operation, sniff, filter or whatever)
