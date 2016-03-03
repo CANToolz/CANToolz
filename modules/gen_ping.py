@@ -21,7 +21,7 @@ class gen_ping(CANModule):
     iso = []
 
     def getLast(self):
-        if self.iso:
+        if not self.iso:
             self._active = False
             return None
 
