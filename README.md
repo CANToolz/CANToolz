@@ -2,11 +2,11 @@
 
 CANSploit is a framework for analysing CAN networks and devices.
 This tool based on different modules which can be assembled in pipe together and
-can be used for security researchers and testers for black-box analyses.
+can be used by security researchers and automotive/OEM security testers for black-box analysis and etc.
 
 ## Using a Hardware
 
-CANSploit can work with CAN network by using next harware:
+CANSploit can work with CAN network by using next hardware:
 
 1. [USBtin](http://www.fischl.de/usbtin/)
 2. [CANBus Triple](https://canb.us/)
@@ -16,14 +16,14 @@ CANSploit can work with CAN network by using next harware:
 - hw_CANBusTriple  - IO module for CANBus Triple HW
 - hw_USBtin        - IO module forUSBtin
 - mod_firewall     - module for blocking CAN message by ID
-- mod_fuzz1        - Simple 'Proxy' fuzzer  (1 byte) Can be combinded with gen_ping/gen_replay
+- mod_fuzz1        - Simple 'Proxy' fuzzer  (1 byte) Can be combined with gen_ping/gen_replay
 - mod_printMessage - printing CAN messages
 - mod_stat         - CAN messages statistic (with .csv file output)
-- gen_ping         - generating CAN messages with chosen IDs (ECU/Service descovery)
+- gen_ping         - generating CAN messages with chosen IDs (ECU/Service discovery)
 - gen_replay       - save and replay packets
 
 P.S. of course we are working on supporting other types of I/O hardware and modules. Please join us!
-Main idea that community can produce different modules that can be usefull for all of us 8)
+Main idea that community can produce different modules that can be useful for all of us 8)
 
 ## Dependencies
 
