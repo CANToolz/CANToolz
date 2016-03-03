@@ -28,7 +28,6 @@ class gen_ping(CANModule):
 
     def do_start(self, args={}):
         self.queue_messages = []
-        _data = []
         if 'body' in args:
             try:
                 _data = [struct.unpack("B", x)[0] for x in (args['body'].decode('hex'))]
@@ -47,15 +46,14 @@ class gen_ping(CANModule):
         if 'range' in args and int(args['range'][0]) < int(args['range'][1]):
             for i in range(int(args['range'][0]), int(args['range'][1])):
                 if iso_mode:
-                    iso_list=ISOTPMessage.generate_can(i, _data)
+                    iso_list = ISOTPMessage.generate_can(i, _data)
                     iso_list.reverse()
                     self.queue_messages.extend(iso_list)
                 else:
                     self.queue_messages.append(CANMessage.init_data(i, len(_data), _data[:8]))
         else:
-            self.dprint(1,"No range specified")
+            self.dprint(1, "No range specified")
             self._active = False
-
 
     def do_effect(self, can_msg, args={}):
         can_msg.CANFrame = self.do_ping()  # get frame

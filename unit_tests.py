@@ -2,6 +2,7 @@ import sys
 import unittest
 import time
 
+
 class ModReplayTests(unittest.TestCase):
     def tearDown(self):
         self.CANEngine.stop_loop()
@@ -27,7 +28,7 @@ class ModReplayTests(unittest.TestCase):
         time.sleep(1)
         print("num is "+num)
         self.assertTrue(int(num) == 4, "Should be be 4 packets")
-        ret=self.CANEngine.call_module("gen_replay", "d 0-4")
+        ret = self.CANEngine.call_module("gen_replay", "d 0-4")
         time.sleep(1)
         print(ret)
         self.CANEngine.call_module("mod_stat", "s")

@@ -198,8 +198,8 @@ class hw_USBtin(CANModule):
             elif can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.RemoteFrame:
                 cmd_byte = "R"
             if cmd_byte:
-                write_buf = cmd_byte + can_msg.CANFrame.frame_raw_id.encode('hex')[1:] + str(can_msg.CANFrame.frame_length) + \
-                           can_msg.CANFrame.frame_raw_data.encode('hex') + "\r"
+                write_buf = cmd_byte + can_msg.CANFrame.frame_raw_id.encode('hex')[1:] + \
+                    str(can_msg.CANFrame.frame_length) + can_msg.CANFrame.frame_raw_data.encode('hex') + "\r"
                 self._serialPort.write(write_buf)
                 self.dprint(2, "WRITE: " + write_buf)
         return can_msg

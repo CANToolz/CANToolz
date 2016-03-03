@@ -92,7 +92,7 @@ class ISOTPMessage:
         elif _length > 4095:
             return []
         else:
-            can_msg_list.append(CANMessage.init_data(fid, 8, [(_length >> 8) + 0x10] + [_length & 0xFF] + data[:6]))  # First
+            can_msg_list.append(CANMessage.init_data(fid, 8, [(_length >> 8) + 0x10] + [_length & 0xFF] + data[:6]))
             seq = 1
             bytes = 6
 

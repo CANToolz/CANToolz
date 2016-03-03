@@ -229,7 +229,8 @@ class mod_stat(CANModule):
                     can_msg.CANFrame.frame_ext)
                 ] = 1
                 if self._alert:
-                    self.dprint(1, "New ID found: " + str(can_msg.CANFrame.frame_id) + " (BUS: " + str(can_msg.bus) + ")")
+                    self.dprint(1, "New ID found: " + str(can_msg.CANFrame.frame_id) +
+                                " (BUS: " + str(can_msg.bus) + ")")
             else:
                 if (can_msg.CANFrame.frame_length,
                         can_msg.CANFrame.frame_raw_data,

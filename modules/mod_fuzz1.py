@@ -43,7 +43,8 @@ class mod_fuzz1(CANModule):
         if 0 < shift < 9:
             can_msg.CANFrame.frame_data[shift - 1] = self.fzb[self.counter()]
             can_msg.CANFrame.parse_params()
-            self.dprint(2, "Message " + str(can_msg.CANFrame.frame_id) + " has been fuzzed (BUS = " + str(can_msg.bus) + ")")
+            self.dprint(2, "Message " + str(can_msg.CANFrame.frame_id) +
+                        " has been fuzzed (BUS = " + str(can_msg.bus) + ")")
 
         return can_msg
 

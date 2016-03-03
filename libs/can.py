@@ -25,7 +25,6 @@ class CANMessage:
 
         self.parse_params()
 
-
     @classmethod
     def init_data(self, fid, length, data):  # Init
         if length > 8:
@@ -52,7 +51,7 @@ class CANMessage:
 
         temp.set_raw_id = fid
         temp.set_raw_length = length
-        temp.set_raw_data= data
+        temp.set_raw_data = data
 
         temp.parse_raw()
 

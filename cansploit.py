@@ -166,7 +166,7 @@ class UserInterface:
 
 
 def main():
-    sys.dont_write_bytecode=True
+    sys.dont_write_bytecode = True
     UserInterface()
 
 

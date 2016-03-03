@@ -32,7 +32,7 @@ class gen_replay(CANModule):
                     length = line[:-1].split(":")[1]
                     data = line[:-1].split(":")[2]
                     self.CANList.append(CANMessage.init_data(int(fid), int(length), [struct.unpack("B", x)[0] for x in
-                    data.decode('hex')[:8]]))
+                                                                                     data.decode('hex')[:8]]))
                 self.dprint(1, "Loaded " + str(len(self.CANList)) + " frames")
         except:
             self.dprint(2, "can't open files with CAN messages!")
@@ -51,8 +51,9 @@ class gen_replay(CANModule):
                         fid = line[:-1].split(":")[0]
                         length = line[:-1].split(":")[1]
                         data = line[:-1].split(":")[2]
-                        self.CANList.append(CANMessage.init_data(int(fid), int(length), [struct.unpack("B", x)[0] for x in
-                                                                                      data.decode('hex')[:8]]))
+                        self.CANList.append(
+                            CANMessage.init_data(int(fid), int(length), [struct.unpack("B", x)[0] for x in
+                                                                         data.decode('hex')[:8]]))
                 self.dprint(1, "Loaded " + str(len(self.CANList)) + " frames")
             except:
                 self.dprint(2, "can't open files with CAN messages!")
@@ -77,7 +78,8 @@ class gen_replay(CANModule):
         except:
             _num1 = 0
             _num2 = len(self.CANList)
-        if _num2 > _num1 and _num1 <= len(self.CANList) and _num2 <= len(self.CANList) and _num1 >= 0 and _num2 > 0:  # TODO Refactoring
+        if _num2 > _num1 and _num1 <= len(self.CANList) and _num2 <= len(
+                self.CANList) and _num1 >= 0 and _num2 > 0:  # TODO Refactoring
             try:
                 _file = open(self._fname, 'w')
                 for i in range(_num1, _num2):
