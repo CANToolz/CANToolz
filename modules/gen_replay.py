@@ -14,7 +14,6 @@ class gen_replay(CANModule):
               
     """
 
-    _file = None
     _fname = None
 
     CANList = []
@@ -25,19 +24,21 @@ class gen_replay(CANModule):
     _replay = False
     _sniff = False
 
-    def doStart(self):
+    def cmd_load(self, name):
         try:
-            self._file = open(self._fname, 'w')
+            with open(name, "r") as ins:
+                for line in ins:
+                    fid = line[:-1].split(":")[0]
+                    length = line[:-1].split(":")[1]
+                    data = line[:-1].split(":")[2]
+                    self.CANList.append(CANMessage.init_data(int(fid), int(length), [struct.unpack("B", x)[0] for x in
+                    data.decode('hex')[:8]]))
+                self.dprint(1, "Loaded " + str(len(self.CANList)) + " frames")
         except:
-            self.dprint(2, "can't open log")
+            self.dprint(2, "can't open files with CAN messages!")
 
-    def doStop(self):
-        try:
-            self._file.close()
-        except:
-            self.dprint(2, "can't open log")
-
-    def doInit(self, params={}):
+    def do_init(self, params={}):
+        self.CANList = []
         if 'save_to' in params:
             self._fname = params['save_to']
         else:
@@ -47,27 +48,28 @@ class gen_replay(CANModule):
             try:
                 with open(params['load_from'], "r") as ins:
                     for line in ins:
-                        id = line[:-1].split(":")[0]
+                        fid = line[:-1].split(":")[0]
                         length = line[:-1].split(":")[1]
                         data = line[:-1].split(":")[2]
-                        self.CANList.append(CANMessage.initInt(int(id), int(length), [struct.unpack("B", x)[0] for x in
+                        self.CANList.append(CANMessage.init_data(int(fid), int(length), [struct.unpack("B", x)[0] for x in
                                                                                       data.decode('hex')[:8]]))
                 self.dprint(1, "Loaded " + str(len(self.CANList)) + " frames")
             except:
                 self.dprint(2, "can't open files with CAN messages!")
 
-        self._cmdList['p'] = ["Print count of loaded packets", 0, "", self.cntPrint]
-        self._cmdList['r'] = ["Replay range from loaded, from number X to number Y", 1, " <X>-<Y> ", self.replayMode]
+        self._cmdList['p'] = ["Print count of loaded packets", 0, "", self.cnt_print]
+        self._cmdList['r'] = ["Replay range from loaded, from number X to number Y", 1, " <X>-<Y> ", self.replay_mode]
         self._cmdList['d'] = ["Save range of loaded packets, from X to Y", 1, " <X>-<Y> (if no parameters then all)",
-                              self.saveDump]
-        self._cmdList['c'] = ["Clean loaded table", 0, "", self.clnTable]
-        self._cmdList['g'] = ["Enable/Disable sniff mode to collect packets", 0, "", self.sniffMode]
+                              self.save_dump]
+        self._cmdList['c'] = ["Clean loaded table", 0, "", self.clean_table]
+        self._cmdList['g'] = ["Enable/Disable sniff mode to collect packets", 0, "", self.sniff_mode]
+        self._cmdList['l'] = ["Load packets from file", 1, " <file> ", self.cmd_load]
 
-    def clnTable(self):
+    def clean_table(self):
         self.CANList = []
         return ""
 
-    def saveDump(self, indexes):
+    def save_dump(self, indexes):
         ret = "Saved to " + self._fname
         try:
             _num1 = int(indexes.split("-")[0])
@@ -77,14 +79,16 @@ class gen_replay(CANModule):
             _num2 = len(self.CANList)
         if _num2 > _num1 and _num1 <= len(self.CANList) and _num2 <= len(self.CANList) and _num1 >= 0 and _num2 > 0:  # TODO Refactoring
             try:
+                _file = open(self._fname, 'w')
                 for i in range(_num1, _num2):
-                    self._file.write(str(self.CANList[i]._id) + ":" + str(self.CANList[i]._length) + ":" + str(
-                        self.CANList[i]._rawData.encode('hex')) + "\n")
+                    _file.write(str(self.CANList[i].frame_id) + ":" + str(self.CANList[i].frame_length) + ":" + str(
+                        self.CANList[i].frame_raw_data.encode('hex')) + "\n")
+                _file.close()
             except Exception as e:
                 ret = "Not saved. Error: " + str(e)
         return ret
 
-    def sniffMode(self):
+    def sniff_mode(self):
         self._replay = False
         if self._sniff:
             self._sniff = False
@@ -92,7 +96,7 @@ class gen_replay(CANModule):
             self._sniff = True
         return str(self._sniff)
 
-    def replayMode(self, indexes):
+    def replay_mode(self, indexes):
         self._replay = False
         self._sniff = False
         try:
@@ -106,19 +110,19 @@ class gen_replay(CANModule):
 
         return str(self._replay)
 
-    def cntPrint(self):
+    def cnt_print(self):
         ret = str(len(self.CANList))
         return ret
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
-    def doEffect(self, CANMsg, args={}):
-        if self._sniff and CANMsg.CANData:
-            self.CANList.append(CANMsg.CANFrame)
+    def do_effect(self, can_msg, args={}):
+        if self._sniff and can_msg.CANData:
+            self.CANList.append(can_msg.CANFrame)
         elif self._replay:
-            CANMsg.CANFrame = self.CANList[self._num1]
+            can_msg.CANFrame = self.CANList[self._num1]
             self._num1 += 1
-            CANMsg.CANData = True
+            can_msg.CANData = True
             if self._num1 == self._num2:
                 self._replay = False
 
-        return CANMsg
+        return can_msg

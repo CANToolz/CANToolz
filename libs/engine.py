@@ -14,7 +14,7 @@ class CANSploit:
 
     def dprint(self, level, msg):
         if level <= self.DEBUG:
-            print self.__class__.__name__ + ": " + msg
+            print(self.__class__.__name__ + ": " + msg)
 
     def __init__(self):
         self._version = "0.9b"  # version
@@ -31,7 +31,7 @@ class CANSploit:
         sys.dont_write_bytecode = True
 
     # Main loop with two pipes
-    def mainLoop(self):
+    def main_loop(self):
         # Run until STOP
         while not self._stop.is_set():
             self._pipes[0] = CANSploitMessage()  # Prepare empty message
@@ -39,43 +39,43 @@ class CANSploit:
             for name, module, params, pipe in self._enabledList:  # Each module
                 #  Handle CAN message
                 if module._active:
-                    module._block.wait(3)
-                    module._block.clear()
-                    self._pipes[pipe] = module.doEffect(self._pipes[pipe], params)  # doEffect on CANMessage
-                    module._block.set()
+                    module.thr_block.wait(3)
+                    module.thr_block.clear()
+                    self._pipes[pipe] = module.do_effect(self._pipes[pipe], params)  # doEffect on CANMessage
+                    module.thr_block.set()
 
                     # Here when STOP
         for name, module, params, pipe in self._enabledList:
-            module.doStop()
+            module.do_stop()
 
     # Call module command        
-    def callModule(self, mod, params):
-        x = self.findModule(mod)
+    def call_module(self, mod, params):
+        x = self.find_module(mod)
         if x >= 0:
-            ret = self._enabledList[x][1].rawWrite(params)
+            ret = self._enabledList[x][1].raw_write(params)
         else:
             ret = "Module " + mod + " not loaded!"
         return ret
 
     # Enable loop        
-    def startLoop(self):
+    def start_loop(self):
         self._stop.clear()
 
         for name, module, params, pipe in self._enabledList:
-            module.doStart()
-            module._block.set()
+            module.do_start(params)
+            module.thr_block.set()
 
-        self._thread = threading.Thread(target=self.mainLoop)
+        self._thread = threading.Thread(target=self.main_loop)
 
         self._thread.daemon = True
         self._thread.start()
 
     # Pause loop      
-    def stopLoop(self):
+    def stop_loop(self):
         self._stop.set()
 
     # Having defulat values for id and pipe params    
-    def checkParams(self, params):
+    def check_params(self, params):
         if 'pipe' in params:
             pipe = 1 if int(params['pipe']) > 2 else int(params['pipe']) - 1
         else:
@@ -88,12 +88,12 @@ class CANSploit:
         return [params, pipe]
 
     # Add module and params to the end    
-    def pushModule(self, mod, params):
-        chkdParams = self.checkParams(params)
-        self._enabledList.append([mod, self._type[mod.split("!")[0]], chkdParams[0], chkdParams[1]])
+    def push_module(self, mod, params):
+        chkd_params = self.check_params(params)
+        self._enabledList.append([mod, self._type[mod.split("!")[0]], chkd_params[0], chkd_params[1]])
 
     # Find index of module with name mod    
-    def findModule(self, mod):
+    def find_module(self, mod):
         i = 0
         x = -1
         for name, module, params, pipe in self._enabledList:
@@ -105,51 +105,51 @@ class CANSploit:
 
         # Add new params to module named mod
 
-    def editModule(self, mod, params):
-        x = self.findModule(mod)
+    def edit_module(self, mod, params):
+        x = self.find_module(mod)
         if x >= 0:
-            chkdParams = self.checkParams(params)
-            self._enabledList[x][2] = chkdParams[0]
-            self._enabledList[x][3] = chkdParams[1]
+            chkd_params = self.check_params(params)
+            self._enabledList[x][2] = chkd_params[0]
+            self._enabledList[x][3] = chkd_params[1]
             return x
         return -1
 
     # Edit value of parameters of module mod    
-    def editModuleParam(self, mod, key, value):
-        x = self.findModule(mod)
+    def edit_module_param(self, mod, key, value):
+        x = self.find_module(mod)
         if x >= 0:
             self._enabledList[x][2][key] = value
             return x
         return -1
 
     # Get value of parameter    
-    def getModuleParam(self, mod, key):
-        x = self.findModule(mod)
+    def get_module_param(self, mod, key):
+        x = self.find_module(mod)
         if x >= 0:
             return self._enabledList[x][2][key]
         return None
 
     # Get all modules and parameters    
-    def getModulesList(self):
+    def get_modules_list(self):
         return self._enabledList
 
     # Get all parameters for module named mod    
-    def getModuleParams(self, mod):
-        x = self.findModule(mod)
+    def get_module_params(self, mod):
+        x = self.find_module(mod)
         if x >= 0:
             return self._enabledList[x][2]
         return None
 
         # Load and init new module form lib
 
-    def initModule(self, mod, params):
+    def init_module(self, mod, params):
         self._modules.append(__import__(mod.split("~")[0]))
         exec ('cls=self._modules[-1].' + mod.split("~")[0] + '(params)')  # init module
         self._type[mod] = cls
 
         # Load all modules and params form config file
 
-    def loadConfig(self, path):  # Load config from file
+    def load_config(self, path):  # Load config from file
         config = ConfigParser.ConfigParser()
         config.optionxform = str
 
@@ -165,12 +165,12 @@ class CANSploit:
 
                     for (mod, settings) in paramz_:
                         paramz = ast.literal_eval(settings)
-                        self.pushModule(mod, paramz)
+                        self.push_module(mod, paramz)
                         # self._enabledList[mod]=[self._type[_mod],paramz]
                 else:  # Load modules
                     paramz_ = config.items(mod_name)
                     paramz = dict((y, x) for y, x in paramz_)
-                    self.initModule(mod_name, paramz)
+                    self.init_module(mod_name, paramz)
 
         except Exception as e:
             self._enabledList = []

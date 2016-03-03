@@ -46,27 +46,27 @@ class hw_CANBusTriple(CANModule):
 
     id = 1
 
-    def readAll(self):
+    def read_all(self):
         out = ""
         while self._serialPort.inWaiting() > 0:
             out += self._serialPort.read(1)
         return out
 
-    def getInfo(self):  # Read info
+    def get_info(self):  # Read info
         self._serialPort.write("\x01\x01")
         time.sleep(1)
-        return self.readAll()
+        return self.read_all()
 
-    def doStop(self):  # disable reading
+    def do_stop(self):  # disable reading
         self._serialPort.write("\x03\x01\x00")
         time.sleep(1)
         self._serialPort.write("\x03\x02\x00")
         time.sleep(1)
         self._serialPort.write("\x03\x03\x00")
         time.sleep(1)
-        self.readAll()
+        self.read_all()
 
-    def doStart(self):  # enable reading
+    def do_start(self, params={}):  # enable reading
         self._serialPort.write("\x03\x01\x01\x00\x00\x00\x00")
         time.sleep(1)
         self._serialPort.write("\x03\x02\x01\x00\x00\x00\x00")
@@ -74,15 +74,15 @@ class hw_CANBusTriple(CANModule):
         self._serialPort.write("\x03\x03\x01\x00\x00\x00\x00")
         time.sleep(1)
 
-    def readJSON(self, string):
+    def read_json(self, string):
         json1_data = json.loads(string)
         return json1_data
 
-    def doAutoRate(self):
+    def do_auto_rate(self):
         self.dprint(1, "Start AR..")
 
-        self.doStop()
-        self.readAll()
+        self.do_stop()
+        self.read_all()
         self._serialPort.write("\x01\0x0A\0x01\x01")
         time.sleep(1)
         self._serialPort.write("\x01\0x0A\0x02\x00")
@@ -94,11 +94,11 @@ class hw_CANBusTriple(CANModule):
         self._serialPort.write("\x01\x08\x01")
         time.sleep(4)
 
-        data = self.readAll().split("\r\n")
+        data = self.read_all().split("\r\n")
         x = ""
         for string in data:
             if string.find("autobaudComplete") >= 0:
-                x = self.readJSON(string)
+                x = self.read_json(string)
         if x != "":
             self.dprint(1, "Rate for BUS 1: " + str(x['rate']))
         else:
@@ -119,11 +119,11 @@ class hw_CANBusTriple(CANModule):
         self._serialPort.write("\x01\x08\x02")
         time.sleep(4)
 
-        data = self.readAll().split("\r\n")
+        data = self.read_all().split("\r\n")
         x = ""
         for string in data:
             if string.find("autobaudComplete") >= 0:
-                x = self.readJSON(string)
+                x = self.read_json(string)
         if x != "":
             self.dprint(1, "Rate for BUS 2: " + str(x['rate']))
         else:
@@ -144,11 +144,11 @@ class hw_CANBusTriple(CANModule):
         self._serialPort.write("\x01\x08\x03")
         time.sleep(4)
 
-        data = self.readAll().split("\r\n")
+        data = self.read_all().split("\r\n")
         x = ""
         for string in data:
             if string.find("autobaudComplete") >= 0:
-                x = self.readJSON(string)
+                x = self.read_json(string)
         if x != "":
             self.dprint(1, "Rate for BUS 3: " + str(x['rate']))
         else:
@@ -163,11 +163,11 @@ class hw_CANBusTriple(CANModule):
         time.sleep(1)
         self.dprint(1, "Auto rate done...")
 
-    def initPort(self):
+    def init_port(self):
         try:
             self._serialPort = serial.Serial(self._COMPort, 57600, timeout=0.5, parity=serial.PARITY_EVEN, rtscts=1)
 
-            if (self.getInfo().find("CANBus Triple")) != -1:
+            if (self.get_info().find("CANBus Triple")) != -1:
                 self.dprint(1, "Port found: " + self._COMPort)
                 return 1
             else:
@@ -178,7 +178,7 @@ class hw_CANBusTriple(CANModule):
             self.dprint(0, 'Error opening port: ' + self._COMPort)
             return 0
 
-    def doInit(self, params={}):  # Get device and open serial port
+    def do_init(self, params={}):  # Get device and open serial port
         # Interactive mode
 
         if 'debug' in params:
@@ -191,19 +191,19 @@ class hw_CANBusTriple(CANModule):
             if params['port'] == 'auto':
                 for port in list(serial.tools.list_ports.comports()):
                     self._COMPort = port[0]
-                    if self.initPort() == 1:
+                    if self.init_port() == 1:
                         break
                 if self._serialPort:
                     self.dprint(0, 'Can\'t init device!')
                     exit()
             else:
-                self.initPort()
+                self.init_port()
         else:
             self.dprint(0, 'No port in config!')
             exit()
 
-        self.doStop()
-        self.readAll()
+        self.do_stop()
+        self.read_all()
 
         if 'bus_1' in params:
             self._readBus = int(params['bus_1'])
@@ -230,37 +230,37 @@ class hw_CANBusTriple(CANModule):
             self._serialPort.write("\x01\x09\x01" + struct.pack("!H", int(params['speed'])))
             self.dprint(1, "Speed: " + str(params['speed']))
         else:
-            self.doAutoRate()
+            self.do_auto_rate()
         time.sleep(4)
-        self.readAll()
+        self.read_all()
 
-        self.dprint(1, "CANBus Triple device detected, version: " + self.readJSON(self.getInfo())['version'])
+        self.dprint(1, "CANBus Triple device detected, version: " + self.read_json(self.get_info())['version'])
         self._readBusCmd = "\x03" + str(struct.pack("B", int(self._readBus)))
         self._writeBusCmd = "\x02" + str(
             struct.pack("B", int(self._writeBus)))  # named _writeBus but just bus_2... TODO refactor to right names
         self._cmdList['t'] = ["Send direct command to the device, like 02010011112233440000000008", 1, " <cmd> ",
-                              self.devWrite]
+                              self.dev_write]
 
-    def devWrite(self, data):
+    def dev_write(self, data):
         self.dprint(1, "CMD: " + data)
         self._serialPort.write(data.decode('hex'))
         return ""
 
-    def doEffect(self, CANMsg, args={}):  # read full packet from serial port
+    def do_effect(self, can_msg, args={}):  # read full packet from serial port
         if 'action' in args:
             if args['action'] == 'read':
-                CANMsg = self.doRead(CANMsg)
+                can_msg = self.do_read(can_msg)
             elif args['action'] == 'write':
-                self.doWrite(CANMsg)
+                self.do_write(can_msg)
             else:
                 self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
-        return CANMsg
+        return can_msg
 
-    def doRead(self, CANMsg):
+    def do_read(self, can_msg):
         data = ""
         counter = 0
         if self._serialPort.inWaiting() > 0:
-            while not CANMsg.CANData and not CANMsg.debugData:
+            while not can_msg.CANData and not can_msg.debugData:
                 byte = self._serialPort.read(1)
                 if byte == "":
                     break
@@ -271,40 +271,41 @@ class hw_CANBusTriple(CANModule):
                 if data[-2:] == "\r\n":  # End
                     if data[0] == '\x03' and counter == 16:  # Packet received
 
-                        xdata = data[2:-3]
+                        tmp_data = data[2:-3]
 
-                        _id = struct.unpack("!H", xdata[0:2])[0]  # TODO: ADD SUPPORT EXTENDED and RTR
-                        _data = [struct.unpack("B", x)[0] for x in xdata[2:-1]]
-                        _length = struct.unpack("B", xdata[-1])[0]
+                        _id = struct.unpack("!H", tmp_data[0:2])[0]  # TODO: ADD SUPPORT EXTENDED and RTR
+                        _data = [struct.unpack("B", x)[0] for x in tmp_data[2:-1]]
+                        _length = struct.unpack("B", tmp_data[-1])[0]
 
-                        CANMsg.CANFrame = CANMessage(_id, _length, _data, False, CANMessage.DataFrame)
+                        can_msg.CANFrame = CANMessage(_id, _length, _data, False, CANMessage.DataFrame)
 
-                        CANMsg._bus = int(struct.unpack("B", data[1])[0])
-                        CANMsg.CANData = True
+                        can_msg.bus = int(struct.unpack("B", data[1])[0])
+                        can_msg.CANData = True
 
                     elif data[0] == '{' and data[-3] == '}':  # Debug info
-                        CANMsg.debugData = True
-                        CANMsg.debugText = data
+                        can_msg.debugData = True
+                        can_msg.debugText = data
                     else:
                         break
 
-                    self.dprint(2, "READ: " + (data).encode('hex'))
-        return CANMsg
+                    self.dprint(2, "READ: " + data.encode('hex'))
+        return can_msg
 
-    def doWrite(self, CANMsg):
-        if CANMsg.CANData and not CANMsg.CANFrame.isExtended and CANMsg.CANFrame._type == CANMessage.DataFrame:  # Only 11 bit support now..., only DataFrame
-            if CANMsg._bus == self._readBus:
+    def do_write(self, can_msg):
+        if can_msg.CANData and not can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.DataFrame:  # Only 11 bit support now..., only DataFrame
+            if can_msg.bus == self._readBus:
                 bus = self._writeBus
-            elif CANMsg._bus == self._writeBus:
+            elif can_msg.bus == self._writeBus:
                 bus = self._readBus
             else:
                 bus = self._writeBus
 
-            writeBuf = "\x02" + str(
-                struct.pack("B", bus)) + CANMsg.CANFrame._rawId + CANMsg.CANFrame._rawData + "\x00" * \
-            (8 - CANMsg.CANFrame._length) + CANMsg.CANFrame._rawLength
+            write_buf = "\x02" + str(
+                struct.pack("B", bus)) + can_msg.CANFrame.frame_raw_id + \
+                can_msg.CANFrame.frame_raw_data + "\x00" * \
+                (8 - can_msg.CANFrame.frame_length) + can_msg.CANFrame.frame_raw_length
 
-            self._serialPort.write(writeBuf)
-            self.dprint(2, "WRITE: " + writeBuf.encode('hex'))
+            self._serialPort.write(write_buf)
+            self.dprint(2, "WRITE: " + write_buf.encode('hex'))
 
-            return CANMsg
+            return can_msg

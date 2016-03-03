@@ -11,75 +11,72 @@ class CANMessage:
     ErrorFrame = 3
     OverloadFrame = 4
 
-    def __init__(self, id, length, data, extended, type):  # Init EMPTY message
-        self._id = id  # Message ID
-        self._length = length  # DATA length
-        self._data = data  # DATA
-        self._ext = extended  # 29 bit message ID - boolean flag
+    def __init__(self, fid, length, data, extended, type):  # Init EMPTY message
+        self.frame_id = fid  # Message ID
+        self.frame_length = length  # DATA length
+        self.frame_data = data  # DATA
+        self.frame_ext = extended  # 29 bit message ID - boolean flag
 
-        self._type = type
+        self.frame_type = type
 
-        self._rawId = ''
-        self._rawLength = ''
-        self._rawData = ''
+        self.frame_raw_id = ''
+        self.frame_raw_length = ''
+        self.frame_raw_data = ''
 
-        self.parseParams()
+        self.parse_params()
+
 
     @classmethod
-    def initInt(self, id, length, data):  # Init
+    def init_data(self, fid, length, data):  # Init
         if length > 8:
             length = 8
-        if id >= 0 and id <= 0x7FF:
+        if fid >= 0 and fid <= 0x7FF:
             extended = False
-        elif id > 0x7FF and id < 0x1FFFFFFF:
+        elif fid > 0x7FF and fid < 0x1FFFFFFF:
             extended = True
         else:
-            id = 0
+            fid = 0
             extended = False
 
-        return CANMessage(id, length, data, extended, 1)
+        return CANMessage(fid, length, data, extended, 1)
 
     @classmethod
-    def initStr(self, id, length, data):  # Another way to init from raw data
+    def init_raw_data(self, fid, length, data):  # Another way to init from raw data
 
-        if len(id) == 2:
+        if len(fid) == 2:
             extended = False
         else:
             extended = True
 
         temp = CANMessage(0, 0, [], extended, 1)
 
-        temp._rawId = id
-        temp._rawlength = length
-        temp._rawData = data
+        temp.set_raw_id = fid
+        temp.set_raw_length = length
+        temp.set_raw_data= data
 
-        temp.parseRaw()
+        temp.parse_raw()
 
         return temp
 
-    @property
-    def isExtended(self):
-        return self._ext
+    def parse_params(self):
 
-    def parseParams(self):
-
-        if not self._ext:
-            self._rawId = struct.pack("!H", self._id)
+        if not self.frame_ext:
+            self.frame_raw_id = struct.pack("!H", self.frame_id)
         else:
-            self._rawId = struct.pack("!I", self._id)
+            self.frame_raw_id = struct.pack("!I", self.frame_id)
 
-        self._rawLength = struct.pack("!B", self._length)
-        self._rawData = ''.join(struct.pack("!B", b) for b in self._data)
+        self.frame_raw_length = struct.pack("!B", self.frame_length)
+        self.frame_raw_data = ''.join(struct.pack("!B", b) for b in self.frame_data)
 
-    def parseRaw(self):
+    def parse_raw(self):
 
-        if not self._ext:
-            self._id = struct.unpack("!H", self._rawId)[0]
+        if not self.frame_ext:
+            self.frame_id = struct.unpack("!H", self.frame_raw_id)[0]
         else:
-            self._id = struct.unpack("!I", self._rawId)[0]
+            self.frame_id = struct.unpack("!I", self.frame_raw_id)[0]
 
-        self._length = struct.unpack("B", self._rawLength)[0]
-        self._data = [struct.unpack("B", x)[0] for x in self._rawData]
+        self.frame_length = struct.unpack("B", self.frame_raw_length)[0]
+        self.frame_data = [struct.unpack("B", x)[0] for x in self.frame_raw_data]
 
 
 '''
@@ -94,4 +91,4 @@ class CANSploitMessage:
         self.CANFrame = None
         self.debugData = False
         self.CANData = False
-        self._bus = 0
+        self.bus = 0

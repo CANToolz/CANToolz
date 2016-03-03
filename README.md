@@ -16,7 +16,7 @@ CANSploit can work with CAN network by using next harware:
 - hw_CANBusTriple  - IO module for CANBus Triple HW
 - hw_USBtin        - IO module forUSBtin
 - mod_firewall     - module for blocking CAN message by ID
-- mod_fuzz1        - Simple 'Proxy' fuzzer  (1 byte)
+- mod_fuzz1        - Simple 'Proxy' fuzzer  (1 byte) Can be combinded with gen_ping/gen_replay
 - mod_printMessage - printing CAN messages
 - mod_stat         - CAN messages statistic (with .csv file output)
 - gen_ping         - generating CAN messages with chosen IDs (ECU/Service descovery)
@@ -98,6 +98,8 @@ Let's see how it looks like from the console...
 That's it for now. Will update this file later with more config, and examples how to use this tool!
 
 
-Alexey Sintsov
+Alexey Sintsov   (@asintsov)
 alex.sintsov@gmail.com
+
+
 

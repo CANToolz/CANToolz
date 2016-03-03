@@ -28,44 +28,44 @@ class hw_fakeIO(CANModule):
     CANList = None
     _bus = 30
 
-    def doStop(self):  # disable reading
+    def do_stop(self):  # disable reading
         self.CANList = None
 
-    def doInit(self, params={}):  # Get device and open serial port
+    def do_init(self, params={}):  # Get device and open serial port
         self._cmdList['t'] = ["Send direct command to the device, like 13:8:1122334455667788", 1, " <cmd> ",
-                              self.devWrite]
+                              self.dev_write]
         return 1
 
-    def devWrite(self, line):
+    def dev_write(self, line):
         self.dprint(0, "CMD: " + line)
-        id = line.split(":")[0]
+        fid = line.split(":")[0]
         length = line.split(":")[1]
         data = line.split(":")[2]
-        self.CANList = CANMessage.initInt(int(id), int(length),
-                                          [struct.unpack("B", x)[0] for x in data.decode('hex')[:8]])
+        self.CANList = CANMessage.init_data(int(fid), int(length),
+                                            [struct.unpack("B", x)[0] for x in data.decode('hex')[:8]])
         return ""
 
-    def doEffect(self, CANMsg, args={}):  # read full packet from serial port
+    def do_effect(self, can_msg, args={}):  # read full packet from serial port
         if 'action' in args:
             if args['action'] == 'read':
-                CANMsg = self.doRead(CANMsg)
+                can_msg = self.do_read(can_msg)
             elif args['action'] == 'write':
-                self.doWrite(CANMsg)
+                self.do_write(can_msg)
             else:
                 self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
-        return CANMsg
+        return can_msg
 
-    def doRead(self, CANMsg):
+    def do_read(self, can_msg):
         if self.CANList:
-            CANMsg.CANData = True
-            CANMsg.CANFrame = self.CANList
-            CANMsg._bus = self._bus
+            can_msg.CANData = True
+            can_msg.CANFrame = self.CANList
+            can_msg.bus = self._bus
             self.CANList = None
             self.dprint(2, "Got message!")
-        return CANMsg
+        return can_msg
 
-    def doWrite(self, CANMsg):
-        if CANMsg.CANData:
-            self.CANList = CANMsg.CANFrame
+    def do_write(self, can_msg):
+        if can_msg.CANData:
+            self.CANList = can_msg.CANFrame
             self.dprint(2, "Wrote message!")
-        return CANMsg
+        return can_msg

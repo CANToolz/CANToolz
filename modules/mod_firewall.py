@@ -24,14 +24,14 @@ class mod_firewall(CANModule):
     version = 1.0
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
-    def doEffect(self, CANMsg, args={}):
-        if (CANMsg.CANData):
-            if ('black_list' in args and CANMsg.CANFrame._id in args['black_list']):
-                CANMsg.CANData = False
-                self.dprint(2, "Message " + str(CANMsg.CANFrame._id) + " has been blocked (BUS = " + str(
-                    CANMsg._bus) + ")")
-            elif ('white_list' in args and CANMsg.CANFrame._id not in args['white_list']):
-                CANMsg.CANData = False
-                self.dprint(2, "Message " + str(CANMsg.CANFrame._id) + " has been blocked (BUS = " + str(
-                    CANMsg._bus) + ")")
-        return CANMsg
+    def do_effect(self, can_msg, args={}):
+        if can_msg.CANData:
+            if 'black_list' in args and can_msg.CANFrame.frame_id in args['black_list']:
+                can_msg.CANData = False
+                self.dprint(2, "Message " + str(can_msg.CANFrame.frame_id) + " has been blocked (BUS = " + str(
+                    can_msg.bus) + ")")
+            elif 'white_list' in args and can_msg.CANFrame.frame_id not in args['white_list']:
+                can_msg.CANData = False
+                self.dprint(2, "Message " + str(can_msg.CANFrame.frame_id) + " has been blocked (BUS = " + str(
+                    can_msg.bus) + ")")
+        return can_msg

@@ -34,7 +34,7 @@ class mod_stat(CANModule):
     version = 1.0
     _alert = False
 
-    def doOpenFiles(self):
+    def do_open_files(self):
         if self._logFile:
             try:
                 self._file = open(self._fname, 'w')
@@ -48,7 +48,7 @@ class mod_stat(CANModule):
                 #            except:
                 #                self.dprint(2,"can't open log")
 
-    def doInit(self, params={}):
+    def do_init(self, params={}):
         self._bodyList = collections.OrderedDict()
         self.ISOList = collections.OrderedDict()
         if 'file' in params:
@@ -62,47 +62,47 @@ class mod_stat(CANModule):
             if 'format' in params:
                 self._format = self._formats[params['format']]
 
-            self._cmdList['f'] = ["Print table to configured file", 0, "", self.cmdFlashFile]
-            self.doOpenFiles()
+            self._cmdList['f'] = ["Print table to configured file", 0, "", self.do_flash_file]
+            self.do_open_files()
 
-        self._cmdList['p'] = ["Print current table", 0, "", self.stdPrint]
-        self._cmdList['c'] = ["Clean table, remove alerts", 0, "", self.cmdClean]
-        self._cmdList['m'] = ["Enable alert mode and insert mark into the table", 1, "<ID>", self.addMark]
-        self._cmdList['a'] = ["Analyses of captured traffic", 0, "", self.doAnal]
-        self._cmdList['i'] = ["Dump ISO to file", 1, " <filename> ", self.doDumpISO]
-        self._cmdList['r'] = ["Dump ISO to replay format", 1, " <filename>", self.doDumpReplay]
+        self._cmdList['p'] = ["Print current table", 0, "", self.do_print]
+        self._cmdList['c'] = ["Clean table, remove alerts", 0, "", self.do_clean]
+        self._cmdList['m'] = ["Enable alert mode and insert mark into the table", 1, "<ID>", self.add_alert]
+        self._cmdList['a'] = ["Analyses of captured traffic", 0, "", self.do_anal]
+        self._cmdList['i'] = ["Dump ISO to file", 1, " <filename> ", self.do_dump_iso]
+        self._cmdList['r'] = ["Dump ALL in replay format", 1, " <filename>", self.do_dump_replay]
 
-    def doAnal(self):
-        retStr = "ISO TP Messages:\n"
-        for id, lst in self._bodyList.iteritems():
-            messageISO = ISOTPMessage(id)
+    def do_anal(self):
+        ret_str = "ISO TP Messages:\n"
+        for fid, lst in self._bodyList.iteritems():
+            message_iso = ISOTPMessage(fid)
             for (lenX, msg, bus, mod), cnt in lst.iteritems():
-                ret = messageISO.addCAN(CANMessage.initInt(id, len(msg), [struct.unpack("B", x)[0] for x in msg]))
+                ret = message_iso.add_can(CANMessage.init_data(fid, len(msg), [struct.unpack("B", x)[0] for x in msg]))
                 if ret < 1:
                     break
-                elif messageISO._finished:
-                    if id not in self.ISOList:
-                        self.ISOList[id] = []
-                    self.ISOList[id].append((bus, messageISO._length, messageISO._data))
-                    self.dprint(1, "ISO-TP Message detected, with ID " + str(id) + " and length " +
-                                str(messageISO._length))
-                    retStr += "\tID " + str(id) + " and length " + str(messageISO._length) + "\n"
+                elif message_iso.message_finished:
+                    if fid not in self.ISOList:
+                        self.ISOList[fid] = []
+                    self.ISOList[fid].append((bus, message_iso.message_length, message_iso.message_data))
+                    self.dprint(1, "ISO-TP Message detected, with ID " + str(fid) + " and length " +
+                                str(message_iso.message_length))
+                    ret_str += "\tID " + str(fid) + " and length " + str(message_iso.message_length) + "\n"
                     break
-        return retStr
+        return ret_str
 
-    def doDumpReplay(self, name):
+    def do_dump_replay(self, name):
         _name = None
         try:
             _name = open(name.strip(), 'w')
 
-            for id, lst in self._bodyList.iteritems():
+            for fid, lst in self._bodyList.iteritems():
                 for (lenX, msg, bus, mod), cnt in lst.iteritems():
-                    _name.write(str(id) + ":" + str(lenX) + ":" + msg.encode('hex') + "\n")
+                    _name.write(str(fid) + ":" + str(lenX) + ":" + msg.encode('hex') + "\n")
             _name.close()
         except:
             self.dprint(2, "can't open log")
 
-    def doDumpISO(self, name):
+    def do_dump_iso(self, name):
         _name = None
         try:
             _name = open(name.strip(), 'w')
@@ -110,34 +110,34 @@ class mod_stat(CANModule):
             self.dprint(2, "can't open log")
         if self._format == 0:
             try:
-                self.stdISOFile(_name)
+                self.do_dump_iso_file(_name)
             except:
                 self.dprint(2, "can't open log")
         elif self._format == 1:
             try:
-                self.stdISOFileCSV(_name)
+                self.do_dump_iso_csv(_name)
             except:
                 self.dprint(2, "can't open log")
         _name.close()
         return ""
 
-    def stdFile(self):
+    def do_dump_file(self):
         self._file.seek(0)
         self._file.truncate()
         self._file.write("BUS\tID\tLEN\t\tMESSAGE\t\t\tCOUNT\n")
         self._file.write("")
-        for id, lst in self._bodyList.iteritems():
+        for fid, lst in self._bodyList.iteritems():
             for (lenX, msg, bus, mod), cnt in lst.iteritems():
                 if mod:
                     modx = "\t"
                 else:
                     modx = "\t\t"
                 sp = " " * (16 - len(msg) * 2)
-                self._file.write(str(bus) + "\t" + str(id) + "\t" + str(lenX) + modx + msg.encode('hex') +
+                self._file.write(str(bus) + "\t" + str(fid) + "\t" + str(lenX) + modx + msg.encode('hex') +
                                  sp + '\t' + str(cnt) + "\n")
         return ""
 
-    def stdISOFile(self, _name):
+    def do_dump_iso_file(self, _name):
 
         self._file.seek(0)
         self._file.truncate()
@@ -151,66 +151,66 @@ class mod_stat(CANModule):
                             ''.join(struct.pack("!B", b) for b in data) + '\n----------------------\n\n')
         return ""
 
-    def stdISOFileCSV(self, _name):
+    def do_dump_iso_csv(self, _name):
 
         self._file.seek(0)
         self._file.truncate()
         self._file.write("BUS,ID,LENGTH,MESSAGE,ASCII\n")
         self._file.write("")
-        for id, lst in self.ISOList.iteritems():
+        for fid, lst in self.ISOList.iteritems():
             for (bus, length, data) in lst:
-                _name.write(str(bus) + "," + str(id) +
+                _name.write(str(bus) + "," + str(fid) +
                             "," + str(length) + "," + ''.join(struct.pack("!B", b) for b in data).encode('hex') +
                             "," + ''.join(struct.pack("!B", b) for b in data) + "\n")
         return ""
 
-    def stdFileCSV(self):
+    def do_dump_csv(self):
         self._file.seek(0)
         self._file.truncate()
         self._file.write("BUS,ID,LENGTH,MESSAGE,COUNT\n")
-        for id, lst in self._bodyList.iteritems():
+        for fid, lst in self._bodyList.iteritems():
             for (len, msg, bus, mod), cnt in lst.iteritems():
-                self._file.write(str(bus) + "," + str(id) + "," + str(len) + "," + msg.encode('hex') +
+                self._file.write(str(bus) + "," + str(fid) + "," + str(len) + "," + msg.encode('hex') +
                                  ',' + str(cnt) + "\n")
         return ""
 
-    def stdPrint(self):
+    def do_print(self):
         table = "\n"
         table += "BUS\tID\tLENGTH\t\tMESSAGE\t\t\tCOUNT"
         table += "\n"
-        for id, lst in self._bodyList.iteritems():
+        for fid, lst in self._bodyList.iteritems():
             for (lenX, msg, bus, mod), cnt in lst.iteritems():
                 if mod:
                     modx = "\t"
                 else:
                     modx = "\t\t"
                 sp = " " * (16 - len(msg) * 2)
-                table += str(bus) + "\t" + str(id) + "\t" + str(lenX) + modx + msg.encode('hex') + sp + '\t' + str(
+                table += str(bus) + "\t" + str(fid) + "\t" + str(lenX) + modx + msg.encode('hex') + sp + '\t' + str(
                     cnt) + "\n"
         table += ""
         return table
 
-    def addMark(self, x):
+    def add_alert(self, x):
         self._bodyList[int(x)] = collections.OrderedDict()
         self._bodyList[int(x)][(0, "MARK", 0, False)] = 1
         self._alert = True
         return ""
 
-    def cmdFlashFile(self):
+    def do_flash_file(self):
         if self._format == 0:
             try:
-                self.stdFile()
+                self.do_dump_file()
             except:
                 self.dprint(2, "can't open log")
 
         elif self._format == 1:
             try:
-                self.stdFileCSV()
+                self.do_dump_csv()
             except:
                 self.dprint(2, "can't open log")
         return ""
 
-    def cmdClean(self):
+    def do_clean(self):
         self._bodyList = collections.OrderedDict()
         self._alert = False
         self.ISOList = collections.OrderedDict()
@@ -218,41 +218,41 @@ class mod_stat(CANModule):
 
         # Effect (could be fuzz operation, sniff, filter or whatever)
 
-    def doEffect(self, CANMsg, args={}):
-        if CANMsg.CANData:
-            if CANMsg.CANFrame._id not in self._bodyList:
-                self._bodyList[CANMsg.CANFrame._id] = collections.OrderedDict()
-                self._bodyList[CANMsg.CANFrame._id][(
-                    CANMsg.CANFrame._length,
-                    CANMsg.CANFrame._rawData,
-                    CANMsg._bus,
-                    CANMsg.CANFrame._ext)
+    def do_effect(self, can_msg, args={}):
+        if can_msg.CANData:
+            if can_msg.CANFrame.frame_id not in self._bodyList:
+                self._bodyList[can_msg.CANFrame.frame_id] = collections.OrderedDict()
+                self._bodyList[can_msg.CANFrame.frame_id][(
+                    can_msg.CANFrame.frame_length,
+                    can_msg.CANFrame.frame_raw_data,
+                    can_msg.bus,
+                    can_msg.CANFrame.frame_ext)
                 ] = 1
                 if self._alert:
-                    print "New ID found: " + str(CANMsg.CANFrame._id) + " (BUS: " + str(CANMsg._bus) + ")"
+                    self.dprint(1, "New ID found: " + str(can_msg.CANFrame.frame_id) + " (BUS: " + str(can_msg.bus) + ")")
             else:
-                if (CANMsg.CANFrame._length,
-                    CANMsg.CANFrame._rawData,
-                    CANMsg._bus,
-                    CANMsg.CANFrame._ext) not in self._bodyList[CANMsg.CANFrame._id]:
-                    self._bodyList[CANMsg.CANFrame._id][(
-                        CANMsg.CANFrame._length,
-                        CANMsg.CANFrame._rawData,
-                        CANMsg._bus,
-                        CANMsg.CANFrame._ext)
+                if (can_msg.CANFrame.frame_length,
+                        can_msg.CANFrame.frame_raw_data,
+                        can_msg.bus,
+                        can_msg.CANFrame.frame_ext) not in self._bodyList[can_msg.CANFrame.frame_id]:
+                    self._bodyList[can_msg.CANFrame.frame_id][(
+                        can_msg.CANFrame.frame_length,
+                        can_msg.CANFrame.frame_raw_data,
+                        can_msg.bus,
+                        can_msg.CANFrame.frame_ext)
                     ] = 1
                 else:
-                    self._bodyList[CANMsg.CANFrame._id][(
-                        CANMsg.CANFrame._length,
-                        CANMsg.CANFrame._rawData,
-                        CANMsg._bus,
-                        CANMsg.CANFrame._ext)
+                    self._bodyList[can_msg.CANFrame.frame_id][(
+                        can_msg.CANFrame.frame_length,
+                        can_msg.CANFrame.frame_raw_data,
+                        can_msg.bus,
+                        can_msg.CANFrame.frame_ext)
                     ] += 1
 
             if self._logFile:
                 self._counter += 1
                 if self._counter >= self._chkCounter:
                     self._counter = 0
-                    self.cmdFlashFile()
+                    self.do_flash_file()
 
-        return CANMsg
+        return can_msg

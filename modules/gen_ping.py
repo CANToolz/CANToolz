@@ -17,71 +17,52 @@ class gen_ping(CANModule):
        {'body':'0011223344556677889900aabbccddeeff','mode':'isotp'}
     """
     _active = False
-    _init = False
-    iso = []
+    queue_messages = []
 
-    def getLast(self):
-        if not self.iso:
+    def do_ping(self):
+        if not self.queue_messages:
             self._active = False
             return None
 
-        return self.iso.pop()
+        return self.queue_messages.pop()
 
-    def doActivate(self):
-        if self._active:
-            self._active = False
-            self.iso = []
-        else:
-            self._init = True
-            self._active = True
-
-        return "Active status: " + str(self._active)
-
-    def doPing(self, data, ISOMode, params):
-        if ISOMode:
-            if self._init:
-                _data = [struct.unpack("B", x)[0] for x in data]
-                if 'range' in params:
-                    for i in range(int(params['range'][0]), int(params['range'][1])):
-                        self.iso.extend(ISOTPMessage.generateCAN(i, _data))
-                self.iso.reverse()
-                self._init = False
-        else:
-            if self._init:
-                _data = [struct.unpack("B", x)[0] for x in data]
-                if 'range' in params:
-                    for i in range(int(params['range'][0]), int(params['range'][1])):
-                        self.iso.append(CANMessage.initInt(i, len(_data), _data[:8]))
-                self._init = False
-
-        CANMsgF = self.getLast()
-
-        return CANMsgF
-
-    def doStart(self):
-        self.iso = []
-
-    def doEffect(self, CANMsg, args={}):
+    def do_start(self, args={}):
+        self.queue_messages = []
+        _data = []
         if 'body' in args:
             try:
-                data = args['body'].decode('hex')
+                _data = [struct.unpack("B", x)[0] for x in (args['body'].decode('hex'))]
             except:
-                data = "\x00" * 8
+                _data = [0, 0, 0, 0, 0, 0, 0, 0]
         else:
-            data = "\x00" * 8
+            _data = [0, 0, 0, 0, 0, 0, 0, 0]
 
-        ISOMode = False
+        iso_mode = False
 
         # Simple CAN or ISO
         if 'mode' in args:
-            ISOMode = True if (args['mode'] == 'ISO' or args['mode'] == 'iso' or args['mode'] == 'ISOTP' or args[
+            iso_mode = True if (args['mode'] == 'ISO' or args['mode'] == 'iso' or args['mode'] == 'ISOTP' or args[
                 'mode'] == 'isotp') else False
 
-        CANMsg.CANFrame = self.doPing(data, ISOMode, args)  # get frame
-
-        if CANMsg.CANFrame:
-            CANMsg.CANData = True
+        if 'range' in args and int(args['range'][0]) < int(args['range'][1]):
+            for i in range(int(args['range'][0]), int(args['range'][1])):
+                if iso_mode:
+                    iso_list=ISOTPMessage.generate_can(i, _data)
+                    iso_list.reverse()
+                    self.queue_messages.extend(iso_list)
+                else:
+                    self.queue_messages.append(CANMessage.init_data(i, len(_data), _data[:8]))
         else:
-            CANMsg.CANData = False
+            self.dprint(1,"No range specified")
+            self._active = False
 
-        return CANMsg
+
+    def do_effect(self, can_msg, args={}):
+        can_msg.CANFrame = self.do_ping()  # get frame
+
+        if can_msg.CANFrame:
+            can_msg.CANData = True
+        else:
+            can_msg.CANData = False
+
+        return can_msg

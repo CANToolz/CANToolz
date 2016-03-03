@@ -34,28 +34,28 @@ class mod_fuzz1(CANModule):
         self._i += 1
         return self._i - 1
 
-    def doInit(self, params):
+    def do_init(self, params):
         for i in range(0, 255):
             self.fzb.append(i)
 
     # Change one byte to random        
-    def doFuzz(self, CANMsg, shift):
-        if shift > 0 and shift < 9:
-            CANMsg.CANFrame._data[shift - 1] = self.fzb[self.counter()]
-            CANMsg.CANFrame.parseParams()
-            self.dprint(2, "Message " + str(CANMsg.CANFrame._id) + " has been fuzzed (BUS = " + str(CANMsg._bus) + ")")
+    def do_fuzz(self, can_msg, shift):
+        if 0 < shift < 9:
+            can_msg.CANFrame.frame_data[shift - 1] = self.fzb[self.counter()]
+            can_msg.CANFrame.parse_params()
+            self.dprint(2, "Message " + str(can_msg.CANFrame.frame_id) + " has been fuzzed (BUS = " + str(can_msg.bus) + ")")
 
-        return CANMsg
+        return can_msg
 
-    def doStart(self):
+    def do_start(self, params={}):
         self._i = 0
         shuffle(self.fzb)
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
-    def doEffect(self, CANMsg, args={}):
-        if CANMsg.CANData and CANMsg.CANFrame._type == CANMessage.DataFrame:
-            if 'fuzz' in args and CANMsg.CANFrame._id in args['fuzz'] and 'byte' in args:
-                CANMsg = self.doFuzz(CANMsg, args['byte'])
-            elif 'nfuzz' in args and CANMsg.CANFrame._id not in args['nfuzz'] and 'byte' in args:
-                CANMsg = self.doFuzz(CANMsg, args['byte'])
-        return CANMsg
+    def do_effect(self, can_msg, args={}):
+        if can_msg.CANData and can_msg.CANFrame.frame_type == CANMessage.DataFrame:
+            if 'fuzz' in args and can_msg.CANFrame.frame_id in args['fuzz'] and 'byte' in args:
+                can_msg = self.do_fuzz(can_msg, args['byte'])
+            elif 'nfuzz' in args and can_msg.CANFrame.frame_id not in args['nfuzz'] and 'byte' in args:
+                can_msg = self.do_fuzz(can_msg, args['byte'])
+        return can_msg

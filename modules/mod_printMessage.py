@@ -23,20 +23,20 @@ class mod_printMessage(CANModule):
     version = 1.0
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
-    def doEffect(self, CANInput, args={}):
-        if CANInput.CANData:
+    def do_effect(self, can_msg, args={}):
+        if can_msg.CANData:
             if 'white_list' in args:
-                if CANInput.CANFrame._id in args['white_list']:
-                    print("Read: " + self.doRead(CANInput))  # Print CAN Message
+                if can_msg.CANFrame.frame_id in args['white_list']:
+                    print("Read: " + self.do_read(can_msg))  # Print CAN Message
             elif 'black_list' in args:
-                if CANInput.CANFrame._id not in args['black_list']:
-                    print("Read: " + self.doRead(CANInput))  # Print CAN Message
+                if can_msg.CANFrame.frame_id not in args['black_list']:
+                    print("Read: " + self.do_read(can_msg))  # Print CAN Message
             else:
-                print("Read: " + self.doRead(CANInput))  # Print CAN Message
-        elif not CANInput.CANData and CANInput.debugData:
-            self.dprint(1, "DEBUG: " + CANInput.debugText)
-        return CANInput
+                print("Read: " + self.do_read(can_msg))  # Print CAN Message
+        elif not can_msg.CANData and can_msg.debugData:
+            self.dprint(1, "DEBUG: " + can_msg.debugText)
+        return can_msg
 
-    def doRead(self, CANInput):
-        return "BUS = " + str(CANInput._bus) + " ID = " + str(CANInput.CANFrame._id) + " Message: " + \
-            str(CANInput.CANFrame._rawData).encode('hex') + " Len: " + str(CANInput.CANFrame._length)
+    def do_read(self, can_msg):
+        return "BUS = " + str(can_msg.bus) + " ID = " + str(can_msg.CANFrame.frame_id) + " Message: " + \
+               str(can_msg.CANFrame.frame_raw_data).encode('hex') + " Len: " + str(can_msg.CANFrame.frame_length)

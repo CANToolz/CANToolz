@@ -13,9 +13,13 @@ class CANModule:
     version = 0.0
     _cmdList = {}  # Command list (doInit section)
     _active = True  # Enabled/Disabled
-    _block = threading.Event()  # Blocking mode (using events)
+    thr_block = threading.Event()  # Blocking mode (using events)
 
-    def doActivate(self):
+    @property
+    def is_active(self):
+        return self._active
+
+    def do_activate(self):
         if self._active:
             self._active = False
         else:
@@ -23,35 +27,35 @@ class CANModule:
         return "Active status: " + str(self._active)
 
     def dprint(self, level, msg):
-        strMsg = self.__class__.__name__ + ": " + msg
+        str_msg = self.__class__.__name__ + ": " + msg
         if level <= self.DEBUG:
-            print strMsg
+            print(str_msg)
 
-    def rawWrite(self, string):  # Used for direct input
+    def raw_write(self, string):  # Used for direct input
         ret = ""
-        self._block.wait(3)
-        self._block.clear()
+        self.thr_block.wait(3)
+        self.thr_block.clear()
         if string[0] in self._cmdList:
             cmd = self._cmdList[string[0]]
             if len(string) > 2:
                 ret = cmd[3](string[2:])
             else:
                 ret = cmd[3]()
-        self._block.set()
+        self.thr_block.set()
         return ret
 
-    def doEffect(self, CANMsg=None, args={}):  # Effect (could be fuzz operation, sniff, filter or whatever)
-        return CANMsg
+    def do_effect(self, can_msg=None, args={}):  # Effect (could be fuzz operation, sniff, filter or whatever)
+        return can_msg
 
-    def getName(self):
+    def get_name(self):
         return self.name
 
-    def getHelp(self):
-        retText = "\nModule " + self.__class__.__name__ + ": " + self.name + "\n" + self.help + \
+    def get_help(self):
+        ret_text = "\nModule " + self.__class__.__name__ + ": " + self.name + "\n" + self.help + \
                   "\n\nConsole commands:\n"
         for cmd, dat in self._cmdList.iteritems():
-            retText += "\t" + cmd + " " + dat[2] + "\t\t - " + dat[0] + "\n"
-        return retText
+            ret_text += "\t" + cmd + " " + dat[2] + "\t\t - " + dat[0] + "\n"
+        return ret_text
 
     def __init__(self, params={}):
         if 'debug' in params:
@@ -63,28 +67,27 @@ class CANModule:
             self._bus = int(params['bus'])
 
         if 'active' in params:
-            if params['active'] == "False" or params['active'] == "false" or \
-                params['active'] == "0" or params['active'] == "-1":  # TODO Refactoring
+            if params['active'] == "False" or params['active'] == "false" or params['active'] == "0" or params['active'] == "-1":  # TODO Refactoring
                 self._active = False
             else:
                 self._active = True
 
-        self._cmdList = {'h': ["List of supported commands", 0, "", self.getHelp],
-                         's': ["Stop/Activate current module", 0, "", self.doActivate]}
+        self._cmdList = {'h': ["List of supported commands", 0, "", self.get_help],
+                         's': ["Stop/Activate current module", 0, "", self.do_activate]}
 
-        self.doInit(params)
+        self.do_init(params)
 
-    def doInit(self, params={}):  # Call for some pre-calculation
+    def do_init(self, params={}):  # Call for some pre-calculation
         return 0
 
-    def doStop(self, params={}):  # Stop activity of this module
+    def do_stop(self, params={}):  # Stop activity of this module
         return 0
 
-    def doStart(self, params={}):  # Start activity of this module
+    def do_start(self, params={}):  # Start activity of this module
         return 0
 
-    def doRead(self, params={}):
+    def do_read(self, params={}):
         return 0
 
-    def doWrite(self, params={}):
+    def do_write(self, params={}):
         return 0

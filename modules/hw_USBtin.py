@@ -53,18 +53,18 @@ class hw_USBtin(CANModule):
             out += self._serialPort.read(1)
         return out
 
-    def doStop(self):  # disable reading
+    def do_stop(self):  # disable reading
         self._serialPort.write("C\r")
         time.sleep(1)
         self.readAll()
 
-    def doStart(self):  # enable reading
+    def do_start(self, params={}):  # enable reading
         self._serialPort.write(self._speed[self._currentSpeed] + "\r")
         time.sleep(1)
         self._serialPort.write("O\r")
         time.sleep(1)
 
-    def initPort(self):
+    def init_port(self):
         try:
             self._serialPort = serial.Serial(self._COMPort, 57600, timeout=0.5, parity=serial.PARITY_EVEN, rtscts=1)
 
@@ -79,7 +79,7 @@ class hw_USBtin(CANModule):
             self.dprint(0, 'Error opening port: ' + self._COMPort)
             return 0
 
-    def doInit(self, params={}):  # Get device and open serial port
+    def do_init(self, params={}):  # Get device and open serial port
         # Interactive mode
         if 'debug' in params:
             self.DEBUG = int(params['debug'])
@@ -91,19 +91,19 @@ class hw_USBtin(CANModule):
             if params['port'] == 'auto':
                 for port in list(serial.tools.list_ports.comports()):
                     self._COMPort = port[0]
-                    if self.initPort() == 1:
+                    if self.init_port() == 1:
                         break
                 if self._serialPort:
                     self.dprint(0, 'Can\'t init device!')
                     exit()
             else:
-                self.initPort()
+                self.init_port()
                 exit()
         else:
             self.dprint(0, 'No port in config!')
             return 0
 
-        self.doStop()
+        self.do_stop()
         # data=self.readAll()
         if 'speed' in params:
             self._currentSpeed = int(params['speed'])
@@ -115,27 +115,27 @@ class hw_USBtin(CANModule):
         self.dprint(1, "Speed: " + str(self._currentSpeed))
         self.dprint(1, "USBtin device found!")
 
-        self._cmdList['t'] = ["Send direct command to the device, like t0010411223344", 1, " <cmd> ", self.devWrite]
+        self._cmdList['t'] = ["Send direct command to the device, like t0010411223344", 1, " <cmd> ", self.dev_write]
 
-    def devWrite(self, data):
+    def dev_write(self, data):
         self.dprint(1, "CMD: " + data)
         self._serialPort.write(data + "\r")
         return ""
 
-    def doEffect(self, CANMsg, args={}):  # read full packet from serial port
+    def do_effect(self, can_msg, args={}):  # read full packet from serial port
         if 'action' in args:
             if args['action'] == 'read':
-                CANMsg = self.doRead(CANMsg)
+                can_msg = self.do_read(can_msg)
             elif args['action'] == 'write':
-                self.doWrite(CANMsg)
+                self.do_write(can_msg)
             else:
                 self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
-        return CANMsg
+        return can_msg
 
-    def doRead(self, CANMsg):
+    def do_read(self, can_msg):
         data = ""
         if self._serialPort.inWaiting() > 0:
-            while not CANMsg.CANData and not CANMsg.debugData:
+            while not can_msg.CANData and not can_msg.debugData:
                 byte = self._serialPort.read(1)
                 # print byte
                 if byte == "":
@@ -143,16 +143,16 @@ class hw_USBtin(CANModule):
 
                 data += byte
                 if data[-1:] == "\r":
-                    CANMsg._bus = self._bus  # Bus USBtin as BUS 60...
+                    can_msg.bus = self._bus  # Bus USBtin as BUS 60...
                     if data[0] == "t":
                         # "t10F81122334455667788"
                         _length = int(data[4])
                         _id = struct.unpack("!H", ("0" + data[1:4]).decode('hex'))[0]
                         _data = [struct.unpack("B", x)[0] for x in data[5:-1].decode('hex')]
 
-                        CANMsg.CANFrame = CANMessage(_id, _length, _data, False, CANMessage.DataFrame)
+                        can_msg.CANFrame = CANMessage(_id, _length, _data, False, CANMessage.DataFrame)
 
-                        CANMsg.CANData = True
+                        can_msg.CANData = True
 
                     elif data[0] == "T":  # Extended
                         # "T0011111181122334455667788"
@@ -160,46 +160,46 @@ class hw_USBtin(CANModule):
                         _id = struct.unpack("!I", (data[1:9]).decode('hex'))[0]
                         _data = [struct.unpack("B", x)[0] for x in data[10:-1].decode('hex')]
 
-                        CANMsg.CANFrame = CANMessage(_id, _length, _data, True, CANMessage.DataFrame)
-                        CANMsg.CANData = True
+                        can_msg.CANFrame = CANMessage(_id, _length, _data, True, CANMessage.DataFrame)
+                        can_msg.CANData = True
 
                     elif data[0] == "r":  # RTR
                         _length = int(data[4])
                         _id = struct.unpack("!H", ("0" + data[1:4]).decode('hex'))[0]
 
-                        CANMsg.CANFrame = CANMessage(_id, _length, [], False, CANMessage.RemoteFrame)
-                        CANMsg.CANData = True
+                        can_msg.CANFrame = CANMessage(_id, _length, [], False, CANMessage.RemoteFrame)
+                        can_msg.CANData = True
 
                     elif data[0] == "R":  # Extended RTR
                         _length = int(data[9])
                         _id = struct.unpack("!I", (data[1:9]).decode('hex'))[0]
 
-                        CANMsg.CANFrame = CANMessage(_id, _length, [], True, CANMessage.RemoteFrame)
-                        CANMsg.CANData = True
+                        can_msg.CANFrame = CANMessage(_id, _length, [], True, CANMessage.RemoteFrame)
+                        can_msg.CANData = True
                     elif data[0] == 'z' or data[0] == 'Z' or data[0] == "\r" or data[0] == "\x07":
                         break
                     else:
-                        CANMsg.debugData = True
-                        CANMsg.debugText = data
+                        can_msg.debugData = True
+                        can_msg.debugText = data
 
                     self.dprint(2, "USBtin READ: " + data)
 
-        return CANMsg
+        return can_msg
 
-    def doWrite(self, CANMsg):
-        if CANMsg.CANData:
-            cmdByte = None
-            if not CANMsg.CANFrame.isExtended and CANMsg.CANFrame._type == CANMessage.DataFrame:  # 11 bit format
-                cmdByte = "t"
-            elif CANMsg.CANFrame.isExtended and CANMsg.CANFrame._type == CANMessage.DataFrame:
-                cmdByte = "T"
-            elif not CANMsg.CANFrame.isExtended and CANMsg.CANFrame._type == CANMessage.RemoteFrame:
-                cmdByte = "r"
-            elif CANMsg.CANFrame.isExtended and CANMsg.CANFrame._type == CANMessage.RemoteFrame:
-                cmdByte = "R"
-            if cmdByte:
-                writeBuf = cmdByte + CANMsg.CANFrame._rawId.encode('hex')[1:] + str(CANMsg.CANFrame._length) + \
-                (CANMsg.CANFrame._rawData).encode('hex') + "\r"
-                self._serialPort.write(writeBuf)
-                self.dprint(2, "WRITE: " + writeBuf)
-        return CANMsg
+    def do_write(self, can_msg):
+        if can_msg.CANData:
+            cmd_byte = None
+            if not can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.DataFrame:  # 11 bit format
+                cmd_byte = "t"
+            elif can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.DataFrame:
+                cmd_byte = "T"
+            elif not can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.RemoteFrame:
+                cmd_byte = "r"
+            elif can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.RemoteFrame:
+                cmd_byte = "R"
+            if cmd_byte:
+                write_buf = cmd_byte + can_msg.CANFrame.frame_raw_id.encode('hex')[1:] + str(can_msg.CANFrame.frame_length) + \
+                           can_msg.CANFrame.frame_raw_data.encode('hex') + "\r"
+                self._serialPort.write(write_buf)
+                self.dprint(2, "WRITE: " + write_buf)
+        return can_msg

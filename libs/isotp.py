@@ -20,37 +20,36 @@ class ISOTPMessage:
     OverflowAbort = 12
 
     def __init__(self, id=0, length=0, data=[], finished=False):  # Init EMPTY message
-        self._id = id
-        self._data = data
-        self._length = length
-        self._data = data
-        self._finished = finished
+        self.message_id = id
+        self.message_data = data
+        self.message_length = length
+        self.message_finished = finished
         self._counterSize = 0
         self._seq = 0
         self._flow = -1
 
-    def addCAN(self, CANMsg):  # Init
+    def add_can(self, can_msg):  # Init
         # The initial field is four bits indicating the frame type,
-        pciType = (CANMsg._data[0] & 0xF0) >> 4
-        sz = (CANMsg._data[0] & 0x0F)
+        pciType = (can_msg.frame_data[0] & 0xF0) >> 4
+        sz = (can_msg.frame_data[0] & 0x0F)
 
         if pciType == self.SingleFrame:  # Single frame
             if sz > 0 and sz < 8:
-                self._data = CANMsg._data[1:sz + 1]
-                self._length = sz
-                if sz + 1 == CANMsg._length:
-                    self._finished = True
+                self.message_data = can_msg.frame_data[1:sz + 1]
+                self.message_length = sz
+                if sz + 1 == can_msg.frame_length:
+                    self.message_finished = True
                     return 1
                 return -7
             else:
                 return -1
         elif pciType == self.FirstFrame:  # First frame
-            self._length = (sz << 8) + CANMsg._data[1]
-            if self._length > 4095:
+            self.message_length = (sz << 8) + can_msg.frame_data[1]
+            if self.message_length > 4095:
                 return -6
             if self._counterSize == 0:
                 self._counterSize = 6
-                self._data = CANMsg._data[2:8]
+                self.message_data = can_msg.frame_data[2:8]
                 self._seq = 1  # Wait for first packet
                 return 1
             else:
@@ -58,16 +57,16 @@ class ISOTPMessage:
         elif pciType == self.ConsecutiveFrame:  # All next frames until last one
             if sz != self._seq:  # Wrong seq
                 return -3
-            _left = self._length - self._counterSize
+            _left = self.message_length - self._counterSize
             _add = min(_left, 7)
-            self._data.extend(CANMsg._data[1:_add + 1])
+            self.message_data.extend(can_msg.frame_data[1:_add + 1])
 
             self._counterSize += _add
 
-            if self._counterSize == self._length:
-                self._finished = True
+            if self._counterSize == self.message_length:
+                self.message_finished = True
                 return 2
-            elif self._counterSize > self._length:
+            elif self._counterSize > self.message_length:
                 return -4
 
             self._seq += 1
@@ -84,25 +83,25 @@ class ISOTPMessage:
             return -5
 
     @classmethod
-    def generateCAN(self, id, data):  # generate CAN messages seq
+    def generate_can(self, fid, data):  # generate CAN messages seq
         _length = len(data)
-        CANMsgList = []
+        can_msg_list = []
 
         if _length < 8:
-            CANMsgList.append(CANMessage.initInt(id, _length + 1, [_length] + data[:_length]))  # Single
+            can_msg_list.append(CANMessage.init_data(fid, _length + 1, [_length] + data[:_length]))  # Single
         elif _length > 4095:
             return []
         else:
-            CANMsgList.append(CANMessage.initInt(id, 8, [(_length >> 8) + 0x10] + [_length & 0xFF] + data[:6]))  # First
+            can_msg_list.append(CANMessage.init_data(fid, 8, [(_length >> 8) + 0x10] + [_length & 0xFF] + data[:6]))  # First
             seq = 1
             bytes = 6
 
             while bytes != _length:  # Rest
                 sent = min(_length - bytes, 7)
-                CANMsgList.append(CANMessage.initInt(id, 1 + sent, [seq + 0x20] + data[bytes:bytes + sent]))
+                can_msg_list.append(CANMessage.init_data(fid, 1 + sent, [seq + 0x20] + data[bytes:bytes + sent]))
                 bytes += sent
                 seq += 1
                 if seq > 0xF:
                     seq = 0
 
-        return CANMsgList
+        return can_msg_list
