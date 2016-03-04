@@ -40,14 +40,14 @@ class hw_USBtin(CANModule):
 
     _bus = 60
 
-    def getInfo(self):  # Read info
+    def get_info(self):  # Read info
         self._serialPort.write("S0\r")
         time.sleep(1)
         self._serialPort.write("V\r")
         time.sleep(1)
-        return self.readAll()
+        return self.read_all()
 
-    def readAll(self):
+    def read_all(self):
         out = ""
         while self._serialPort.inWaiting() > 0:
             out += self._serialPort.read(1)
@@ -56,7 +56,7 @@ class hw_USBtin(CANModule):
     def do_stop(self):  # disable reading
         self._serialPort.write("C\r")
         time.sleep(1)
-        self.readAll()
+        self.read_all()
 
     def do_start(self, params={}):  # enable reading
         self._serialPort.write(self._speed[self._currentSpeed] + "\r")
@@ -68,7 +68,7 @@ class hw_USBtin(CANModule):
         try:
             self._serialPort = serial.Serial(self._COMPort, 57600, timeout=0.5, parity=serial.PARITY_EVEN, rtscts=1)
 
-            if (self.getInfo().find("V0100")) != -1:
+            if (self.get_info().find("V0100")) != -1:
                 self.dprint(1, "Port found: " + self._COMPort)
                 return 1
             else:
@@ -93,7 +93,7 @@ class hw_USBtin(CANModule):
                     self._COMPort = port[0]
                     if self.init_port() == 1:
                         break
-                if self._serialPort:
+                if not self._serialPort:
                     self.dprint(0, 'Can\'t init device!')
                     exit()
             else:

@@ -78,7 +78,7 @@ class mod_stat(CANModule):
             message_iso = ISOTPMessage(fid)
             for (lenX, msg, bus, mod), cnt in lst.iteritems():
                 ret = message_iso.add_can(CANMessage.init_data(fid, len(msg), [struct.unpack("B", x)[0] for x in msg]))
-                if ret < 1:
+                if ret < 1 or message_iso.message_length < 9:
                     break
                 elif message_iso.message_finished:
                     if fid not in self.ISOList:

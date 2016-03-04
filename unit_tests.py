@@ -12,9 +12,9 @@ class ModReplayTests(unittest.TestCase):
     def test_replay1(self):
         self.CANEngine = CANSploit()
         self.CANEngine.load_config("tests/test_3.conf")
-        self.CANEngine.call_module("mod_stat", "s")
-        time.sleep(2)
         self.CANEngine.start_loop()
+        time.sleep(2)
+        self.CANEngine.call_module("mod_stat", "s")
         num = self.CANEngine.call_module("gen_replay", "p")
         time.sleep(1)
         self.assertTrue(int(num) == 0, "Should be be 0 packets")
@@ -73,7 +73,7 @@ class ModReplayTests(unittest.TestCase):
         print(ret)
         self.assertTrue(int(ret) == 6, "Should be 6 packets")
 
-'''
+
 class ModPingTests(unittest.TestCase):
     def tearDown(self):
         self.CANEngine.stop_loop()
@@ -241,7 +241,7 @@ class ModFirewallTests(unittest.TestCase):
         time.sleep(1)
         mod = self.CANEngine._enabledList[index][1].CANList
         self.assertTrue(mod.frame_id == 4, "We should be able to find ID 4")
-'''
+
 if __name__ == '__main__':
     sys.path.append('./modules')
     from libs.engine import *

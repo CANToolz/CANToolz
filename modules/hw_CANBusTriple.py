@@ -193,7 +193,7 @@ class hw_CANBusTriple(CANModule):
                     self._COMPort = port[0]
                     if self.init_port() == 1:
                         break
-                if self._serialPort:
+                if not self._serialPort:
                     self.dprint(0, 'Can\'t init device!')
                     exit()
             else:
