@@ -2,12 +2,64 @@ import sys
 import unittest
 import time
 
+class ModUdsTests(unittest.TestCase):
+    def tearDown(self):
+        self.CANEngine.stop_loop()
+        self.CANEngine = None
+        print("stopped")
+
+    def test_replay1(self):
+        self.CANEngine = CANSploit()
+        self.CANEngine.load_config("tests/test_5.conf")
+        self.CANEngine.start_loop()
+        time.sleep(1)
+        self.CANEngine.call_module("gen_ping", "s")
+        time.sleep(2)
+        index = self.CANEngine.find_module('mod_stat')
+        _bodyList = self.CANEngine._enabledList[index][1]._bodyList
+        self.assertTrue(len(_bodyList) == 4, "Should be 4 groups of packets")
+        self.assertTrue(1790 in _bodyList, "1790 should be there")
+        self.assertTrue(1791 in _bodyList, "1791 should be there")
+        self.assertTrue(1792 in _bodyList, "1792 should be there")
+        self.assertTrue((3, "02010d".decode('hex'), 0, False) in _bodyList[1792], "020902 as packet should be there")
+        self.assertTrue((7, "062f0307030000".decode('hex'), 0, False) in _bodyList[1792], "062f0307030000 as packet should be there")
+        self.assertTrue((3, "020902".decode('hex'), 0, False) in _bodyList[1792], "020901 as packet should be there")
+        self.assertTrue((3, "02010d".decode('hex'), 0, False) in _bodyList[1790], "02010d as packet should be there")
+        self.assertFalse((3, "020904".decode('hex'), 0, False) in _bodyList[1791], "020904 as packet should not be there")
+        _bodyList = self.CANEngine._enabledList[index][1]._bodyList
+        self.CANEngine.call_module("gen_replay", "r 0-9")
+        time.sleep(2)
+        ret = self.CANEngine.call_module("mod_stat", "p")
+        print ret
+        _bodyList = self.CANEngine._enabledList[index][1]._bodyList
+        ret = self.CANEngine.call_module("mod_stat", "a")
+        print ret
+        _udsList = self.CANEngine._enabledList[index][1].UDSList.sessions
+
+        self.assertTrue(1791 in _udsList, "1791 should be there")
+        self.assertTrue(1792 in _udsList, "1792 should be there")
+        self.assertTrue(1793 in _udsList, "1793 should be there")
+        self.assertTrue(1 in _udsList[1791], "1 should be there")
+        self.assertTrue(0x2f in _udsList[1793], "0x2f should be there")
+        self.assertTrue(0x09 in _udsList[1792], "0x09 should be there")
+        self.assertTrue(2 == _udsList[1792][9]['sub'], "2 should be there")
+        self.assertTrue(3 == _udsList[1793][0x2f]['sub'], "3 should be there")
+        self.assertTrue(1 == _udsList[1791][1]['status'], "Status should be 1")
+        self.assertTrue(1 == _udsList[1792][9]['status'], "Status should be 1")
+        self.assertTrue(2 == _udsList[1793][0x2f]['status'], "Status should be 2")
+
+        self.assertTrue(0 == _udsList[1791][0x2f]['status'], "Status should be 0")
+        self.assertTrue(0 == _udsList[1791][0x9]['status'], "Status should be 0")
+        self.assertTrue(0 == _udsList[1793][0x1]['status'], "Status should be 0")
+        self.assertTrue(0 == _udsList[1793][0x9]['status'], "Status should be 0")
+
+
 
 class ModReplayTests(unittest.TestCase):
     def tearDown(self):
         self.CANEngine.stop_loop()
         self.CANEngine = None
-        print("stoped")
+        print("stopped")
 
     def test_replay1(self):
         self.CANEngine = CANSploit()

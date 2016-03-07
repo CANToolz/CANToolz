@@ -1,5 +1,5 @@
 from libs.module import *
-from libs.isotp import *
+from libs.uds import *
 import collections
 
 
@@ -27,6 +27,7 @@ class mod_stat(CANModule):
     _bodyList = None
     _logFile = False
     ISOList = None
+    UDSList = None
     _format = 0  # 0 - plain text, 1 - CSV
     _formats = {'CSV': 1, 'text': 0, 'csv': 1, 'txt': 0}
     id = 3
@@ -49,6 +50,7 @@ class mod_stat(CANModule):
                 #                self.dprint(2,"can't open log")
 
     def do_init(self, params={}):
+
         self._bodyList = collections.OrderedDict()
         self.ISOList = collections.OrderedDict()
         if 'file' in params:
@@ -65,6 +67,11 @@ class mod_stat(CANModule):
             self._cmdList['f'] = ["Print table to configured file", 0, "", self.do_flash_file]
             self.do_open_files()
 
+        if 'shift' in params:
+            self.UDSList = UDSMessage(params['shift'])
+        else:
+            self.UDSList = UDSMessage()
+
         self._cmdList['p'] = ["Print current table", 0, "", self.do_print]
         self._cmdList['c'] = ["Clean table, remove alerts", 0, "", self.do_clean]
         self._cmdList['m'] = ["Enable alert mode and insert mark into the table", 1, "<ID>", self.add_alert]
@@ -78,16 +85,37 @@ class mod_stat(CANModule):
             message_iso = ISOTPMessage(fid)
             for (lenX, msg, bus, mod), cnt in lst.iteritems():
                 ret = message_iso.add_can(CANMessage.init_data(fid, len(msg), [struct.unpack("B", x)[0] for x in msg]))
-                if ret < 1 or message_iso.message_length < 9:
-                    break
-                elif message_iso.message_finished:
+                #if ret < 0 or message_iso.message_length < 1:
+                #     message_iso = ISOTPMessage(fid)
+                if message_iso.message_finished:
                     if fid not in self.ISOList:
                         self.ISOList[fid] = []
                     self.ISOList[fid].append((bus, message_iso.message_length, message_iso.message_data))
                     self.dprint(1, "ISO-TP Message detected, with ID " + str(fid) + " and length " +
                                 str(message_iso.message_length))
                     ret_str += "\tID " + str(fid) + " and length " + str(message_iso.message_length) + "\n"
-                    break
+
+                    # Check for UDS
+                    self.UDSList.handle_message(message_iso)
+                    message_iso = ISOTPMessage(fid)
+
+        ret_str += "\n\nUDS found:\n"
+        for fid, services in self.UDSList.sessions.iteritems():
+            for service, body in services.iteritems():
+                text = " (N/A) "
+                if service in UDSMessage.services_base:
+                    for sub in UDSMessage.services_base[service]:
+                        if sub.keys()[0] == body['sub']:
+                            text = " ("+sub.values()[0]+") "
+                    if text == " (N/A) ":
+                        text = " ("+UDSMessage.services_base[service][0].values()[0]+") "
+                if body['status'] == 1:
+                    data = ''.join(struct.pack("!B", b) for b in body['response']['data'])
+                    ret_str += "\n\tID: " + str(fid) + " Service: " + str(hex(service)) + " Sub: " + str(hex(body['sub'])) + text + "\n\t\tResponse: " + data.encode('hex') + " ASCII: " + data
+                elif body['status'] == 2:
+                    ret_str += "\n\tID: " + str(fid) + " Service: " + str(hex(service)) + " Sub: " + str(hex(body['sub'])) + text + "\n\t\tError: " + body['response']['error']
+
+
         return ret_str
 
     def do_dump_replay(self, name):

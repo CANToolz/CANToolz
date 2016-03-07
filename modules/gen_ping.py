@@ -1,6 +1,6 @@
 from libs.module import *
 from libs.isotp import *
-
+from libs.uds import *
 
 class gen_ping(CANModule):
     name = "Sending CAN pings"
@@ -12,9 +12,11 @@ class gen_ping(CANModule):
    
     Module parameters:  
        body           -  data HEX that will be used in CAN for discovery (by default body is 0000000000000000)
-       mode           -  by default CAN, but also support ISOTP
+       mode           -  by default CAN, but also support ISOTP and UDS
        range          -  [0,1000] - ID range
-       {'body':'0011223344556677889900aabbccddeeff','mode':'isotp'}
+         {'body':'0011223344556677889900aabbccddeeff','mode':'isotp'}  ; ISO-TP
+         {'body':'001122334455667788','mode':'CAN'}  ; ISO-TP
+         {'services':[{'service':0x01, 'sub':0x0d},{'service':0x09, 'sub':0x02},{'service':0x2F, 'sub':0x03, 'data':[7,3,0,0]}],'mode':'UDS'}  ; UDS
     """
     _active = False
     queue_messages = []
@@ -36,21 +38,48 @@ class gen_ping(CANModule):
         else:
             _data = [0, 0, 0, 0, 0, 0, 0, 0]
 
-        iso_mode = False
+        iso_mode = 0 # 0 - CAN, 1 - ISO-TP, 2 - UDS
 
         # Simple CAN or ISO
         if 'mode' in args:
-            iso_mode = True if (args['mode'] == 'ISO' or args['mode'] == 'iso' or args['mode'] == 'ISOTP' or args[
-                'mode'] == 'isotp') else False
+            if args['mode'] == 'ISO' or args['mode'] == 'iso' or args['mode'] == 'ISOTP' or args['mode'] == 'isotp':
+                iso_mode = 1
+            elif args['mode'] == 'UDS' or args['mode'] == 'uds':
+                iso_mode = 2
 
         if 'range' in args and int(args['range'][0]) < int(args['range'][1]):
             for i in range(int(args['range'][0]), int(args['range'][1])):
-                if iso_mode:
+                if iso_mode == 1:
                     iso_list = ISOTPMessage.generate_can(i, _data)
                     iso_list.reverse()
                     self.queue_messages.extend(iso_list)
-                else:
+                elif iso_mode == 0:
                     self.queue_messages.append(CANMessage.init_data(i, len(_data), _data[:8]))
+                elif iso_mode == 2:
+                    if 'services' in args:
+                        for service in args['services']:
+                            if 'service' in service:
+                                uds_m = UDSMessage()
+                                if 'sub' in service:
+                                    sub = service['sub']
+                                elif service['service'] in UDSMessage.services_base:
+                                    subs = UDSMessage.services_base[service['service']]
+                                    for s in subs:
+                                        sub = s.keys()[0]
+                                        if not sub:
+                                            sub = 0
+                                            continue
+                                        else:
+                                            break
+                                else:
+                                    sub = 0
+                                if 'data' in service:
+                                    dat = service['data']
+                                else:
+                                    dat = []
+                                iso_list = uds_m.add_request(i, service['service'], sub, dat)
+                                iso_list.reverse()
+                                self.queue_messages.extend(iso_list)
         else:
             self.dprint(1, "No range specified")
             self._active = False

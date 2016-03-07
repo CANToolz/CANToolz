@@ -34,20 +34,21 @@ class ISOTPMessage:
         sz = (can_msg.frame_data[0] & 0x0F)
 
         if pciType == self.SingleFrame:  # Single frame
-            if sz > 0 and sz < 8:
-                self.message_data = can_msg.frame_data[1:sz + 1]
-                self.message_length = sz
+            if 0 < sz < 8:
                 if sz + 1 == can_msg.frame_length:
+                    self.message_data = can_msg.frame_data[1:sz + 1]
+                    self.message_length = sz
                     self.message_finished = True
                     return 1
                 return -7
             else:
                 return -1
         elif pciType == self.FirstFrame:  # First frame
-            self.message_length = (sz << 8) + can_msg.frame_data[1]
-            if self.message_length > 4095:
+            message_length = (sz << 8) + can_msg.frame_data[1]
+            if message_length > 4095:
                 return -6
             if self._counterSize == 0:
+                self.message_length = message_length
                 self._counterSize = 6
                 self.message_data = can_msg.frame_data[2:8]
                 self._seq = 1  # Wait for first packet
@@ -78,7 +79,7 @@ class ISOTPMessage:
 
         elif pciType == self.FlowControl:
             self._flow = sz
-            return self._flow + 10
+            return -9
         else:
             return -5
 
