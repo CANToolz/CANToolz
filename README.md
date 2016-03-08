@@ -129,8 +129,14 @@ CANMessage format:
 - frame_length    - int, DATA length (0-8 bytes)
 - frame_data      - list, with data
 
-Alexey Sintsov   (@asintsov)
-alex.sintsov@gmail.com
+## P.S.
+
+Current version is uber-beta. Not tested enough, code is not celan and ugly... working on that, sorry. 
+
+Best Regards,
+Your Code Monkey
+  Alexey Sintsov   (@asintsov)
+  alex.sintsov@gmail.com
 
 
 
