@@ -57,7 +57,7 @@ class hw_CANBusTriple(CANModule):
         time.sleep(1)
         return self.read_all()
 
-    def do_stop(self):  # disable reading
+    def do_stop(self, params):  # disable reading
         self._serialPort.write("\x03\x01\x00")
         time.sleep(1)
         self._serialPort.write("\x03\x02\x00")
@@ -66,7 +66,7 @@ class hw_CANBusTriple(CANModule):
         time.sleep(1)
         self.read_all()
 
-    def do_start(self, params={}):  # enable reading
+    def do_start(self, params):  # enable reading
         self._serialPort.write("\x03\x01\x01\x00\x00\x00\x00")
         time.sleep(1)
         self._serialPort.write("\x03\x02\x01\x00\x00\x00\x00")
@@ -81,7 +81,7 @@ class hw_CANBusTriple(CANModule):
     def do_auto_rate(self):
         self.dprint(1, "Start AR..")
 
-        self.do_stop()
+        self.do_stop({})
         self.read_all()
         self._serialPort.write("\x01\0x0A\0x01\x01")
         time.sleep(1)
@@ -181,8 +181,7 @@ class hw_CANBusTriple(CANModule):
     def do_init(self, params):  # Get device and open serial port
         # Interactive mode
 
-        if 'debug' in params:
-            self.DEBUG = int(params['debug'])
+        self.DEBUG = int(params.get('debug', 0))
 
         self.dprint(1, "Init phase started...")
 
@@ -207,7 +206,7 @@ class hw_CANBusTriple(CANModule):
 
         self._readBus = int(params.get('bus_1', 1))
         self._bus = self._readBus
-        self._readBus = int(params.get('bus_2', self._readBus))
+        self._writeBus = int(params.get('bus_2', self._readBus))
 
         self.dprint(1, "Port : " + self._COMPort)
         self.dprint(1, "Bus 1: " + str(self._readBus))
