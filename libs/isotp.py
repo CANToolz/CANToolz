@@ -52,7 +52,7 @@ class ISOTPMessage:
                 self._counterSize = 6
                 self.message_data = can_msg.frame_data[2:8]
                 self._seq = 1  # Wait for first packet
-                return 1
+                return 2
             else:
                 return -2
         elif pciType == self.ConsecutiveFrame:  # All next frames until last one
@@ -66,7 +66,7 @@ class ISOTPMessage:
 
             if self._counterSize == self.message_length:
                 self.message_finished = True
-                return 2
+                return 1
             elif self._counterSize > self.message_length:
                 return -4
 

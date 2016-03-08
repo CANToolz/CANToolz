@@ -30,7 +30,7 @@ class mod_printMessage(CANModule):
             elif 'black_list' in args and can_msg.CANFrame.frame_id not in args.get('black_list', []):
                 self.dprint(0, "Read: " + self.do_read(can_msg))  # Print CAN Message
             else:
-                self.dprint(2, "Read: " + self.do_read(can_msg))  # Print CAN Message
+                self.dprint(0, "Read: " + self.do_read(can_msg))  # Print CAN Message
 
         if can_msg.debugData:
             self.dprint(0, "DEBUG: " + can_msg.debugText.get('text', ''))
