@@ -123,7 +123,7 @@ class UDSMessage:
         0x7F: 'Service not supported in active session'
     }
 
-    def __init__(self, _shift = 0x08):  # Init Session
+    def __init__(self, _shift=0x08):  # Init Session
         self.sessions = {}
         self.shift = _shift
 
@@ -159,7 +159,7 @@ class UDSMessage:
     def handle_message(self, _input_message):
         if self.check_status(_input_message) == 1:
             return False
-        elif self.check_status(_input_message) == 2: # Possible response came
+        elif self.check_status(_input_message) == 2:  # Possible response came
             sts = self.sessions[_input_message.message_id - self.shift][_input_message.message_data[0]-0x40]['status']
             if sts == 0:  # Ok, now we have Response... looks like
                 return self.add_raw_response(_input_message)
@@ -167,14 +167,14 @@ class UDSMessage:
         elif self.check_status(_input_message) == -1:  # New service request
             self.add_raw_request(_input_message)
             return True
-        elif self.check_status(_input_message) == -2: # Maybe error
+        elif self.check_status(_input_message) == -2:  # Maybe error
             return self.add_raw_response(_input_message)
         else:                                         # New Service request and new ID
             self.add_raw_request(_input_message)
             return True
         return False
 
-    def add_request(self, _id, _service, _subcommand = 0, _data = []):
+    def add_request(self, _id, _service, _subcommand=0, _data=[]):
         if _id not in self.sessions:
             self.start_session(_id)
 
@@ -205,20 +205,22 @@ class UDSMessage:
         return True
 
     def add_raw_response(self, _input_message):
-        if (_input_message.message_id - self.shift) in self.sessions:
-            if (_input_message.message_data[0] - 0x40) in self.sessions[(_input_message.message_id - self.shift)]:
-                self.sessions[(_input_message.message_id - self.shift)][_input_message.message_data[0] - 0x40]['response']['id'] = _input_message.message_id
-                self.sessions[(_input_message.message_id - self.shift)][_input_message.message_data[0] - 0x40]['response']['sub'] = _input_message.message_data[1]
-                self.sessions[(_input_message.message_id - self.shift)][_input_message.message_data[0] - 0x40]['response']['data'] = _input_message.message_data[2:]
-                self.sessions[(_input_message.message_id - self.shift)][_input_message.message_data[0] - 0x40]['status'] = 1
+        response_id = _input_message.message_id - self.shift
+        if response_id in self.sessions:
+            response_byte = _input_message.message_data[0] - 0x40
+            if response_byte in self.sessions[response_id]:
+                self.sessions[response_id][response_byte]['response']['id'] = _input_message.message_id
+                self.sessions[response_id][response_byte]['response']['sub'] = _input_message.message_data[1]
+                self.sessions[response_id][response_byte]['response']['data'] = _input_message.message_data[2:]
+                self.sessions[response_id][response_byte]['status'] = 1
                 return True
             elif _input_message.message_data[0] in self.error_responses:
-                x = self.sessions[(_input_message.message_id - self.shift)].keys()[-1]
-                self.sessions[(_input_message.message_id - self.shift)][x]['response']['id'] = _input_message.message_id
-                self.sessions[(_input_message.message_id - self.shift)][x]['response']['sub'] = None
-                self.sessions[(_input_message.message_id - self.shift)][x]['response']['data'] = None
-                self.sessions[(_input_message.message_id - self.shift)][x]['status'] = 2
-                self.sessions[(_input_message.message_id - self.shift)][x]['response']['error'] = self.error_responses[_input_message.message_data[0]]
+                x = self.sessions[response_id].keys()[-1]
+                self.sessions[response_id][x]['response']['id'] = _input_message.message_id
+                self.sessions[response_id][x]['response']['sub'] = None
+                self.sessions[response_id][x]['response']['data'] = None
+                self.sessions[response_id][x]['status'] = 2
+                self.sessions[response_id][x]['response']['error'] = self.error_responses[_input_message.message_data[0]]
                 return True
         return False
 
