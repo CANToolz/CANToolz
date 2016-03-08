@@ -1,12 +1,16 @@
-# CANSploit
+# CANToolz
 
-CANSploit is a framework for analysing CAN networks and devices.
+CANToolz is a framework for analysing CAN networks and devices.
 This tool based on different modules which can be assembled in pipe together and
 can be used by security researchers and automotive/OEM security testers for black-box analysis and etc.
 
+This platform is a try to unify all needed tricks/tools and other things that you can do with CAN bus in one place.
+Also it gives a (almost) easy way to add your modules and use "extended" version for your needs
+(like custom brutforcers for chosen ECU and etc).
+
 ## Using a Hardware
 
-CANSploit can work with CAN network by using next hardware:
+CANToolz can work with CAN network by using next hardware:
 
 1. [USBtin](http://www.fischl.de/usbtin/)
 2. [CANBus Triple](https://canb.us/)
@@ -19,6 +23,7 @@ CANSploit can work with CAN network by using next hardware:
 - mod_fuzz1        - Simple 'Proxy' fuzzer  (1 byte) Can be combined with gen_ping/gen_replay
 - mod_printMessage - printing CAN messages
 - mod_stat         - CAN messages statistic (with .csv file output)
+                     Analyses option (c mod_stat a) will try to find UDS/ISO TP messages
 - gen_ping         - generating CAN messages with chosen IDs (ECU/Service discovery)
 - gen_replay       - save and replay packets
 
@@ -35,14 +40,14 @@ See more use-cases inside examples folder:
 
 - MITM with firewall
 - replay discovery
-- ping discovery
+- ping discovery (UDS)
 
 ## Example from  The Car Hacker’s Handbook The Car Hacker’s Handbook A Guide for the Penetration Tester
 This example just like "Using can-utils to Find the Door-Unlock Control" from great book: "The Car Hacker’s Handbook The Car Hacker’s Handbook A Guide for the Penetration Tester" by Chris Evans
 
 Let's see how it looks like from the console...
 
-    python cansploit.py -c can_replay_discovery.conf
+    python cantoolz.py -c can_replay_discovery.conf
     hw_USBtin: Init phase started...
     hw_USBtin: Port found: COM14
     hw_USBtin: PORT: COM14
@@ -97,6 +102,32 @@ Let's see how it looks like from the console...
 
 That's it for now. Will update this file later with more config, and examples how to use this tool!
 
+# Dev "API" (short version)
+
+Just create file mod_test with same class name insede (extend CANModule class):
+
+ do_effect(msg,args)  - main method, that will be called in the loop.
+    msg  - input Message with CAN frame
+    args - parameters for this module
+
+ do_start(args)       - this method will be called eah time you activate loop (command start/s)
+    args - parameters for this module
+
+ do_stop()            - will be called when main loop has been stoped (ctrl+c or stop in the console)
+
+ do_init(init_args)   - this nethod will be called when module loaded into a project
+    init_args - parameters for initialization
+
+msg format:
+    msg.CANData   - boolean. If true then this message contains CAN Frame
+    msg.debugData - boolean. If true then this message contains other data. (can be used for cross-module communication)
+    msg.Frame     - CANMessage
+    msg.debugText - string
+
+CANMessage format:
+    frame_id        - int, CAN message ID (lower and high bytes together, also can hold extended format)
+    frame_length    - int, DATA length (0-8 bytes)
+    frame_data      - list, with data
 
 Alexey Sintsov   (@asintsov)
 alex.sintsov@gmail.com

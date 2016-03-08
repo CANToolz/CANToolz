@@ -126,5 +126,4 @@ class gen_replay(CANModule):
             can_msg.CANData = True
             if self._num1 == self._num2:
                 self._replay = False
-
         return can_msg
