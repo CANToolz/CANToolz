@@ -5,7 +5,7 @@ This tool based on different modules which can be assembled in pipe together and
 can be used by security researchers and automotive/OEM security testers for black-box analysis and etc.
 
 This platform is a try to unify all needed tricks/tools and other things that you can do with CAN bus in one place.
-Also it gives a (almost) easy way to add your modules and use "extended" version for your needs
+Also it gives (almost) an easy way to add your modules and use "extended" version for your needs
 (like custom brutforcers for chosen ECU and etc).
 
 ## Using a Hardware
