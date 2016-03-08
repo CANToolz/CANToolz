@@ -10,6 +10,7 @@ Also it gives a (almost) easy way to add your modules and use "extended" version
 
 
 "I don't get why everyone releases new "car hacking tools" all the time.  @nudehaberdasher and I released ours in 2013 and they work fine." (c) Charlie Miller (‏@0xcharlie)
+
 "Looking for our car hacking tools / data / scripts? http://illmatics.com/content.zip " (c) Chris Valasek ‏@nudehaberdasher
 
 ## Using a Hardware
@@ -110,28 +111,32 @@ That's it for now. Will update this file later with more config, and examples ho
 
 Just create file mod_test with same class name insede (extend CANModule class):
 
- do_effect(msg,args)  - main method, that will be called in the loop.
-    msg  - input Message with CAN frame
-    args - parameters for this module
+    do_effect(msg,args)  - main method, that will be called in the loop.
+      msg  - input Message with CAN frame
+      args - parameters for this module
 
- do_start(args)       - this method will be called eah time you activate loop (command start/s)
-    args - parameters for this module
+    do_start(args)       - this method will be called eah time you activate loop (command start/s)
+      args - parameters for this module
 
- do_stop(args)            - will be called when main loop has been stoped (ctrl+c or stop in the console)
+    do_stop(args)            - will be called when main loop has been stoped (ctrl+c or stop in the console)
 
- do_init(init_args)   - this nethod will be called when module loaded into a project
-    init_args - parameters for initialization
+    do_init(init_args)   - this nethod will be called when module loaded into a project
+      init_args - parameters for initialization
 
-msg format:
-- msg.CANData   - boolean. If true then this message contains CAN Frame
-- msg.debugData - boolean. If true then this message contains other data. (can be used for cross-module communication)
-- msg.Frame     - CANMessage
-- msg.debugText - string
 
-CANMessage format:
-- frame_id        - int, CAN message ID (lower and high bytes together, also can hold extended format)
-- frame_length    - int, DATA length (0-8 bytes)
-- frame_data      - list, with data
+
+    msg format:
+      msg.CANData   - boolean. If true then this message contains CAN Frame
+      msg.debugData - boolean. If true then this message contains other data. (can be used for cross-module communication)
+      msg.Frame     - CANMessage
+      msg.debugText - string
+
+
+
+    CANMessage format:
+      frame_id        - int, CAN message ID (lower and high bytes together, also can hold extended format)
+      frame_length    - int, DATA length (0-8 bytes)
+      frame_data      - list, with data
 
 P.S.
  Current version is uber-beta. Not tested enough, code is not clean and ugly and there are bugs that not found yet... working on that, sorry.
