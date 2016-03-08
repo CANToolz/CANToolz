@@ -21,6 +21,9 @@ class gen_ping(CANModule):
     _active = False
     queue_messages = []
 
+    def do_init(self, params):
+        self._active = False
+
     def do_ping(self):
         if not self.queue_messages:
             self._active = False

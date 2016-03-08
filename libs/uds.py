@@ -174,7 +174,7 @@ class UDSMessage:
             return True
         return False
 
-    def add_request(self, _id, _service, _subcommand=0, _data=[]):
+    def add_request(self, _id, _service, _subcommand, _data):
         if _id not in self.sessions:
             self.start_session(_id)
 
@@ -193,9 +193,8 @@ class UDSMessage:
     def add_raw_request(self, _input_message):
         if _input_message.message_id not in self.sessions:
             self.start_session(_input_message.message_id)
-
         self.sessions[_input_message.message_id][_input_message.message_data[0]] = {
-                'sub': _input_message.message_data[1],
+                'sub': _input_message.message_data[1] if len(_input_message.message_data) > 1 else None,
                 'data': _input_message.message_data[2:],
                 'response': {
                     'id': None, 'sub': None, 'data': None, 'error': None
@@ -210,7 +209,7 @@ class UDSMessage:
             response_byte = _input_message.message_data[0] - 0x40
             if response_byte in self.sessions[response_id]:
                 self.sessions[response_id][response_byte]['response']['id'] = _input_message.message_id
-                self.sessions[response_id][response_byte]['response']['sub'] = _input_message.message_data[1]
+                self.sessions[response_id][response_byte]['response']['sub'] = _input_message.message_data[1] if len(_input_message.message_data) > 1 else None
                 self.sessions[response_id][response_byte]['response']['data'] = _input_message.message_data[2:]
                 self.sessions[response_id][response_byte]['status'] = 1
                 return True
