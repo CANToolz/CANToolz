@@ -29,9 +29,9 @@ class CANMessage:
     def init_data(self, fid, length, data):  # Init
         if length > 8:
             length = 8
-        if fid >= 0 and fid <= 0x7FF:
+        if 0 <= fid <= 0x7FF:
             extended = False
-        elif fid > 0x7FF and fid < 0x1FFFFFFF:
+        elif 0x7FF < fid < 0x1FFFFFFF:
             extended = True
         else:
             fid = 0

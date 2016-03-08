@@ -72,8 +72,11 @@ class ModReplayTests(unittest.TestCase):
         self.assertTrue(int(num) == 0, "Should be be 0 packets")
         self.CANEngine.call_module("gen_replay", "g")
         self.CANEngine.call_module("hw_fakeIO", "t 4:8:1122334411111111")
+        time.sleep(1)
         self.CANEngine.call_module("hw_fakeIO", "t 4:8:1122334411111111")
+        time.sleep(1)
         self.CANEngine.call_module("hw_fakeIO", "t 666:8:1122334411111111")
+        time.sleep(1)
         self.CANEngine.call_module("hw_fakeIO", "t 5:8:1122334411111111")
         time.sleep(1)
         num = self.CANEngine.call_module("gen_replay", "p")
@@ -145,6 +148,7 @@ class ModPingTests(unittest.TestCase):
             'body': '000000000000010203040506070102030405060711121314151617a1a2a3a4a5a6a7112233'
         })
         self.CANEngine.start_loop()
+        time.sleep(2)
         self.CANEngine.call_module("gen_ping", "s")
         self.CANEngine.call_module("gen_ping~1", "s")
         time.sleep(1)
@@ -167,7 +171,6 @@ class ModPingTests(unittest.TestCase):
         self.CANEngine.start_loop()
         self.CANEngine.call_module("gen_ping", "s")
         time.sleep(1)
-        time.sleep(1)
         index = self.CANEngine.find_module('mod_stat')
         _bodyList = self.CANEngine._enabledList[index][1]._bodyList
         self.assertTrue(len(_bodyList) == 0, "Should be empty list")
@@ -182,6 +185,7 @@ class ModPingTests(unittest.TestCase):
             'mode': 'isotp'
         })
         self.CANEngine.start_loop()
+        time.sleep(1)
         self.CANEngine.call_module("gen_ping", "s")
         time.sleep(1)
         index = self.CANEngine.find_module('mod_stat')

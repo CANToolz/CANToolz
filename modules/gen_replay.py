@@ -37,7 +37,7 @@ class gen_replay(CANModule):
         except:
             self.dprint(2, "can't open files with CAN messages!")
 
-    def do_init(self, params={}):
+    def do_init(self, params):
         self.CANList = []
         if 'save_to' in params:
             self._fname = params['save_to']
@@ -78,8 +78,7 @@ class gen_replay(CANModule):
         except:
             _num1 = 0
             _num2 = len(self.CANList)
-        if _num2 > _num1 and _num1 <= len(self.CANList) and _num2 <= len(
-                self.CANList) and _num1 >= 0 and _num2 > 0:  # TODO Refactoring
+        if len(self.CANList) >= _num2 > _num1 >= 0:
             try:
                 _file = open(self._fname, 'w')
                 for i in range(_num1, _num2):
@@ -117,7 +116,7 @@ class gen_replay(CANModule):
         return ret
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
-    def do_effect(self, can_msg, args={}):
+    def do_effect(self, can_msg, args):
         if self._sniff and can_msg.CANData:
             self.CANList.append(can_msg.CANFrame)
         elif self._replay:

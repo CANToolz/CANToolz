@@ -48,15 +48,15 @@ class mod_fuzz1(CANModule):
 
         return can_msg
 
-    def do_start(self, params={}):
+    def do_start(self, params):
         self._i = 0
         shuffle(self.fzb)
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
-    def do_effect(self, can_msg, args={}):
+    def do_effect(self, can_msg, args):
         if can_msg.CANData and can_msg.CANFrame.frame_type == CANMessage.DataFrame:
-            if 'fuzz' in args and can_msg.CANFrame.frame_id in args['fuzz'] and 'byte' in args:
+            if can_msg.CANFrame.frame_id in args.get('fuzz', []) and 'byte' in args:
                 can_msg = self.do_fuzz(can_msg, args['byte'])
-            elif 'nfuzz' in args and can_msg.CANFrame.frame_id not in args['nfuzz'] and 'byte' in args:
+            elif 'nfuzz' in args and can_msg.CANFrame.frame_id not in args.get('nfuzz', []) and 'byte' in args:
                 can_msg = self.do_fuzz(can_msg, args['byte'])
         return can_msg

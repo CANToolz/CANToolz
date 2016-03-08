@@ -28,10 +28,10 @@ class hw_fakeIO(CANModule):
     CANList = None
     _bus = 30
 
-    def do_stop(self):  # disable reading
+    def do_stop(self, params):  # disable reading
         self.CANList = None
 
-    def do_init(self, params={}):  # Get device and open serial port
+    def do_init(self, params):  # Get device and open serial port
         self._cmdList['t'] = ["Send direct command to the device, like 13:8:1122334455667788", 1, " <cmd> ",
                               self.dev_write]
         return 1
@@ -45,14 +45,13 @@ class hw_fakeIO(CANModule):
                                             [struct.unpack("B", x)[0] for x in data.decode('hex')[:8]])
         return ""
 
-    def do_effect(self, can_msg, args={}):  # read full packet from serial port
-        if 'action' in args:
-            if args['action'] == 'read':
-                can_msg = self.do_read(can_msg)
-            elif args['action'] == 'write':
-                self.do_write(can_msg)
-            else:
-                self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
+    def do_effect(self, can_msg, args):  # read full packet from serial port
+        if args.get('action') == 'read':
+            can_msg = self.do_read(can_msg)
+        elif args.get('action') == 'write':
+            self.do_write(can_msg)
+        else:
+            self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
         return can_msg
 
     def do_read(self, can_msg):

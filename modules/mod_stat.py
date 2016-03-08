@@ -49,7 +49,7 @@ class mod_stat(CANModule):
                 #            except:
                 #                self.dprint(2,"can't open log")
 
-    def do_init(self, params={}):
+    def do_init(self, params):
 
         self._bodyList = collections.OrderedDict()
         self.ISOList = collections.OrderedDict()
@@ -91,8 +91,6 @@ class mod_stat(CANModule):
                     if fid not in self.ISOList:
                         self.ISOList[fid] = []
                     self.ISOList[fid].append((bus, message_iso.message_length, message_iso.message_data))
-                    self.dprint(1, "ISO-TP Message detected, with ID " + str(fid) + " and length " +
-                                str(message_iso.message_length))
                     ret_str += "\tID " + str(fid) + " and length " + str(message_iso.message_length) + "\n"
 
                     # Check for UDS
@@ -246,7 +244,7 @@ class mod_stat(CANModule):
 
         # Effect (could be fuzz operation, sniff, filter or whatever)
 
-    def do_effect(self, can_msg, args={}):
+    def do_effect(self, can_msg, args):
         if can_msg.CANData:
             if can_msg.CANFrame.frame_id not in self._bodyList:
                 self._bodyList[can_msg.CANFrame.frame_id] = collections.OrderedDict()

@@ -28,7 +28,7 @@ class gen_ping(CANModule):
 
         return self.queue_messages.pop()
 
-    def do_start(self, args={}):
+    def do_start(self, args):
         self.queue_messages = []
         if 'body' in args:
             try:
@@ -38,14 +38,9 @@ class gen_ping(CANModule):
         else:
             _data = [0, 0, 0, 0, 0, 0, 0, 0]
 
-        iso_mode = 0 # 0 - CAN, 1 - ISO-TP, 2 - UDS
-
-        # Simple CAN or ISO
-        if 'mode' in args:
-            if args['mode'] == 'ISO' or args['mode'] == 'iso' or args['mode'] == 'ISOTP' or args['mode'] == 'isotp':
-                iso_mode = 1
-            elif args['mode'] == 'UDS' or args['mode'] == 'uds':
-                iso_mode = 2
+        # 0 - CAN, 1 - ISO-TP, 2 - UDS
+        iso_mode = 1 if args.get('mode') in ['ISO', 'iso', 'ISOTP', 'isotp'] else\
+            2 if args.get('mode') in ['uds', 'UDS'] else 0
 
         if 'range' in args and int(args['range'][0]) < int(args['range'][1]):
             for i in range(int(args['range'][0]), int(args['range'][1])):
@@ -64,6 +59,7 @@ class gen_ping(CANModule):
                                     sub = service['sub']
                                 elif service['service'] in UDSMessage.services_base:
                                     subs = UDSMessage.services_base[service['service']]
+                                    sub = 0
                                     for s in subs:
                                         sub = s.keys()[0]
                                         if not sub:
@@ -84,7 +80,7 @@ class gen_ping(CANModule):
             self.dprint(1, "No range specified")
             self._active = False
 
-    def do_effect(self, can_msg, args={}):
+    def do_effect(self, can_msg, args):
         can_msg.CANFrame = self.do_ping()  # get frame
 
         if can_msg.CANFrame:

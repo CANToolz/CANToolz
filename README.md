@@ -6,7 +6,11 @@ can be used by security researchers and automotive/OEM security testers for blac
 
 This platform is a try to unify all needed tricks/tools and other things that you can do with CAN bus in one place.
 Also it gives a (almost) easy way to add your modules and use "extended" version for your needs
-(like custom brutforcers for chosen ECU and etc).
+(like custom brutforcers for chosen ECU and etc). Just for fun... finally.
+
+
+"I don't get why everyone releases new "car hacking tools" all the time.  @nudehaberdasher and I released ours in 2013 and they work fine." (c) Charlie Miller (‏@0xcharlie)
+"Looking for our car hacking tools / data / scripts? http://illmatics.com/content.zip " (c) Chris Valasek ‏@nudehaberdasher
 
 ## Using a Hardware
 
@@ -113,7 +117,7 @@ Just create file mod_test with same class name insede (extend CANModule class):
  do_start(args)       - this method will be called eah time you activate loop (command start/s)
     args - parameters for this module
 
- do_stop()            - will be called when main loop has been stoped (ctrl+c or stop in the console)
+ do_stop(args)            - will be called when main loop has been stoped (ctrl+c or stop in the console)
 
  do_init(init_args)   - this nethod will be called when module loaded into a project
     init_args - parameters for initialization
@@ -128,6 +132,11 @@ CANMessage format:
 - frame_id        - int, CAN message ID (lower and high bytes together, also can hold extended format)
 - frame_length    - int, DATA length (0-8 bytes)
 - frame_data      - list, with data
+
+P.S.
+ Current version is uber-beta. Not tested enough, code is not clean and ugly and there are bugs that not found yet... working on that, sorry.
+ A lot of not-needed IF, and bad code, strange RPINTs and etc...
+ Feel free to fix or ignore ;)
 
 Alexey Sintsov   (@asintsov)
 alex.sintsov@gmail.com

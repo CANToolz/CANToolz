@@ -53,12 +53,12 @@ class hw_USBtin(CANModule):
             out += self._serialPort.read(1)
         return out
 
-    def do_stop(self):  # disable reading
+    def do_stop(self, params):  # disable reading
         self._serialPort.write("C\r")
         time.sleep(1)
         self.read_all()
 
-    def do_start(self, params={}):  # enable reading
+    def do_start(self, params):  # enable reading
         self._serialPort.write(self._speed[self._currentSpeed] + "\r")
         time.sleep(1)
         self._serialPort.write("O\r")
@@ -103,12 +103,9 @@ class hw_USBtin(CANModule):
             self.dprint(0, 'No port in config!')
             return 0
 
-        self.do_stop()
+        self.do_stop(params)
         # data=self.readAll()
-        if 'speed' in params:
-            self._currentSpeed = int(params['speed'])
-        else:
-            self._currentSpeed = 50
+        self._currentSpeed = int(params.get('speed',500))
 
         # print str(self._serialPort)
         self.dprint(1, "PORT: " + self._COMPort)
@@ -122,14 +119,13 @@ class hw_USBtin(CANModule):
         self._serialPort.write(data + "\r")
         return ""
 
-    def do_effect(self, can_msg, args={}):  # read full packet from serial port
-        if 'action' in args:
-            if args['action'] == 'read':
-                can_msg = self.do_read(can_msg)
-            elif args['action'] == 'write':
-                self.do_write(can_msg)
-            else:
-                self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
+    def do_effect(self, can_msg, args):  # read full packet from serial port
+        if args.get('action') == 'read':
+            can_msg = self.do_read(can_msg)
+        elif args.get('action') == 'write':
+            self.do_write(can_msg)
+        else:
+            self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
         return can_msg
 
     def do_read(self, can_msg):
@@ -180,7 +176,7 @@ class hw_USBtin(CANModule):
                         break
                     else:
                         can_msg.debugData = True
-                        can_msg.debugText = data
+                        can_msg.debugText = {'text': data}
 
                     self.dprint(2, "USBtin READ: " + data)
 

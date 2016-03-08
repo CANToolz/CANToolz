@@ -20,10 +20,7 @@ class CANModule:
         return self._active
 
     def do_activate(self):
-        if self._active:
-            self._active = False
-        else:
-            self._active = True
+        self._active = not self._active
         return "Active status: " + str(self._active)
 
     def dprint(self, level, msg):
@@ -44,7 +41,7 @@ class CANModule:
         self.thr_block.set()
         return ret
 
-    def do_effect(self, can_msg=None, args={}):  # Effect (could be fuzz operation, sniff, filter or whatever)
+    def do_effect(self, can_msg, args):  # Effect (could be fuzz operation, sniff, filter or whatever)
         return can_msg
 
     def get_name(self):
@@ -57,37 +54,30 @@ class CANModule:
             ret_text += "\t" + cmd + " " + dat[2] + "\t\t - " + dat[0] + "\n"
         return ret_text
 
-    def __init__(self, params={}):
-        if 'debug' in params:
-            self.DEBUG = int(params['debug'])
-        else:
-            self.DEBUG = 0
+    def __init__(self, params):
 
-        if 'bus' in params:
-            self._bus = int(params['bus'])
+        self.DEBUG = int(params.get('debug', 0))
+        self._bus = int(params.get('bus', 0))
+        self._active = False if params.get('active') in ["False", "false", "0", "-1"] else True
 
-        if 'active' in params:
-            if params['active'] == "False" or params['active'] == "false" or params['active'] == "0" or params['active'] == "-1":  # TODO Refactoring
-                self._active = False
-            else:
-                self._active = True
-
-        self._cmdList = {'h': ["List of supported commands", 0, "", self.get_help],
-                         's': ["Stop/Activate current module", 0, "", self.do_activate]}
+        self._cmdList = {
+            'h': ["List of supported commands", 0, "", self.get_help],
+            's': ["Stop/Activate current module", 0, "", self.do_activate]
+        }
 
         self.do_init(params)
 
-    def do_init(self, params={}):  # Call for some pre-calculation
+    def do_init(self, params):  # Call for some pre-calculation
         return 0
 
-    def do_stop(self, params={}):  # Stop activity of this module
+    def do_stop(self, params):  # Stop activity of this module
         return 0
 
-    def do_start(self, params={}):  # Start activity of this module
+    def do_start(self, params):  # Start activity of this module
         return 0
 
-    def do_read(self, params={}):
+    def do_read(self, params):
         return 0
 
-    def do_write(self, params={}):
+    def do_write(self, params):
         return 0

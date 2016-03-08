@@ -178,7 +178,7 @@ class hw_CANBusTriple(CANModule):
             self.dprint(0, 'Error opening port: ' + self._COMPort)
             return 0
 
-    def do_init(self, params={}):  # Get device and open serial port
+    def do_init(self, params):  # Get device and open serial port
         # Interactive mode
 
         if 'debug' in params:
@@ -202,33 +202,24 @@ class hw_CANBusTriple(CANModule):
             self.dprint(0, 'No port in config!')
             exit()
 
-        self.do_stop()
+        self.do_stop(params)
         self.read_all()
 
-        if 'bus_1' in params:
-            self._readBus = int(params['bus_1'])
-
-        else:
-            self._readBus = 1
-
+        self._readBus = int(params.get('bus_1', 1))
         self._bus = self._readBus
-
-        if 'bus_2' in params:
-            self._writeBus = int(params['bus_2'])
-        else:
-            self._writeBus = self._readBus
+        self._readBus = int(params.get('bus_2', self._readBus))
 
         self.dprint(1, "Port : " + self._COMPort)
         self.dprint(1, "Bus 1: " + str(self._readBus))
         self.dprint(1, "Bus 2: " + str(self._writeBus))
 
-        if 'speed' in params and params['speed'] != 'auto':
+        if str(params.get('speed')) != 'auto':
             self._serialPort.write("\x01\x09\x01" + struct.pack("!H", int(params['speed'])))
             time.sleep(1)
             self._serialPort.write("\x01\x09\x01" + struct.pack("!H", int(params['speed'])))
             time.sleep(1)
             self._serialPort.write("\x01\x09\x01" + struct.pack("!H", int(params['speed'])))
-            self.dprint(1, "Speed: " + str(params['speed']))
+            self.dprint(1, "Speed: " + str(params.get('speed')))
         else:
             self.do_auto_rate()
         time.sleep(4)
@@ -237,7 +228,8 @@ class hw_CANBusTriple(CANModule):
         self.dprint(1, "CANBus Triple device detected, version: " + self.read_json(self.get_info())['version'])
         self._readBusCmd = "\x03" + str(struct.pack("B", int(self._readBus)))
         self._writeBusCmd = "\x02" + str(
-            struct.pack("B", int(self._writeBus)))  # named _writeBus but just bus_2... TODO refactor to right names
+            struct.pack("B", int(self._writeBus)))  # TODO refactor to right names
+
         self._cmdList['t'] = ["Send direct command to the device, like 02010011112233440000000008", 1, " <cmd> ",
                               self.dev_write]
 
@@ -246,14 +238,13 @@ class hw_CANBusTriple(CANModule):
         self._serialPort.write(data.decode('hex'))
         return ""
 
-    def do_effect(self, can_msg, args={}):  # read full packet from serial port
-        if 'action' in args:
-            if args['action'] == 'read':
-                can_msg = self.do_read(can_msg)
-            elif args['action'] == 'write':
-                self.do_write(can_msg)
-            else:
-                self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
+    def do_effect(self, can_msg, args):  # read full packet from serial port
+        if args.get('action') == 'read':
+            can_msg = self.do_read(can_msg)
+        elif args.get('action') == 'write':
+            self.do_write(can_msg)
+        else:
+            self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
         return can_msg
 
     def do_read(self, can_msg):
@@ -284,7 +275,7 @@ class hw_CANBusTriple(CANModule):
 
                     elif data[0] == '{' and data[-3] == '}':  # Debug info
                         can_msg.debugData = True
-                        can_msg.debugText = data
+                        can_msg.debugText = {'text': data}
                     else:
                         break
 

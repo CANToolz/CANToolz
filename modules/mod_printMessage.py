@@ -23,18 +23,18 @@ class mod_printMessage(CANModule):
     version = 1.0
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
-    def do_effect(self, can_msg, args={}):
+    def do_effect(self, can_msg, args):
         if can_msg.CANData:
-            if 'white_list' in args:
-                if can_msg.CANFrame.frame_id in args['white_list']:
-                    print("Read: " + self.do_read(can_msg))  # Print CAN Message
-            elif 'black_list' in args:
-                if can_msg.CANFrame.frame_id not in args['black_list']:
-                    print("Read: " + self.do_read(can_msg))  # Print CAN Message
+            if can_msg.CANFrame.frame_id in args.get('white_list',[]):
+                self.dprint(0, "Read: " + self.do_read(can_msg))  # Print CAN Message
+            elif 'black_list' in args and can_msg.CANFrame.frame_id not in args.get('black_list', []):
+                self.dprint(0, "Read: " + self.do_read(can_msg))  # Print CAN Message
             else:
-                print("Read: " + self.do_read(can_msg))  # Print CAN Message
-        elif not can_msg.CANData and can_msg.debugData:
-            self.dprint(1, "DEBUG: " + can_msg.debugText)
+                self.dprint(2, "Read: " + self.do_read(can_msg))  # Print CAN Message
+
+        if can_msg.debugData:
+            self.dprint(0, "DEBUG: " + can_msg.debugText.get('text', ''))
+
         return can_msg
 
     def do_read(self, can_msg):

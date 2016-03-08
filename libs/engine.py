@@ -38,7 +38,7 @@ class CANSploit:
             self._pipes[1] = CANSploitMessage()  # Prepare empty message
             for name, module, params, pipe in self._enabledList:  # Each module
                 #  Handle CAN message
-                if module._active:
+                if module.is_active:
                     module.thr_block.wait(3)
                     module.thr_block.clear()
                     self._pipes[pipe] = module.do_effect(self._pipes[pipe], params)  # doEffect on CANMessage
@@ -46,7 +46,7 @@ class CANSploit:
 
                     # Here when STOP
         for name, module, params, pipe in self._enabledList:
-            module.do_stop()
+            module.do_stop(params)
 
     # Call module command        
     def call_module(self, mod, params):
