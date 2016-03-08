@@ -79,11 +79,8 @@ class hw_USBtin(CANModule):
             self.dprint(0, 'Error opening port: ' + self._COMPort)
             return 0
 
-    def do_init(self, params={}):  # Get device and open serial port
-        # Interactive mode
-        if 'debug' in params:
-            self.DEBUG = int(params['debug'])
-
+    def do_init(self, params):  # Get device and open serial port
+        self.DEBUG = int(params.get('debug', 0))
         self.dprint(1, "Init phase started...")
 
         if 'port' in params:
@@ -103,7 +100,7 @@ class hw_USBtin(CANModule):
             self.dprint(0, 'No port in config!')
             return 0
 
-        self.do_stop(params)
+        self.do_stop({})
         # data=self.readAll()
         self._currentSpeed = int(params.get('speed', 500))
 
