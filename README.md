@@ -119,15 +119,15 @@ Just create file mod_test with same class name insede (extend CANModule class):
     init_args - parameters for initialization
 
 msg format:
-    msg.CANData   - boolean. If true then this message contains CAN Frame
-    msg.debugData - boolean. If true then this message contains other data. (can be used for cross-module communication)
-    msg.Frame     - CANMessage
-    msg.debugText - string
+- msg.CANData   - boolean. If true then this message contains CAN Frame
+- msg.debugData - boolean. If true then this message contains other data. (can be used for cross-module communication)
+- msg.Frame     - CANMessage
+- msg.debugText - string
 
 CANMessage format:
-    frame_id        - int, CAN message ID (lower and high bytes together, also can hold extended format)
-    frame_length    - int, DATA length (0-8 bytes)
-    frame_data      - list, with data
+- frame_id        - int, CAN message ID (lower and high bytes together, also can hold extended format)
+- frame_length    - int, DATA length (0-8 bytes)
+- frame_data      - list, with data
 
 Alexey Sintsov   (@asintsov)
 alex.sintsov@gmail.com
