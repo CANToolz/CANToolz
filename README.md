@@ -131,12 +131,12 @@ CANMessage format:
 
 ## P.S.
 
-Current version is uber-beta. Not tested enough, code is not celan and ugly... working on that, sorry. 
+Current version is uber-beta. Not tested enough, code is not celan and ugly and there are bugs that not found yet... working on that, sorry. 
 
 Best Regards,
 Your Code Monkey
-  Alexey Sintsov   (@asintsov)
-  alex.sintsov@gmail.com
+Alexey Sintsov   (@asintsov)
+alex.sintsov@gmail.com
 
 
 
