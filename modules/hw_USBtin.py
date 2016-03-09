@@ -82,7 +82,7 @@ class hw_USBtin(CANModule):
     def do_init(self, params):  # Get device and open serial port
         self.DEBUG = int(params.get('debug', 0))
         self.dprint(1, "Init phase started...")
-
+        self._bus = int(params.get('bus', 60))
         if 'port' in params:
             self._COMPort = params['port']
             if params['port'] == 'auto':

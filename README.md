@@ -2,12 +2,16 @@
 
 CANToolz is a framework for analysing CAN networks and devices.
 This tool based on different modules which can be assembled in pipe together and
-can be used by security researchers and automotive/OEM security testers for black-box analysis and etc.
+can be used by security researchers and automotive/OEM security testers for black-box analysis and etc. 
+You can use this software to perform, ECU discovery, MITM testing, fuzzing, bruteforcing, scanning and etc
 
 This platform is a try to unify all needed tricks/tools and other things that you can do with CAN bus in one place.
-Also it gives a (almost) easy way to add your modules and use "extended" version for your needs
-(like custom brutforcers for chosen ECU and etc). Just for fun... finally.
-
+I have found, that there are many tools available, from Charlie Miller and Chris Valaseks to UDS/CAN tools by Craig Smith.
+They all cool and useful, but it is still difficult to use it in evry-day work (al least for me) and you need to modify/code 
+a lot of thing to get something you I want (MITM, scanners with some logic). That's why i have this software. If more people can 
+contribute into modules, than more useful this thing can be. It gives (almost) an easy way to add your modules and use "extended" version for your needs
+(like custom brutforcers for chosen ECU and etc). Just for fun... finally. No Forbs, Wires  or other big noise needed around this. 
+Just want to have a good tool and people around.
 
 "I don't get why everyone releases new "car hacking tools" all the time.  @nudehaberdasher and I released ours in 2013 and they work fine." (c) Charlie Miller (‏@0xcharlie)
 
@@ -43,12 +47,19 @@ Main idea that community can produce different modules that can be useful for al
 # Usage Examples
 See more use-cases inside examples folder:
 
-- MITM with firewall
-- replay discovery
-- ping discovery (UDS)
+- CAN Switch filter scanner
+    Checking which packets can be passed from diagnostic can to HU and back and etc
+- MITM with firewall (ECU ID detection)
+    Checking what packets are responsible for chosen "action"
+- Replay discovery
+    Checking what packets are responsible for chosen "action"
+- Ping discovery ( with ISO TP and UDS support)
+    UDS detection and etc
+
+And many other options possible. Just use modules in "needed" order.
 
 ## Example from  The Car Hacker’s Handbook The Car Hacker’s Handbook A Guide for the Penetration Tester
-This example just like "Using can-utils to Find the Door-Unlock Control" from great book: "The Car Hacker’s Handbook The Car Hacker’s Handbook A Guide for the Penetration Tester" by Chris Evans
+This example just like "Using can-utils to Find the Door-Unlock Control" from great book: "The Car Hacker’s Handbook The Car Hacker’s Handbook A Guide for the Penetration Tester" by Craig Smith
 
 Let's see how it looks like from the console...
 
@@ -143,8 +154,16 @@ P.S.
  A lot of not-needed IF, and bad code, strange RPINTs and etc...
  Feel free to fix or ignore ;)
 
+With best regards:
+
 Alexey Sintsov   (@asintsov)
 alex.sintsov@gmail.com
+
+DC#7812
+
+DEFCON-RUSSIA
+
+http://defcon-russia.ru
 
 
 

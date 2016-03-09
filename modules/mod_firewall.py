@@ -26,12 +26,20 @@ class mod_firewall(CANModule):
     # Effect (could be fuzz operation, sniff, filter or whatever)
     def do_effect(self, can_msg, args):
         if can_msg.CANData:
-            if can_msg.CANFrame.frame_id in args.get('black_list', []):
+            if 'black_list' in args and can_msg.CANFrame.frame_id in args.get('black_list', []):
                 can_msg.CANData = False
-                self.dprint(2, "Message " + str(can_msg.CANFrame.frame_id) + " has been blocked (BUS = " + str(
+                self.dprint(2, "Message " + str(can_msg.CANFrame.frame_id) + " has been blocked(BL) (BUS = " + str(
                     can_msg.bus) + ")")
             elif 'white_list' in args and can_msg.CANFrame.frame_id not in args.get('white_list',[]):
                 can_msg.CANData = False
-                self.dprint(2, "Message " + str(can_msg.CANFrame.frame_id) + " has been blocked (BUS = " + str(
+                self.dprint(2, "Message " + str(can_msg.CANFrame.frame_id) + " has been blocked(WL) (BUS = " + str(
+                    can_msg.bus) + ")")
+            elif 'white_body' in args and can_msg.CANFrame.frame_data != args.get('white_body',[]):
+                can_msg.CANData = False
+                self.dprint(2, "Message " + str(can_msg.CANFrame.frame_id) + " has been blocked(WB) (BUS = " + str(
+                    can_msg.bus) + ")")
+            elif 'black_body' in args and can_msg.CANFrame.frame_data == args.get('black_body',[]):
+                can_msg.CANData = False
+                self.dprint(2, "Message " + str(can_msg.CANFrame.frame_id) + " has been blocked(BB) (BUS = " + str(
                     can_msg.bus) + ")")
         return can_msg

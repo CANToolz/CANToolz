@@ -127,7 +127,7 @@ class UserInterface:
                     i += 1
 
             elif input[0:5] == 'edit ' or input[0:2] == 'e ':  # edit params from the console
-                match = re.match(r"(edit|e)\s+([\w\!\~]+)\s+(.*)", input, re.IGNORECASE)
+                match = re.match(r"(edit|e)\s+([\w\!\~]+)\s+(.+)", input, re.IGNORECASE)
                 if match:
                     module = match.group(2).strip()
                     _paramz = match.group(3).strip()
@@ -136,6 +136,14 @@ class UserInterface:
                         self.CANEngine.edit_module(str(module), paramz)
                         print("Edited module: " + str(module))
                         print("Added  params: " + str(self.CANEngine.get_module_params(module)))
+                        index = self.CANEngine.find_module(str(module))
+                        mode = 1 if self.CANEngine.get_modules_list()[index][1].is_active else 0
+                        if mode == 1:
+                            self.CANEngine.get_modules_list()[index][1].do_activate(0)
+                        self.CANEngine.get_modules_list()[index][1].do_stop(paramz)
+                        self.CANEngine.get_modules_list()[index][1].do_start(paramz)
+                        if mode == 1:
+                            self.CANEngine.get_modules_list()[index][1].do_activate(1)
                     except Exception as e:
                         print("Edit error: " + str(e))
                 else:
