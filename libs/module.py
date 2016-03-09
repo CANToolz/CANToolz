@@ -19,8 +19,13 @@ class CANModule:
     def is_active(self):
         return self._active
 
-    def do_activate(self):
-        self._active = not self._active
+    def do_activate(self, mode = -1):
+        if mode == -1:
+            self._active = not self._active
+        elif mode == 0:
+            self._active = False
+        else:
+            self._active = True
         return "Active status: " + str(self._active)
 
     def dprint(self, level, msg):

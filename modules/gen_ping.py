@@ -24,9 +24,10 @@ class gen_ping(CANModule):
     def do_init(self, params):
         self._active = False
 
-    def do_ping(self):
+    def do_ping(self, params):
         if not self.queue_messages:
             self._active = False
+            self.do_start(params)
             return None
 
         return self.queue_messages.pop()
@@ -84,7 +85,7 @@ class gen_ping(CANModule):
             self._active = False
 
     def do_effect(self, can_msg, args):
-        can_msg.CANFrame = self.do_ping()  # get frame
+        can_msg.CANFrame = self.do_ping(args)  # get frame
 
         if can_msg.CANFrame:
             can_msg.CANData = True

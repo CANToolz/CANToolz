@@ -28,6 +28,9 @@ class hw_fakeIO(CANModule):
     CANList = None
     _bus = 30
 
+    def do_start(self, params):
+        self.CANList = None
+
     def do_stop(self, params):  # disable reading
         self.CANList = None
 
