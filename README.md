@@ -6,7 +6,7 @@ can be used by security researchers and automotive/OEM security testers for blac
 You can use this software to perform, ECU discovery, MITM testing, fuzzing, bruteforcing, scanning and etc
 
 This platform is a try to unify all needed tricks/tools and other things that you can do with CAN bus in one place.
-I have found, that there are many tools available, from Charlie Miller and Chris Valaseks to UDS/CAN tools by Craig Smith.
+I have found, that there are many tools available, from Charlie Miller and Chris Valasek tools to UDS/CAN tools by Craig Smith.
 They all cool and useful, but it is still difficult to use it in evry-day work (al least for me) and you need to modify/code 
 a lot of thing to get something you I want (MITM, scanners with some logic). That's why i have this software. If more people can 
 contribute into modules, than more useful this thing can be. It gives (almost) an easy way to add your modules and use "extended" version for your needs
