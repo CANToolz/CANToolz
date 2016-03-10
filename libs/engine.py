@@ -11,6 +11,17 @@ Main class
 
 class CANSploit:
     DEBUG = 0
+    ascii_logo_c = """
+
+   _____          _   _ _______          _
+  / ____|   /\   | \ | |__   __|        | |
+ | |       /  \  |  \| |  | | ___   ___ | |____
+ | |      / /\ \ | . ` |  | |/ _ \ / _ \| |_  /
+ | |____ / ____ \| |\  |  | | (_) | (_) | |/ /
+  \_____/_/    \_\_| \_|  |_|\___/ \___/|_/___|
+
+
+"""
 
     def dprint(self, level, msg):
         if level <= self.DEBUG:
@@ -25,6 +36,7 @@ class CANSploit:
         self._thread = None
         self._mainThread = None
         self._stop = threading.Event()
+        self._stop.set()
         self._raw = threading.Event()
         self._idc = -1
         sys.path.append('./modules')
@@ -70,9 +82,17 @@ class CANSploit:
         self._thread.daemon = True
         self._thread.start()
 
+        return not self._stop.is_set()
+
     # Pause loop      
     def stop_loop(self):
         self._stop.set()
+        return not self._stop.is_set()
+
+    # Current status
+    @property
+    def status_loop(self):
+        return not self._stop.is_set()
 
     # Having defulat values for id and pipe params    
     def check_params(self, params):
@@ -144,7 +164,7 @@ class CANSploit:
 
     def init_module(self, mod, params):
         self._modules.append(__import__(mod.split("~")[0]))
-        exec ('cls=self._modules[-1].' + mod.split("~")[0] + '(params)')  # init module
+        exec('cls=self._modules[-1].' + mod.split("~")[0] + '(params)')  # init module
         self._type[mod] = cls
 
         # Load all modules and params form config file

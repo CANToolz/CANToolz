@@ -1,7 +1,10 @@
 from optparse import OptionParser
 from libs.engine import *
 import re
-
+import SimpleHTTPServer
+import SocketServer
+import BaseHTTPServer
+import json
 
 ######################################################
 #                                                    # 
@@ -34,18 +37,149 @@ import re
 #                                                    #
 ######################################################
 
+CANENGINE = None
 
-def start(self):
-    # try:
-    self.load_config()
-    # except:
-    #    self.dprint(0,"Config syntax error")
-    self.main_loop()
+class ThreadingSimpleServer(SocketServer.ThreadingMixIn,
+                   BaseHTTPServer.HTTPServer):
+    pass
+
+# WEB class
+class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
+    root = "web"
+    can_engine = None
+
+    def __init__(self, request, client_address, server):
+
+        self.server = server
+        self.protocol_version = 'HTTP/1.1'
+        print("[*] HTTPD: Received connection from %s" % (client_address[0]))
+        SimpleHTTPServer.SimpleHTTPRequestHandler.__init__(self, request, client_address, server)
+
+    def do_POST(self):
+        resp_code = 500
+        cont_type = 'text/plain'
+        body = ""
+
+        path_parts = self.path.split("/")
+
+        path_parts = self.path.split("/")
+
+        if path_parts[1] == "api" and self.can_engine:
+            cont_type = "application/json"
+            cmd = path_parts[2]
+
+            if cmd == "edit" and path_parts[3]:
+                try:
+                    line = self.rfile.readline().decode()
+                    paramz = json.loads(line)
+                    if self.can_engine.edit_module(str(path_parts[3]), paramz) >= 0:
+                        new_params = self.can_engine.get_module_params(path_parts[3])
+                        body = json.dumps(new_params, ensure_ascii=False)
+                        resp_code = 200
+                    else:
+                        body = "{ \"error\": \"module not found!\"}"
+                        resp_code = 404
+                except Exception as e:
+                    resp_code = 500
+                    body = "{ \"error\": "+json.dumps(str(e))+"}"
+            elif cmd == "cmd" and path_parts[3]:
+                try:
+                    line = self.rfile.readline().decode()
+                    paramz = json.loads(line).get("cmd")
+                    text = self.can_engine.call_module(path_parts[3], str(paramz))
+                    body = json.dumps({"response": text})
+                    resp_code = 200
+                except Exception as e:
+                    resp_code = 500
+                    body = "{ \"error\": "+json.dumps(str(e))+"}"
+
+        self.send_response(resp_code)
+        self.send_header('Content-Type', cont_type)
+        self.send_header('Connection', 'closed')
+        self.send_header('Content-Length', len(body))
+        self.end_headers()
+        self.wfile.write(body)
+
+        return
+
+    def do_GET(self):
+        resp_code = 500
+        cont_type = 'text/plain'
+        body = ""
+
+        path_parts = self.path.split("/")
+
+        if path_parts[1] == "api" and self.can_engine:  # API Request
+            cont_type = "application/json"
+            cmd = path_parts[2]
+
+            if cmd == "get_conf":
+                response = {"queue": []}
+                modz = self.can_engine.get_modules_list()
+                try:
+                    for name, module, params, pipe in modz:
+                        response['queue'].append({'pipe': pipe+1, 'name': name, "params": params})
+                    body = json.dumps(response, ensure_ascii=False)
+                    resp_code = 200
+                except Exception as e:
+                    resp_code = 500
+                    body = "{ \"error\": "+json.dumps(str(e))+"}"
+
+            elif cmd == "start":
+                try:
+                    modz = self.can_engine.start_loop()
+                    body = json.dumps({"status": modz})
+                    resp_code = 200
+                except Exception as e:
+                    resp_code = 500
+                    body = "{ \"error\": "+json.dumps(str(e))+"}"
+
+            elif cmd == "stop":
+                try:
+                    modz = self.can_engine.stop_loop()
+                    body = json.dumps({"status": modz})
+                    resp_code = 200
+                except Exception as e:
+                    resp_code = 500
+                    body = "{ \"error\": "+json.dumps(str(e))+"}"
+            elif cmd == "status":
+                try:
+                    modz = self.can_engine.status_loop
+                    body = json.dumps({"status": modz})
+                    resp_code = 200
+                except Exception as e:
+                    resp_code = 500
+                    body = "{ \"error\": "+json.dumps(str(e))+"}"
+
+        else:  # Static content request
+            content = self.root + self.path
+            try:
+                with open(content, "rb") as ins:
+                    for line in ins:
+                        body += line
+
+                ext = self.path.split(".")[-1]
+                cont_type = 'text/html' if ext == "html" else 'text/javascript' if ext == ".js" else\
+                    'image/png' if ext == 'png' else 'text/plain'
+                resp_code = 200
+
+            except Exception as e:  # Error... almost not found, but can be other...
+                # 404 not right then, but who cares?
+                resp_code = 404
+                cont_type = 'text/plain'
+                body = str(e)
+
+        self.send_response(resp_code)
+        self.send_header('Content-Type', cont_type)
+        self.send_header('Connection', 'closed')
+        self.send_header('Content-Length', len(body))
+        self.end_headers()
+        self.wfile.write(body)
+
+        return
 
 
-# UI class
-
-
+# Console calss
 class UserInterface:
     def __init__(self):
         usage = "%prog [options] for more help: %prog -h"
@@ -70,7 +204,7 @@ class UserInterface:
             self.CONFIG = None
 
         if options.GUI:
-            self.GUI = options.CONFIG
+            self.GUI = options.GUI
         else:
             self.GUI = "console"
 
@@ -80,6 +214,7 @@ class UserInterface:
             self.CANEngine.load_config(self.CONFIG)
 
         if self.GUI[0] == "c":
+            print(self.CANEngine.ascii_logo_c)
             self.console_loop()
         elif self.GUI[0] == "w":
             self.web_loop()
@@ -90,7 +225,17 @@ class UserInterface:
         exit()
 
     def web_loop(self):
-        print("WEB UI is not implemented")
+        port = 4444
+        print(self.CANEngine.ascii_logo_c)
+        WebConsole.can_engine = self.CANEngine
+        server = ThreadingSimpleServer(('', port), WebConsole)
+        print("CANtoolz WEB started at port: ", port)
+        try:
+            while True:
+                sys.stdout.flush()
+                server.handle_request()
+        except KeyboardInterrupt:
+            print("gg bb")
 
     def console_loop(self):
         while True:
