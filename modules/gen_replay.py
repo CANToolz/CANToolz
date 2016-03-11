@@ -8,10 +8,12 @@ class gen_replay(CANModule):
     
     This module doing replay of captured packets. 
     
-    Init parameters: none
+    Init parameters:
         load_from  - load packets from file (optional)
-        save_to  - save to file (mod_replay.save by default)
-              
+        save_to    - save to file (mod_replay.save by default)
+
+    Module parameters: none
+
     """
 
     _fname = None

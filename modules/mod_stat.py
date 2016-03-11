@@ -11,12 +11,11 @@ class mod_stat(CANModule):
     This module doing statistic for found CAN messages, putting into STDOUT or file (text/csv).
     Good to see anomalies, behaviour and discovery new IDs
     
-    Init parameters: 
-    
-    [mod_stat]
-    file = stats.csv     ; file to save output
-    count = 200          ; update file after each <count> messages 
-    format = csv         ; format to save, csv or text
+    Init parameters:
+
+        'file'  : 'stats.csv'  # file to save output
+        'count' : 200          # update file after each <count> messages
+        'format': 'csv'        # format to save, csv or text
        
     """
 

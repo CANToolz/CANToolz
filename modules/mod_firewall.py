@@ -11,9 +11,9 @@ class mod_firewall(CANModule):
     
     Module parameters: 
     
-      white_list - list of ID that should be filtered
-      black_list - list of ID that should not be filtered
-      pipe -       integer, 1 or 2 - from which pipe to print, default 1
+      'white_list' - list of ID that should be filtered
+      'black_list' - list of ID that should not be filtered
+      'pipe'       - integer, 1 or 2 - from which pipe to print, default 1
       
       Example: {'white_list':[133,111]}
     

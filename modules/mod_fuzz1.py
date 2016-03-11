@@ -13,9 +13,9 @@ class mod_fuzz1(CANModule):
     
     Module parameters: 
     
-      fuzz  - list of ID that should be fuzzed
-      nfuzz - list of ID that should not be filtered
-      byte  - byte index form 1 to 8, that should be fuzzed
+      'fuzz'  - list of ID that should be fuzzed
+      'nfuzz' - list of ID that should not be filtered
+      'byte'  - byte index form 1 to 8, that should be fuzzed
       
       Example: {'fuzz':[133,111],'byte':1}
 

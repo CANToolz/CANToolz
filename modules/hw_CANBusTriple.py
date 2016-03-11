@@ -14,20 +14,19 @@ class hw_CANBusTriple(CANModule):
     This device support up to 3 buses, so it is enough for MITM
     
     Init parameters example:  
-    
-    [hw_CANBusTriple]
-    port = auto         ; Serial port, COM3 or path.. auto also could work there
-    bus_1 = 1           ; CAN bus for IO 
-    ;bus_2 = 2           ; CAN bus to IO, if not commented or not equal to bus_1 then can be enough for MITM
-    debug = 2          ; debug level (default 0)
-    speed = 50         ; this device support AutoRate, use auto for that
+
+        'port' : 'auto'      # Serial port, COM3 or path.. auto also could work there
+        'bus_1': 1           # CAN bus for IO
+        'bus_2' : 2          # CAN bus to IO, if not commented or not equal to bus_1 then can be enough for MITM
+        'debug' : 2          # debug level (default 0)
+        'speed' : 50         # this device support AutoRate, use auto for that
         
     Module parameters: 
-      action - read or write. Will write/read to/from bus
-      pipe -  integer, 1 or 2 - from which pipe to read or write 
+      action     - 'read' or 'write'. Will write/read to/from bus
+      pipe       -  integer, 1 or 2 - from which pipe to read or write
           If you use both buses(and different), than you need only one pipe configured...
           
-      Example: {'action':'read','pipe':2} 
+          Example: {'action':'read','pipe':2}
           
     P.S. this device still does not support 29-bit IDs... so they will be ignored on R/W
     
