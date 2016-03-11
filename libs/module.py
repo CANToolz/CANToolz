@@ -53,11 +53,7 @@ class CANModule:
         return self.name
 
     def get_help(self):
-        ret_text = "\nModule " + self.__class__.__name__ + ": " + self.name + "\n" + self.help + \
-                  "\n\nConsole commands:\n"
-        for cmd, dat in self._cmdList.iteritems():
-            ret_text += "\t" + cmd + " " + dat[2] + "\t\t - " + dat[0] + "\n"
-        return ret_text
+        return self._cmdList
 
     def __init__(self, params):
 
@@ -66,7 +62,6 @@ class CANModule:
         self._active = False if params.get('active') in ["False", "false", "0", "-1"] else True
 
         self._cmdList = {
-            'h': ["List of supported commands", 0, "", self.get_help],
             's': ["Stop/Activate current module", 0, "", self.do_activate]
         }
 

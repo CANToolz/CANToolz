@@ -5,10 +5,11 @@ import SimpleHTTPServer
 import SocketServer
 import BaseHTTPServer
 import json
+import ast
 
 ######################################################
 #                                                    # 
-# CANSploit v 0.9b                                   #
+# CANToolz v 1.0b                                    #
 #             ... or can't?                          #
 ######################################################
 #      Main Code Monkey    Alyosha Sintsov           #
@@ -72,8 +73,8 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 try:
                     line = self.rfile.readline().decode()
                     paramz = json.loads(line)
-                    if self.can_engine.edit_module(str(path_parts[3]), paramz) >= 0:
-                        new_params = self.can_engine.get_module_params(path_parts[3])
+                    if self.can_engine.edit_module(int(path_parts[3]), paramz) >= 0:
+                        new_params = self.can_engine.get_module_params(int(path_parts[3]))
                         body = json.dumps(new_params, ensure_ascii=False)
                         resp_code = 200
                     else:
@@ -86,7 +87,7 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 try:
                     line = self.rfile.readline().decode()
                     paramz = json.loads(line).get("cmd")
-                    text = self.can_engine.call_module(path_parts[3], str(paramz))
+                    text = self.can_engine.call_module(int(path_parts[3]), str(paramz))
                     body = json.dumps({"response": text})
                     resp_code = 200
                 except Exception as e:
@@ -117,14 +118,25 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 response = {"queue": []}
                 modz = self.can_engine.get_modules_list()
                 try:
-                    for name, module, params, pipe in modz:
-                        response['queue'].append({'pipe': pipe+1, 'name': name, "params": params})
+                    for name, module, params in modz:
+                        response['queue'].append({'name': name, "params": params})
+
                     body = json.dumps(response, ensure_ascii=False)
                     resp_code = 200
                 except Exception as e:
                     resp_code = 500
                     body = "{ \"error\": "+json.dumps(str(e))+"}"
-
+            elif cmd == "help" and path_parts[3]:
+                try:
+                    help_list = self.can_engine.get_modules_list()[int(path_parts[3])][1]._cmdList
+                    response_help = {}
+                    for cmd, body in help_list.iteritems():
+                        response_help[cmd] = {'descr': body[0], 'descr_param':body[2], 'param_count': body[1]}
+                    body = json.dumps(response_help, ensure_ascii=False)
+                    resp_code = 200
+                except Exception as e:
+                    resp_code = 500
+                    body = "{ \"error\": "+json.dumps(str(e))+"}"
             elif cmd == "start":
                 try:
                     modz = self.can_engine.start_loop()
@@ -259,45 +271,46 @@ class UserInterface:
                 total = len(modz)
                 i = 0
                 print
-                for name, module, params, pipe in modz:
+                for name, module, params in modz:
                     tab1 = "\t"
                     tab2 = "\t"
-                    tab1 += "\t" * (28 / len(str(name)))
-                    tab2 += "\t" * (28 / len(str(params)))
-                    print("Module " + name + tab1 + str(params) + tab2 + "Enabled: " + str(module.is_active))
+                    tab1 += "\t" * (12 / len(str(name)))
+                    tab2 += "\t"
+                    print("("+str(i)+")\t-\t" + name + tab1 + str(params) + tab2 + "Enabled: " + str(module.is_active))
                     if i < total - 1:
-                        print("\t||\t")
-                        print("\t||\t")
-                        print("\t\/\t")
+                        print("\t\t||\t")
+                        print("\t\t||\t")
+                        print("\t\t\/\t")
                     i += 1
+                print
 
             elif input[0:5] == 'edit ' or input[0:2] == 'e ':  # edit params from the console
-                match = re.match(r"(edit|e)\s+([\w\!\~]+)\s+(.+)", input, re.IGNORECASE)
+                match = re.match(r"(edit|e)\s+(\d+)\s+(.+)", input, re.IGNORECASE)
                 if match:
-                    module = match.group(2).strip()
+                    module = int(match.group(2).strip())
                     _paramz = match.group(3).strip()
                     try:
                         paramz = ast.literal_eval(_paramz)
-                        self.CANEngine.edit_module(str(module), paramz)
-                        print("Edited module: " + str(module))
+                        self.CANEngine.edit_module(module, paramz)
+                        print("Edited module: " + str(self.CANEngine.get_modules_list()[module][0]))
                         print("Added  params: " + str(self.CANEngine.get_module_params(module)))
-                        index = self.CANEngine.find_module(str(module))
-                        mode = 1 if self.CANEngine.get_modules_list()[index][1].is_active else 0
+
+                        mode = 1 if self.CANEngine.get_modules_list()[module][1].is_active else 0
                         if mode == 1:
-                            self.CANEngine.get_modules_list()[index][1].do_activate(0)
-                        self.CANEngine.get_modules_list()[index][1].do_stop(paramz)
-                        self.CANEngine.get_modules_list()[index][1].do_start(paramz)
+                            self.CANEngine.get_modules_list()[module][1].do_activate(0)
+                        self.CANEngine.get_modules_list()[module][1].do_stop(paramz)
+                        self.CANEngine.get_modules_list()[module][1].do_start(paramz)
                         if mode == 1:
-                            self.CANEngine.get_modules_list()[index][1].do_activate(1)
+                            self.CANEngine.get_modules_list()[module][1].do_activate(1)
                     except Exception as e:
                         print("Edit error: " + str(e))
                 else:
                     print("Wrong format for EDIT command")
 
             elif input[0:4] == 'cmd ' or input[0:2] == 'c ':
-                match = re.match(r"(cmd|c)\s+([\w~!]+)\s+(.*)", input, re.IGNORECASE)
+                match = re.match(r"(cmd|c)\s+(\d+)\s+(.*)", input, re.IGNORECASE)
                 if match:
-                    _mod = str(match.group(2).strip())
+                    _mod = int(match.group(2).strip())
                     _paramz = match.group(3).strip()
                     if 1 == 1:
                         #                    try:
@@ -306,16 +319,30 @@ class UserInterface:
                         #                    except Exception as e:
                         #                        print "CMD input error: "+str(e)
 
-            elif input == 'help' or input == 'h':
-                print
-                print('start\t\tStart sniff/mitm/fuzz on CAN buses')
-                print('stop or ctrl+c\tStop sniff/mitm/fuzz')
-                print('view\t\tList of loaded MiTM modules')
-                print('edit <module> [params]\t\tEdit parameters for modules')
-                print('cmd <cmd>\t\tSend some cmd to modules')
-                print('help\t\tThis menu')
-                print('quit\t\tClose port and exit')
-                print
+            elif input[0:4] == 'help' or input[0:2] == 'h ':
+
+                match = re.match(r"(help|h)\s+(\d+)", input, re.IGNORECASE)
+                if match:
+                    try:
+                        module = int(match.group(2).strip())
+                        mod  = self.CANEngine.get_modules_list()[module][1]
+                        print("\nModule " + mod.__class__.__name__ + ": " + mod.name + "\n" + mod.help + \
+                            "\n\nConsole commands:\n")
+                        for cmd, dat in mod._cmdList.iteritems():
+                            print("\t" + cmd + " " + dat[2] + "\t\t - " + dat[0] + "\n")
+                    except Exception as e:
+                        print("Help error: " + str(e))
+                else:
+                    print
+                    print('start\t\t\tStart sniff/mitm/fuzz on CAN buses')
+                    print('stop or ctrl+c\t\tStop sniff/mitm/fuzz')
+                    print('view\t\t\tList of loaded MiTM modules')
+                    print('edit <index> [params]\tEdit parameters for modules')
+                    print('cmd  <index> <cmd>\tSend some cmd to modules')
+                    print('help\t\t\tThis menu')
+                    print('help <index>\t\tHelp for module with chosen index')
+                    print('quit\t\t\tClose port and exit')
+                    print
 
 
 def main():

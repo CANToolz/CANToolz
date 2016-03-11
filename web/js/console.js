@@ -13,8 +13,21 @@ var webConsole = function (firstName) {
         if (error == undefined){
             var i = 0;
             var len = json.queue.length;
+            var table = document.getElementById("tbl");
+            var new_table = document.createElement('tbl');
+            table.parentNode.replaceChild(new_table, table)
+            var tblBody = document.createElement("tbody");
             for (;i < len; i++){
-                ;
+                var curr = json.queue[i];
+                
+                if (curr.pipe == 1)
+                {
+                    
+                } else {
+                
+                }
+              
+                
             }
         }
     });
