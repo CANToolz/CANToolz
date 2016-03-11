@@ -8,8 +8,7 @@ class gen_ping(CANModule):
     
     This module doing ID buteforce.
     (combine with mod_stat for example)
-    
-   
+    Init parameters: None
     Module parameters:  
        body           -  data HEX that will be used in CAN for discovery (by default body is 0000000000000000)
        mode           -  by default CAN, but also support ISOTP and UDS

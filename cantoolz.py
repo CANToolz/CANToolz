@@ -1,11 +1,15 @@
 from optparse import OptionParser
 from libs.engine import *
 import re
-
+import SimpleHTTPServer
+import SocketServer
+import BaseHTTPServer
+import json
+import ast
 
 ######################################################
 #                                                    # 
-# CANSploit v 0.9b                                   #
+# CANToolz v 1.0b                                    #
 #             ... or can't?                          #
 ######################################################
 #      Main Code Monkey    Alyosha Sintsov           #
@@ -34,18 +38,160 @@ import re
 #                                                    #
 ######################################################
 
+CANENGINE = None
 
-def start(self):
-    # try:
-    self.load_config()
-    # except:
-    #    self.dprint(0,"Config syntax error")
-    self.main_loop()
+class ThreadingSimpleServer(SocketServer.ThreadingMixIn,
+                   BaseHTTPServer.HTTPServer):
+    pass
+
+# WEB class
+class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
+    root = "web"
+    can_engine = None
+
+    def __init__(self, request, client_address, server):
+
+        self.server = server
+        self.protocol_version = 'HTTP/1.1'
+        print("[*] HTTPD: Received connection from %s" % (client_address[0]))
+        SimpleHTTPServer.SimpleHTTPRequestHandler.__init__(self, request, client_address, server)
+
+    def do_POST(self):
+        resp_code = 500
+        cont_type = 'text/plain'
+        body = ""
+
+        path_parts = self.path.split("/")
+
+        path_parts = self.path.split("/")
+
+        if path_parts[1] == "api" and self.can_engine:
+            cont_type = "application/json"
+            cmd = path_parts[2]
+
+            if cmd == "edit" and path_parts[3]:
+                try:
+                    line = self.rfile.readline().decode()
+                    paramz = json.loads(line)
+                    if self.can_engine.edit_module(int(path_parts[3]), paramz) >= 0:
+                        new_params = self.can_engine.get_module_params(int(path_parts[3]))
+                        body = json.dumps(new_params, ensure_ascii=False)
+                        resp_code = 200
+                    else:
+                        body = "{ \"error\": \"module not found!\"}"
+                        resp_code = 404
+                except Exception as e:
+                    resp_code = 500
+                    body = "{ \"error\": "+json.dumps(str(e))+"}"
+            elif cmd == "cmd" and path_parts[3]:
+                try:
+                    line = self.rfile.readline().decode()
+                    paramz = json.loads(line).get("cmd")
+                    text = self.can_engine.call_module(int(path_parts[3]), str(paramz))
+                    body = json.dumps({"response": text})
+                    resp_code = 200
+                except Exception as e:
+                    resp_code = 500
+                    body = "{ \"error\": "+json.dumps(str(e))+"}"
+
+        self.send_response(resp_code)
+        self.send_header('Content-Type', cont_type)
+        self.send_header('Connection', 'closed')
+        self.send_header('Content-Length', len(body))
+        self.end_headers()
+        self.wfile.write(body)
+
+        return
+
+    def do_GET(self):
+        resp_code = 500
+        cont_type = 'text/plain'
+        body = ""
+
+        path_parts = self.path.split("/")
+
+        if path_parts[1] == "api" and self.can_engine:  # API Request
+            cont_type = "application/json"
+            cmd = path_parts[2]
+
+            if cmd == "get_conf":
+                response = {"queue": []}
+                modz = self.can_engine.get_modules_list()
+                try:
+                    for name, module, params in modz:
+                        response['queue'].append({'name': name, "params": params})
+
+                    body = json.dumps(response, ensure_ascii=False)
+                    resp_code = 200
+                except Exception as e:
+                    resp_code = 500
+                    body = "{ \"error\": "+json.dumps(str(e))+"}"
+            elif cmd == "help" and path_parts[3]:
+                try:
+                    help_list = self.can_engine.get_modules_list()[int(path_parts[3])][1]._cmdList
+                    response_help = {}
+                    for cmd, body in help_list.iteritems():
+                        response_help[cmd] = {'descr': body[0], 'descr_param':body[2], 'param_count': body[1]}
+                    body = json.dumps(response_help, ensure_ascii=False)
+                    resp_code = 200
+                except Exception as e:
+                    resp_code = 500
+                    body = "{ \"error\": "+json.dumps(str(e))+"}"
+            elif cmd == "start":
+                try:
+                    modz = self.can_engine.start_loop()
+                    body = json.dumps({"status": modz})
+                    resp_code = 200
+                except Exception as e:
+                    resp_code = 500
+                    body = "{ \"error\": "+json.dumps(str(e))+"}"
+
+            elif cmd == "stop":
+                try:
+                    modz = self.can_engine.stop_loop()
+                    body = json.dumps({"status": modz})
+                    resp_code = 200
+                except Exception as e:
+                    resp_code = 500
+                    body = "{ \"error\": "+json.dumps(str(e))+"}"
+            elif cmd == "status":
+                try:
+                    modz = self.can_engine.status_loop
+                    body = json.dumps({"status": modz})
+                    resp_code = 200
+                except Exception as e:
+                    resp_code = 500
+                    body = "{ \"error\": "+json.dumps(str(e))+"}"
+
+        else:  # Static content request
+            content = self.root + self.path
+            try:
+                with open(content, "rb") as ins:
+                    for line in ins:
+                        body += line
+
+                ext = self.path.split(".")[-1]
+                cont_type = 'text/html' if ext == "html" else 'text/javascript' if ext == ".js" else\
+                    'image/png' if ext == 'png' else 'text/plain'
+                resp_code = 200
+
+            except Exception as e:  # Error... almost not found, but can be other...
+                # 404 not right then, but who cares?
+                resp_code = 404
+                cont_type = 'text/plain'
+                body = str(e)
+
+        self.send_response(resp_code)
+        self.send_header('Content-Type', cont_type)
+        self.send_header('Connection', 'closed')
+        self.send_header('Content-Length', len(body))
+        self.end_headers()
+        self.wfile.write(body)
+
+        return
 
 
-# UI class
-
-
+# Console calss
 class UserInterface:
     def __init__(self):
         usage = "%prog [options] for more help: %prog -h"
@@ -70,7 +216,7 @@ class UserInterface:
             self.CONFIG = None
 
         if options.GUI:
-            self.GUI = options.CONFIG
+            self.GUI = options.GUI
         else:
             self.GUI = "console"
 
@@ -80,6 +226,7 @@ class UserInterface:
             self.CANEngine.load_config(self.CONFIG)
 
         if self.GUI[0] == "c":
+            print(self.CANEngine.ascii_logo_c)
             self.console_loop()
         elif self.GUI[0] == "w":
             self.web_loop()
@@ -90,7 +237,17 @@ class UserInterface:
         exit()
 
     def web_loop(self):
-        print("WEB UI is not implemented")
+        port = 4444
+        print(self.CANEngine.ascii_logo_c)
+        WebConsole.can_engine = self.CANEngine
+        server = ThreadingSimpleServer(('', port), WebConsole)
+        print("CANtoolz WEB started at port: ", port)
+        try:
+            while True:
+                sys.stdout.flush()
+                server.handle_request()
+        except KeyboardInterrupt:
+            print("gg bb")
 
     def console_loop(self):
         while True:
@@ -114,45 +271,46 @@ class UserInterface:
                 total = len(modz)
                 i = 0
                 print
-                for name, module, params, pipe in modz:
+                for name, module, params in modz:
                     tab1 = "\t"
                     tab2 = "\t"
-                    tab1 += "\t" * (28 / len(str(name)))
-                    tab2 += "\t" * (28 / len(str(params)))
-                    print("Module " + name + tab1 + str(params) + tab2 + "Enabled: " + str(module.is_active))
+                    tab1 += "\t" * (12 / len(str(name)))
+                    tab2 += "\t"
+                    print("("+str(i)+")\t-\t" + name + tab1 + str(params) + tab2 + "Enabled: " + str(module.is_active))
                     if i < total - 1:
-                        print("\t||\t")
-                        print("\t||\t")
-                        print("\t\/\t")
+                        print("\t\t||\t")
+                        print("\t\t||\t")
+                        print("\t\t\/\t")
                     i += 1
+                print
 
             elif input[0:5] == 'edit ' or input[0:2] == 'e ':  # edit params from the console
-                match = re.match(r"(edit|e)\s+([\w\!\~]+)\s+(.+)", input, re.IGNORECASE)
+                match = re.match(r"(edit|e)\s+(\d+)\s+(.+)", input, re.IGNORECASE)
                 if match:
-                    module = match.group(2).strip()
+                    module = int(match.group(2).strip())
                     _paramz = match.group(3).strip()
                     try:
                         paramz = ast.literal_eval(_paramz)
-                        self.CANEngine.edit_module(str(module), paramz)
-                        print("Edited module: " + str(module))
+                        self.CANEngine.edit_module(module, paramz)
+                        print("Edited module: " + str(self.CANEngine.get_modules_list()[module][0]))
                         print("Added  params: " + str(self.CANEngine.get_module_params(module)))
-                        index = self.CANEngine.find_module(str(module))
-                        mode = 1 if self.CANEngine.get_modules_list()[index][1].is_active else 0
+
+                        mode = 1 if self.CANEngine.get_modules_list()[module][1].is_active else 0
                         if mode == 1:
-                            self.CANEngine.get_modules_list()[index][1].do_activate(0)
-                        self.CANEngine.get_modules_list()[index][1].do_stop(paramz)
-                        self.CANEngine.get_modules_list()[index][1].do_start(paramz)
+                            self.CANEngine.get_modules_list()[module][1].do_activate(0)
+                        self.CANEngine.get_modules_list()[module][1].do_stop(paramz)
+                        self.CANEngine.get_modules_list()[module][1].do_start(paramz)
                         if mode == 1:
-                            self.CANEngine.get_modules_list()[index][1].do_activate(1)
+                            self.CANEngine.get_modules_list()[module][1].do_activate(1)
                     except Exception as e:
                         print("Edit error: " + str(e))
                 else:
                     print("Wrong format for EDIT command")
 
             elif input[0:4] == 'cmd ' or input[0:2] == 'c ':
-                match = re.match(r"(cmd|c)\s+([\w~!]+)\s+(.*)", input, re.IGNORECASE)
+                match = re.match(r"(cmd|c)\s+(\d+)\s+(.*)", input, re.IGNORECASE)
                 if match:
-                    _mod = str(match.group(2).strip())
+                    _mod = int(match.group(2).strip())
                     _paramz = match.group(3).strip()
                     if 1 == 1:
                         #                    try:
@@ -161,16 +319,30 @@ class UserInterface:
                         #                    except Exception as e:
                         #                        print "CMD input error: "+str(e)
 
-            elif input == 'help' or input == 'h':
-                print
-                print('start\t\tStart sniff/mitm/fuzz on CAN buses')
-                print('stop or ctrl+c\tStop sniff/mitm/fuzz')
-                print('view\t\tList of loaded MiTM modules')
-                print('edit <module> [params]\t\tEdit parameters for modules')
-                print('cmd <cmd>\t\tSend some cmd to modules')
-                print('help\t\tThis menu')
-                print('quit\t\tClose port and exit')
-                print
+            elif input[0:4] == 'help' or input[0:2] == 'h ':
+
+                match = re.match(r"(help|h)\s+(\d+)", input, re.IGNORECASE)
+                if match:
+                    try:
+                        module = int(match.group(2).strip())
+                        mod  = self.CANEngine.get_modules_list()[module][1]
+                        print("\nModule " + mod.__class__.__name__ + ": " + mod.name + "\n" + mod.help + \
+                            "\n\nConsole commands:\n")
+                        for cmd, dat in mod._cmdList.iteritems():
+                            print("\t" + cmd + " " + dat[2] + "\t\t - " + dat[0] + "\n")
+                    except Exception as e:
+                        print("Help error: " + str(e))
+                else:
+                    print
+                    print('start\t\t\tStart sniff/mitm/fuzz on CAN buses')
+                    print('stop or ctrl+c\t\tStop sniff/mitm/fuzz')
+                    print('view\t\t\tList of loaded MiTM modules')
+                    print('edit <index> [params]\tEdit parameters for modules')
+                    print('cmd  <index> <cmd>\tSend some cmd to modules')
+                    print('help\t\t\tThis menu')
+                    print('help <index>\t\tHelp for module with chosen index')
+                    print('quit\t\t\tClose port and exit')
+                    print
 
 
 def main():
