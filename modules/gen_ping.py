@@ -17,7 +17,7 @@ class gen_ping(CANModule):
          {'body':'001122334455667788','mode':'CAN'}  ; ISO-TP
          {'services':[{'service':0x01, 'sub':0x0d},{'service':0x09, 'sub':0x02},{'service':0x2F, 'sub':0x03, 'data':[7,3,0,0]}],'mode':'UDS'}  ; UDS
     """
-    _active = False
+
     queue_messages = []
 
     def do_init(self, params):
