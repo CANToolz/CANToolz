@@ -1,12 +1,12 @@
-.application {
+.scenario {
   position: relative;
-  width: 1440px;
-  height: 1440px;
 }
 
 .step {
+  box-sizing: border-box;
   position: absolute;
-  height: 64px;
-  width: 128px;
-  border: solid black;
+}
+
+.step.current {
+  background-color: lightsteelblue;
 }

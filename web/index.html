@@ -2,10 +2,31 @@
 <html>
   <head>
     <title>CANToolz WEB Console</title>
-    <link rel="stylesheet" href="css/main.css" type="text/css" />
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="css/main.css" />
   </head>
 
   <body class="application" onload="main();">
+    <div class="container">
+      <div class="row">
+        <div class="col-xs-12">
+          <h1>
+            <a class="loop-action btn btn-lg btn-success">CANToolz</a>
+            <small>config_name.py</small>
+          </h1>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xs-8">
+          <div class="scenario"></div>
+        </div>
+        <div class="controls col-xs-4">
+          Меню
+        </div>
+      </div>
+    </div>
+
+
     <script src="//d3js.org/d3.v3.min.js"></script>
     <script src="js/main.js"></script>
   </body>
