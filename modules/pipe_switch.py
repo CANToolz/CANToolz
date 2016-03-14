@@ -34,5 +34,7 @@ class pipe_switch(CANModule):
         if args.get('action') == 'read' and can_msg.CANData:
             self.can_buffer = copy.deepcopy(can_msg)
         elif args.get('action') == 'write' and self.can_buffer:
-            return self.can_buffer
+            can_msg = copy.deepcopy(self.can_buffer)
+            self.can_buffer = None
+
         return can_msg

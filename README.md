@@ -63,7 +63,7 @@ This example just like "Using can-utils to Find the Door-Unlock Control" from gr
 
 Let's see how it looks like from the console...
 
-         python canstoolz.py -c can_replay_discovery.py
+     python canstoolz.py -c can_replay_discovery.py
      hw_USBtin: Init phase started...
      hw_USBtin: Port found: COM14
      hw_USBtin: PORT: COM14
