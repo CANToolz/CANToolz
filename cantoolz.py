@@ -171,8 +171,13 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
                         body += line
 
                 ext = self.path.split(".")[-1]
-                cont_type = 'text/html' if ext == "html" else 'text/javascript' if ext == ".js" else\
-                    'image/png' if ext == 'png' else 'text/plain'
+
+                if ext == 'html':   cont_type = 'text/html'
+                elif ext == 'js':   cont_type = 'text/javascript'
+                elif ext == 'css':  cont_type = 'text/css'
+                elif ext == 'png':  cont_type = 'image/png'
+                else:               cont_type = 'text/plain'
+
                 resp_code = 200
 
             except Exception as e:  # Error... almost not found, but can be other...
