@@ -46,7 +46,7 @@ function nop() {}
 function stepModule(step, callback) {
   var module = moduleCache[step.name];
   if (module === undefined) {
-    d3.json('/api/help/', function(error, module) {
+    d3.json('/api/help/'+step.name, function(error, module) {
       if (module !== null) {
         callback(moduleCache[step.name] = module);
       } else {

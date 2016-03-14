@@ -87,7 +87,7 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 try:
                     line = self.rfile.readline().decode()
                     paramz = json.loads(line).get("cmd")
-                    text = self.can_engine.call_module(int(path_parts[3]), str(paramz))
+                    text = self.can_engine.call_module(self.can_engine.find_module(str(path_parts[3])), str(paramz))
                     body = json.dumps({"response": text})
                     resp_code = 200
                 except Exception as e:
@@ -128,7 +128,7 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     body = "{ \"error\": "+json.dumps(str(e))+"}"
             elif cmd == "help" and path_parts[3]:
                 try:
-                    help_list = self.can_engine.get_modules_list()[int(path_parts[3])][1]._cmdList
+                    help_list = self.can_engine.get_modules_list()[self.can_engine.find_module(str(path_parts[3]))][1]._cmdList
                     response_help = {}
                     for cmd, body in help_list.iteritems():
                         response_help[cmd] = {'descr': body[0], 'descr_param':body[2], 'param_count': body[1]}
