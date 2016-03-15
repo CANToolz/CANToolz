@@ -13,12 +13,12 @@ class gen_fuzz(CANModule):
     
     Module parameters: 
 
-      'range'  - [0,1000] - ID range
+      'id'  - [0,1,2,111,333] - ID to fuzz
       'data'   - default data
       'delay'  - delay between frames (0 by default)
       'index'  - [1,4] - list of bytes (indexes) that should be fuzzed
       
-      Example: {'range':[111,113],'data':[0,0,0,0,0,0,0,0],'delay':0}
+      Example: {'id':[111,113],'data':[0,0,0,0,0,0,0,0],'delay':0}
 
     """
 
@@ -36,8 +36,8 @@ class gen_fuzz(CANModule):
         self.last = time.clock()
         self.queue_messages = []
         iso_mode = 1 if args.get('mode') in ['ISO', 'iso', 'ISOTP', 'isotp'] else 0
-        if 'range' in args and int(args['range'][0]) < int(args['range'][1]):
-            for i in range(int(args['range'][0]), int(args['range'][1])):
+        if 'id' in args:
+            for i in args['id']:
                 _body = list(args.get('data', []))
                 _i = 0
                 while _i < len(_body):
