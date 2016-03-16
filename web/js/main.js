@@ -30,11 +30,6 @@ var Module;
 var STEP_HEIGHT_UNIT = 64;
 
 /**
- * @const {number}
- */
-var STEP_WIDTH_UNIT = 128;
-
-/**
  * @type {!Object<string, !Module>}
  */
 var moduleCache = {};
@@ -103,8 +98,12 @@ function initControls(scenario) {
 
       d3.json('/api/cmd/' + module).post(JSON.stringify({
         'cmd': command + ' ' + args
-      }), function() {
-        debugger
+      }), function(error, result) {
+        if (result !== null) {
+          d3.select('.output').insert('pre', ':first-child').text(result.response);
+        } else {
+          console.error(error);
+        }        
       });
     }
   })
@@ -182,6 +181,10 @@ function redrawCircuit(scenario) {
   var circuit = d3.select('.scenario')
       .selectAll('.step')
       .data(scenario.queue);
+  
+  var width = 100 / d3.max(scenario.queue, function(step) {
+    return step.params.pipe
+  });
 
   circuit
       .enter()
@@ -190,8 +193,8 @@ function redrawCircuit(scenario) {
       .classed('well', true)
       .text(function (step) { return step.name })
       .style('top', function(step, i) { return i * STEP_HEIGHT_UNIT + 'px' })
-      .style('left', function(step) { return (step.params.pipe - 1) * STEP_WIDTH_UNIT + 'px' })
-      .style('width', STEP_WIDTH_UNIT + 'px')
+      .style('left', function(step) { return (step.params.pipe - 1) * width + '%' })
+      .style('width', width + '%')
       .style('height', STEP_HEIGHT_UNIT + 'px');
 
   circuit
