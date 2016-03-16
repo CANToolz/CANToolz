@@ -92,6 +92,14 @@ function initControls(scenario) {
       });
     }
   });
+
+  d3.select('.controls').on('click', function() {
+    var target = d3.select(d3.event.target);
+    if (target.classed('command-run')) {
+
+      
+    }
+  })
 }
 
 
@@ -120,6 +128,7 @@ function redrawMenu(module) {
 
       form.append('span')
           .text('Run!')
+          .classed('command-run', true)
           .classed('btn', true)
           .classed('input-group-addon', true);
 
