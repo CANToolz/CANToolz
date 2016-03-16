@@ -15,7 +15,12 @@ var Step;
 var Scenario;
 
 /**
- * @typedef {{}}
+ * @typedef {{param_count: number, descr_param: string, descr: string }}
+ */
+var Command;
+
+/**
+ * @typedef {Object<string, Command>}
  */
 var Module;
 
@@ -46,7 +51,7 @@ function nop() {}
 function stepModule(step, callback) {
   var module = moduleCache[step.name];
   if (module === undefined) {
-    d3.json('/api/help/'+step.name, function(error, module) {
+    d3.json('/api/help/' + step.name, function(error, module) {
       if (module !== null) {
         callback(moduleCache[step.name] = module);
       } else {
@@ -57,6 +62,7 @@ function stepModule(step, callback) {
     callback(module);
   }
 }
+
 
 /**
  * @param {!Scenario} scenario
@@ -93,6 +99,41 @@ function initControls(scenario) {
  * @param {!Module} module
  */
 function redrawMenu(module) {
+  var commands = d3.select('.controls')
+      .selectAll('.command')
+      .data(d3.entries(module));
+
+  var enter = commands.enter().append('div')
+      .classed('command', true)
+      .classed('row', true);
+
+    var form = enter.append('div')
+        .classed('input-group', true);
+
+      form.append('span')
+          .classed('command-name', true)
+          .classed('input-group-addon', true);
+
+      form.append('input')
+          .attr('type', 'text')
+          .classed('form-control', true);
+
+      form.append('span')
+          .text('Run!')
+          .classed('btn', true)
+          .classed('input-group-addon', true);
+
+    enter.append('span')
+        .classed('help-block', true);
+
+  commands.exit().remove();
+
+  commands.select('.command-name').text(function(r) { return r.key; });
+  commands.select('.help-block').text(function(r) { return r.value.descr; });
+  commands.select('input')
+      .classed('hide', function (r) { return r.value.param_count === 0; })
+      .attr('placeholder', function(r) { return r.value.descr_param; });
+
 
 }
 
