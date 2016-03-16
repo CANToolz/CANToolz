@@ -63,16 +63,16 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
         path_parts = self.path.split("/")
 
-        path_parts = self.path.split("/")
-
         if path_parts[1] == "api" and self.can_engine:
             cont_type = "application/json"
             cmd = path_parts[2]
 
+            content_size = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_size)
+
             if cmd == "edit" and path_parts[3]:
                 try:
-                    line = self.rfile.readline().decode()
-                    paramz = json.loads(line)
+                    paramz = json.loads(post_data)
                     if self.can_engine.edit_module(int(path_parts[3]), paramz) >= 0:
                         new_params = self.can_engine.get_module_params(int(path_parts[3]))
                         body = json.dumps(new_params, ensure_ascii=False)
@@ -85,8 +85,7 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     body = "{ \"error\": "+json.dumps(str(e))+"}"
             elif cmd == "cmd" and path_parts[3]:
                 try:
-                    line = self.rfile.readline().decode()
-                    paramz = json.loads(line).get("cmd")
+                    paramz = json.loads(post_data).get("cmd")
                     text = self.can_engine.call_module(self.can_engine.find_module(str(path_parts[3])), str(paramz))
                     body = json.dumps({"response": text})
                     resp_code = 200
