@@ -88,7 +88,7 @@ function initControls(scenario) {
       redrawCircuit(scenario);
 
       stepModule(scenario.current, function(module) {
-        redrawMenu(module);
+        redrawMenu(scenario.current.name, module);
       });
     }
   });
@@ -96,17 +96,34 @@ function initControls(scenario) {
   d3.select('.controls').on('click', function() {
     var target = d3.select(d3.event.target);
     if (target.classed('command-run')) {
+      var module = target.attr('module');
+      var command = target.attr('command')
+      var args = d3.select('.controls input[command="' + command + '"]')
+          .node().value;
 
-      
+      d3.json('/api/cmd/' + module).post(JSON.stringify({
+        'cmd': command + ' ' + args
+      }), function() {
+        debugger
+      });
     }
   })
 }
 
 
 /**
+ * @param {string} name
  * @param {!Module} module
  */
-function redrawMenu(module) {
+function redrawMenu(name, module) {
+  /**
+   * @param {{key: string, value: Command}} record
+   * @returns {string}
+   */
+  function commandName(record) {
+    return record.key;
+  }
+
   var commands = d3.select('.controls')
       .selectAll('.command')
       .data(d3.entries(module));
@@ -137,13 +154,16 @@ function redrawMenu(module) {
 
   commands.exit().remove();
 
-  commands.select('.command-name').text(function(r) { return r.key; });
+  commands.select('.command-name').text(commandName);
   commands.select('.help-block').text(function(r) { return r.value.descr; });
   commands.select('input')
       .classed('hide', function (r) { return r.value.param_count === 0; })
+      .attr('command', commandName)
       .attr('placeholder', function(r) { return r.value.descr_param; });
 
-
+  commands.select('.command-run')
+      .attr('command', commandName)
+      .attr('module', name)
 }
 
 /**
