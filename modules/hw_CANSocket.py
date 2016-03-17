@@ -40,7 +40,7 @@ class hw_CANSocket(CANModule):
 
     def do_start(self, params):
         if not self._active:
-            self.socket.bind((self.ndev,))
+            self.socket.bind((self.device,))
             self._active = True
 
     def do_effect(self, can_msg, args):  # read full packet from serial port
