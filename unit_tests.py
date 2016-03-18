@@ -11,7 +11,7 @@ class ModUdsTests(unittest.TestCase):
     def test_fuzz_can(self):
         self.CANEngine = CANSploit()
         self.CANEngine.load_config("tests/test_6.py")
-        self.CANEngine.edit_module(0, {'range': [111,112], 'data': [0,1], 'delay': 0})
+        self.CANEngine.edit_module(0, {'id': [111], 'data': [0,1], 'delay': 0})
         self.CANEngine.start_loop()
         time.sleep(1)
         self.CANEngine.call_module(0, "s")
@@ -25,7 +25,7 @@ class ModUdsTests(unittest.TestCase):
     def test_fuzz_iso(self):
         self.CANEngine = CANSploit()
         self.CANEngine.load_config("tests/test_6.py")
-        self.CANEngine.edit_module(0, {'range': [111,112], 'data': [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18],\
+        self.CANEngine.edit_module(0, {'id': [111], 'data': [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18],\
                                        'delay': 0,'index':[5,16],'mode':'ISO'})
         self.CANEngine.start_loop()
         time.sleep(1)

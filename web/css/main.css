@@ -1,0 +1,18 @@
+.scenario {
+  position: relative;
+}
+
+.step {
+  box-sizing: border-box;
+  position: absolute;
+}
+
+.step.current {
+  background-color: lightsteelblue;
+}
+
+
+.input-group-addon:first-child:last-child {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}

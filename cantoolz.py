@@ -23,6 +23,9 @@ import ast
 ########### MAIN CONTRIBUTORS ########################
 # - Boris Ryutin ( @dukebarman )                     #
 #      Fist supporter and awesome guy                #
+#                                                    #
+# - Sergey Kononenko ( @kononencheg )                #
+#        Best developer, front-end ninja             #
 ######################################################
 # We need:                                           #
 #    - more hardware to support                      #
@@ -38,7 +41,7 @@ import ast
 #                                                    #
 ######################################################
 
-CANENGINE = None
+
 
 class ThreadingSimpleServer(SocketServer.ThreadingMixIn,
                    BaseHTTPServer.HTTPServer):
@@ -63,16 +66,16 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
         path_parts = self.path.split("/")
 
-        path_parts = self.path.split("/")
-
         if path_parts[1] == "api" and self.can_engine:
             cont_type = "application/json"
             cmd = path_parts[2]
 
+            content_size = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_size)
+
             if cmd == "edit" and path_parts[3]:
                 try:
-                    line = self.rfile.readline().decode()
-                    paramz = json.loads(line)
+                    paramz = json.loads(post_data)
                     if self.can_engine.edit_module(int(path_parts[3]), paramz) >= 0:
                         new_params = self.can_engine.get_module_params(int(path_parts[3]))
                         body = json.dumps(new_params, ensure_ascii=False)
@@ -85,9 +88,8 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     body = "{ \"error\": "+json.dumps(str(e))+"}"
             elif cmd == "cmd" and path_parts[3]:
                 try:
-                    line = self.rfile.readline().decode()
-                    paramz = json.loads(line).get("cmd")
-                    text = self.can_engine.call_module(int(path_parts[3]), str(paramz))
+                    paramz = json.loads(post_data).get("cmd")
+                    text = self.can_engine.call_module(self.can_engine.find_module(str(path_parts[3])), str(paramz))
                     body = json.dumps({"response": text})
                     resp_code = 200
                 except Exception as e:
@@ -113,8 +115,10 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
         if path_parts[1] == "api" and self.can_engine:  # API Request
             cont_type = "application/json"
             cmd = path_parts[2]
-
-            if cmd == "get_conf":
+            if cmd == "quit_1337":
+                resp_code = 204
+                modz = self.can_engine.stop_loop()
+            elif cmd == "get_conf":
                 response = {"queue": []}
                 modz = self.can_engine.get_modules_list()
                 try:
@@ -128,7 +132,7 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     body = "{ \"error\": "+json.dumps(str(e))+"}"
             elif cmd == "help" and path_parts[3]:
                 try:
-                    help_list = self.can_engine.get_modules_list()[int(path_parts[3])][1]._cmdList
+                    help_list = self.can_engine.get_modules_list()[self.can_engine.find_module(str(path_parts[3]))][1]._cmdList
                     response_help = {}
                     for cmd, body in help_list.iteritems():
                         response_help[cmd] = {'descr': body[0], 'descr_param':body[2], 'param_count': body[1]}
@@ -171,8 +175,13 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
                         body += line
 
                 ext = self.path.split(".")[-1]
-                cont_type = 'text/html' if ext == "html" else 'text/javascript' if ext == ".js" else\
-                    'image/png' if ext == 'png' else 'text/plain'
+
+                if ext == 'html':   cont_type = 'text/html'
+                elif ext == 'js':   cont_type = 'text/javascript'
+                elif ext == 'css':  cont_type = 'text/css'
+                elif ext == 'png':  cont_type = 'image/png'
+                else:               cont_type = 'text/plain'
+
                 resp_code = 200
 
             except Exception as e:  # Error... almost not found, but can be other...
@@ -243,11 +252,11 @@ class UserInterface:
         server = ThreadingSimpleServer(('', port), WebConsole)
         print("CANtoolz WEB started at port: ", port)
         try:
-            while True:
-                sys.stdout.flush()
-                server.handle_request()
+            sys.stdout.flush()
+            server.serve_forever()
         except KeyboardInterrupt:
             print("gg bb")
+
 
     def console_loop(self):
         while True:
