@@ -81,10 +81,10 @@ function initControls(scenario) {
       scenario.current = target.datum();
 
       redrawCircuit(scenario);
+      redrawOptions(scenario.current, scenario.queue.indexOf(scenario.current));
 
       stepModule(scenario.current, function(module) {
         redrawMenu(scenario.current.name, module);
-        redrawOptions(scenario, scenario.current)
       });
     }
   });
@@ -93,7 +93,7 @@ function initControls(scenario) {
     var target = d3.select(d3.event.target);
     if (target.classed('command-run')) {
       var module = target.attr('module');
-      var command = target.attr('command')
+      var command = target.attr('command');
       var args = d3.select('.controls input[command="' + command + '"]')
           .node().value;
 
@@ -107,7 +107,57 @@ function initControls(scenario) {
         }        
       });
     }
-  })
+  });
+
+
+  d3.select('.options').on('click', function() {
+    var target = d3.select(d3.event.target);
+    var index = target.attr('step');
+    var step = scenario.queue[index];
+
+    function handleResult(error, result) {
+      if (result !== undefined) {
+        redrawCircuit(scenario);
+        redrawOptions(scenario.queue[index], index);
+      } else {
+        console.error(error);
+      }
+    }
+
+    if (step && target.classed('btn-danger')) {
+      delete step.params[target.attr('param')];
+    }
+
+    if (step && target.classed('btn-primary')) {
+      var param = target.attr('param');
+      var input = d3.select('.options input[param="' + param + '"]');
+      var type = input.attr('format');
+      var value = input.node().value;
+
+      switch (type) {
+        case 'object': step.params[param] = JSON.parse(value); break;
+        case 'string': step.params[param] = value; break;
+        case 'number': step.params[param] = Number(value); break;
+      }
+    }
+
+    if (step && target.classed('btn-success')) {
+      var newParam = d3.select('.options .new-param').node().value;
+      var newValue = d3.select('.options .new-value').node().value;
+      var newType = d3.select('.options select').node().value;
+
+      switch (newType) {
+        case 'json': step.params[newParam] = JSON.parse(newValue); break;
+        case 'str': step.params[newParam] = newValue; break;
+        case 'num': step.params[newParam] = Number(newValue); break;
+      }
+    }
+
+    if (step) {
+      d3.json('/api/edit/' + index)
+          .post(JSON.stringify(step.params), handleResult);
+    }
+  });
 }
 
 
@@ -176,13 +226,44 @@ function redrawHeader(scenario) {
 }
 
 /**
- * @param {!Scenario} scenario
  * @param {!Step} step
+ * @param {number} index
  */
-function redrawOptions(scenario, step) {
+function redrawOptions(step, index) {
+  /**
+   * @param {{key: string, value: *}} record
+   * @returns {string}
+   */
+  function paramName(record) {
+    return record.key;
+  }
+
+  /**
+   * @param {{key: string, value: *}} record
+   * @returns {string}
+   */
+  function paramFormat(record) {
+    return typeof record.value;
+  }
+
+  /**
+   * @param {{key: string, value: *}} record
+   * @returns {string}
+   */
+  function paramValue(record) {
+    if (typeof record.value === 'object') {
+      return JSON.stringify(record.value);
+    }
+
+    return record.value;
+  }
+
   var fields = d3.select('.options tbody')
       .selectAll('tr')
       .data(d3.entries(step.params));
+
+  d3.select('.options .btn-success')
+      .attr('step', index);
 
   var enter = fields.enter().append('tr');
   
@@ -206,13 +287,12 @@ function redrawOptions(scenario, step) {
 
   fields.exit().remove();
 
-  fields.select('input').attr('value', function(record) {
-    return record.value;
-  });
-
-  fields.selectAll('button').attr('param', function(record) {
-    return record.key;
-  });
+  fields.select('.btn-danger').attr('param', paramName).attr('step', index);
+  fields.select('.btn-primary').attr('param', paramName).attr('step', index);
+  fields.select('input')
+      .attr('param', paramName)
+      .attr('format', paramFormat)
+      .attr('value', paramValue);
 
   fields.select('p').text(function(record) {
     return record.key;
