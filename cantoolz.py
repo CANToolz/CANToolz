@@ -23,6 +23,9 @@ import ast
 ########### MAIN CONTRIBUTORS ########################
 # - Boris Ryutin ( @dukebarman )                     #
 #      Fist supporter and awesome guy                #
+#                                                    #
+# - Sergey Kononenko ( @kononencheg )                #
+#        Best developer, front-end ninja             #
 ######################################################
 # We need:                                           #
 #    - more hardware to support                      #
@@ -38,7 +41,7 @@ import ast
 #                                                    #
 ######################################################
 
-CANENGINE = None
+
 
 class ThreadingSimpleServer(SocketServer.ThreadingMixIn,
                    BaseHTTPServer.HTTPServer):
@@ -112,8 +115,10 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
         if path_parts[1] == "api" and self.can_engine:  # API Request
             cont_type = "application/json"
             cmd = path_parts[2]
-
-            if cmd == "get_conf":
+            if cmd == "quit_1337":
+                resp_code = 204
+                modz = self.can_engine.stop_loop()
+            elif cmd == "get_conf":
                 response = {"queue": []}
                 modz = self.can_engine.get_modules_list()
                 try:
@@ -247,11 +252,11 @@ class UserInterface:
         server = ThreadingSimpleServer(('', port), WebConsole)
         print("CANtoolz WEB started at port: ", port)
         try:
-            while True:
-                sys.stdout.flush()
-                server.handle_request()
+            sys.stdout.flush()
+            server.serve_forever()
         except KeyboardInterrupt:
             print("gg bb")
+
 
     def console_loop(self):
         while True:

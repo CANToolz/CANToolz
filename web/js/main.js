@@ -63,17 +63,11 @@ function stepModule(step, callback) {
  * @param {!Scenario} scenario
  */
 function initControls(scenario) {
+  redrawHeader();
   d3.select('.loop-action').on('click', function() {
-    if (scenario.running) {
-      scenario.running = false;
-      d3.json('/api/stop', nop);
-    } else {
-      scenario.running = true;
-      d3.json('/api/start', nop);
-    }
+    d3.json('/api/status', changeStatus);
 
-    redrawHeader(scenario);
-  });
+ });
 
   d3.select('.scenario').on('click', function() {
     var target = d3.select(d3.event.target);
@@ -84,7 +78,7 @@ function initControls(scenario) {
       redrawOptions(scenario.current, scenario.queue.indexOf(scenario.current));
 
       stepModule(scenario.current, function(module) {
-        redrawMenu(scenario.current.name, module);
+         redrawMenu(scenario.current.name, module);
       });
     }
   });
@@ -117,8 +111,9 @@ function initControls(scenario) {
 
     function handleResult(error, result) {
       if (result !== undefined) {
-        redrawCircuit(scenario);
-        redrawOptions(scenario.queue[index], index);
+
+        //redrawCircuit(scenario);
+        //redrawOptions(scenario.queue[index], index);
       } else {
         console.error(error);
       }
@@ -157,6 +152,7 @@ function initControls(scenario) {
       d3.json('/api/edit/' + index)
           .post(JSON.stringify(step.params), handleResult);
     }
+    main();
   });
 }
 
@@ -185,9 +181,9 @@ function redrawMenu(name, module) {
     var form = enter.append('div')
         .classed('input-group', true);
 
-      form.append('span')
-          .classed('command-name', true)
-          .classed('input-group-addon', true);
+      //form.append('span')
+      //    .classed('command-name', true)
+      //    .classed('input-group-addon', true);
 
       form.append('input')
           .attr('type', 'text')
@@ -204,8 +200,8 @@ function redrawMenu(name, module) {
 
   commands.exit().remove();
 
-  commands.select('.command-name').text(commandName);
-  commands.select('.help-block').text(function(r) { return r.value.descr; });
+  //commands.select('.command-name').text(commandName);
+  commands.select('.command-run').text(function(r) { return r.value.descr; });
   commands.select('input')
       .classed('hide', function (r) { return r.value.param_count === 0; })
       .attr('command', commandName)
@@ -217,12 +213,39 @@ function redrawMenu(name, module) {
 }
 
 /**
+ * @param {Scenario} scenario
+ */
+function redrawStatus(status) {
+  if (status !== undefined) {
+    d3.select('.loop-action')
+      .classed('btn-success', !status.status)
+      .classed('btn-danger', status.status)
+  }
+
+  return status.status;
+}
+
+/**
+ * @param {Status} current status
+ */
+function changeStatus(status) {
+  if (status !== undefined) {
+    if (!status.status){
+        d3.json('/api/start', nop);
+    }else{
+        d3.json('/api/stop', nop);
+    }
+  }
+
+  redrawHeader();
+
+}
+
+/**
  * @param {!Scenario} scenario
  */
-function redrawHeader(scenario) {
-  d3.select('.loop-action')
-      .classed('btn-success', !scenario.running)
-      .classed('btn-danger', scenario.running)
+function redrawHeader() {
+  d3.json('/api/status', redrawStatus);
 }
 
 /**
@@ -303,6 +326,7 @@ function redrawOptions(step, index) {
  * @param {!Scenario} scenario
  */
 function redrawCircuit(scenario) {
+
   var circuit = d3.select('.scenario')
       .selectAll('.step')
       .data(scenario.queue);
@@ -337,13 +361,12 @@ function init(error, scenario) {
     scenario.running = false;
 
     initControls(scenario);
-
-    redrawHeader(scenario);
     redrawCircuit(scenario);
   } else {
     console.error(error);
   }
 }
+
 
 /**
  * Application bootstrap.
