@@ -47,7 +47,7 @@ function stepModule(step, callback) {
   var module = moduleCache[step.name];
   if (module === undefined) {
     d3.json('/api/help/' + step.name, function(error, module) {
-      if (module !== null) {
+      if (module !== undefined) {
         callback(moduleCache[step.name] = module);
       } else {
         console.error(error);
@@ -84,6 +84,7 @@ function initControls(scenario) {
 
       stepModule(scenario.current, function(module) {
         redrawMenu(scenario.current.name, module);
+        redrawOptions(scenario, scenario.current)
       });
     }
   });
@@ -99,7 +100,7 @@ function initControls(scenario) {
       d3.json('/api/cmd/' + module).post(JSON.stringify({
         'cmd': command + ' ' + args
       }), function(error, result) {
-        if (result !== null) {
+        if (result !== undefined) {
           d3.select('.output').insert('pre', ':first-child').text(result.response);
         } else {
           console.error(error);
@@ -176,6 +177,50 @@ function redrawHeader(scenario) {
 
 /**
  * @param {!Scenario} scenario
+ * @param {!Step} step
+ */
+function redrawOptions(scenario, step) {
+  var fields = d3.select('.options tbody')
+      .selectAll('tr')
+      .data(d3.entries(step.params));
+
+  var enter = fields.enter().append('tr');
+  
+    enter.append('td')
+        .append('p')
+        .classed('form-control-static', true);
+
+    enter.append('td')
+        .append('input')
+        .classed('form-control', true);
+
+    enter.append('td')
+        .append('button')
+        .classed('btn btn-primary', true)
+        .text('\u2714');
+
+    enter.append('td')
+        .append('button')
+        .classed('btn btn-danger', true)
+        .text('\u00D7');
+
+  fields.exit().remove();
+
+  fields.select('input').attr('value', function(record) {
+    return record.value;
+  });
+
+  fields.selectAll('button').attr('param', function(record) {
+    return record.key;
+  });
+
+  fields.select('p').text(function(record) {
+    return record.key;
+  });
+}
+
+/**
+ * @param {!Scenario} scenario
  */
 function redrawCircuit(scenario) {
   var circuit = d3.select('.scenario')
@@ -207,7 +252,7 @@ function redrawCircuit(scenario) {
  * @param {Scenario} scenario
  */
 function init(error, scenario) {
-  if (scenario !== null) {
+  if (scenario !== undefined) {
     scenario.current = null;
     scenario.running = false;
 
