@@ -255,8 +255,11 @@ class UserInterface:
             sys.stdout.flush()
             server.serve_forever()
         except KeyboardInterrupt:
+            self.CANEngine.stop_loop()
             server.server_close()
+            server.shutdown()
             print("gg bb")
+            exit()
 
 
     def console_loop(self):

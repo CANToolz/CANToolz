@@ -1,4 +1,3 @@
-
 /**
  * @typedef {{pipe: number}}
  */
@@ -58,6 +57,41 @@ function stepModule(step, callback) {
   }
 }
 
+/**
+ * @param {Scenario} scenario
+ */
+function redrawStatus(status) {
+  if (status !== undefined) {
+    d3.select('.loop-action')
+      .classed('btn-success', !status.status)
+      .classed('btn-danger', status.status)
+  }
+
+  return status.status;
+}
+
+/**
+ * @param {Status} current status
+ */
+function changeStatus(status) {
+  if (status !== undefined) {
+    if (!status.status){
+        d3.json('/api/start', nop);
+    }else{
+        d3.json('/api/stop', nop);
+    }
+  }
+
+  redrawHeader();
+
+}
+
+/**
+ * @param {!Scenario} scenario
+ */
+function redrawHeader() {
+  d3.json('/api/status', redrawStatus);
+}
 
 /**
  * @param {!Scenario} scenario
@@ -78,7 +112,7 @@ function initControls(scenario) {
       redrawOptions(scenario.current, scenario.queue.indexOf(scenario.current));
 
       stepModule(scenario.current, function(module) {
-         redrawMenu(scenario.current.name, module);
+        redrawMenu(scenario.current.name, module);
       });
     }
   });
@@ -98,7 +132,7 @@ function initControls(scenario) {
           d3.select('.output').insert('pre', ':first-child').text(result.response);
         } else {
           console.error(error);
-        }        
+        }
       });
     }
   });
@@ -111,7 +145,6 @@ function initControls(scenario) {
 
     function handleResult(error, result) {
       if (result !== undefined) {
-
         redrawCircuit(scenario);
         redrawOptions(scenario.queue[index], index);
       } else {
@@ -152,7 +185,6 @@ function initControls(scenario) {
       d3.json('/api/edit/' + index)
           .post(JSON.stringify(step.params), handleResult);
     }
-    d3.json('/api/get_conf', init);
   });
 }
 
@@ -212,41 +244,6 @@ function redrawMenu(name, module) {
       .attr('module', name)
 }
 
-/**
- * @param {Scenario} scenario
- */
-function redrawStatus(status) {
-  if (status !== undefined) {
-    d3.select('.loop-action')
-      .classed('btn-success', !status.status)
-      .classed('btn-danger', status.status)
-  }
-
-  return status.status;
-}
-
-/**
- * @param {Status} current status
- */
-function changeStatus(status) {
-  if (status !== undefined) {
-    if (!status.status){
-        d3.json('/api/start', nop);
-    }else{
-        d3.json('/api/stop', nop);
-    }
-  }
-
-  redrawHeader();
-
-}
-
-/**
- * @param {!Scenario} scenario
- */
-function redrawHeader() {
-  d3.json('/api/status', redrawStatus);
-}
 
 /**
  * @param {!Step} step
@@ -288,8 +285,11 @@ function redrawOptions(step, index) {
   d3.select('.options .btn-success')
       .attr('step', index);
 
+  d3.select('.options')
+      .classed('hide', false);
+
   var enter = fields.enter().append('tr');
-  
+
     enter.append('td')
         .append('p')
         .classed('form-control-static', true);
@@ -326,11 +326,10 @@ function redrawOptions(step, index) {
  * @param {!Scenario} scenario
  */
 function redrawCircuit(scenario) {
-
   var circuit = d3.select('.scenario')
       .selectAll('.step')
       .data(scenario.queue);
-  
+
   var width = 100 / d3.max(scenario.queue, function(step) {
     return step.params.pipe
   });
@@ -342,11 +341,11 @@ function redrawCircuit(scenario) {
       .classed('well', true)
       .text(function (step) { return step.name })
       .style('top', function(step, i) { return i * STEP_HEIGHT_UNIT + 'px' })
-      .style('left', function(step) { return (step.params.pipe - 1) * width + '%' })
-      .style('width', width + '%')
       .style('height', STEP_HEIGHT_UNIT + 'px');
 
   circuit
+      .style('left', function(step) { return (step.params.pipe - 1) * width + '%' })
+      .style('width', width + '%')
       .classed('current', function(step) { return step === scenario.current; });
 }
 
@@ -361,12 +360,13 @@ function init(error, scenario) {
     scenario.running = false;
 
     initControls(scenario);
+
+    //redrawHeader(scenario);
     redrawCircuit(scenario);
   } else {
     console.error(error);
   }
 }
-
 
 /**
  * Application bootstrap.
@@ -374,3 +374,4 @@ function init(error, scenario) {
 function main() {
   d3.json('/api/get_conf', init);
 }
+
