@@ -9,8 +9,8 @@ import ast
 
 ######################################################
 #                                                    # 
-# CANToolz v 1.0b                                    #
-#             ... or can't?                          #
+#          Yet Another Car Hacking Tool              #
+#                   YACHT                            #
 ######################################################
 #      Main Code Monkey    Alyosha Sintsov           #
 #                              aka @asintsov         #
@@ -18,7 +18,7 @@ import ast
 ######################################################
 #                                                    #
 # Want to be there as contributor?                   #
-# Help us here: https://github.com/eik00d/CANSploit  #
+# Help us here: https://github.com/eik00d/CANToolz   #
 #                                                    #
 ########### MAIN CONTRIBUTORS ########################
 # - Boris Ryutin ( @dukebarman )                     #
@@ -32,7 +32,6 @@ import ast
 #    - unit tests                                    # 
 #    - new modules!                                  #
 #    - testers!                                      #
-#    - GUI... so original                            #
 #    - doc writes                                    #
 #    - bug fixers 8)                                 #
 #                                                    #
@@ -115,10 +114,7 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
         if path_parts[1] == "api" and self.can_engine:  # API Request
             cont_type = "application/json"
             cmd = path_parts[2]
-            if cmd == "quit_1337":
-                resp_code = 204
-                modz = self.can_engine.stop_loop()
-            elif cmd == "get_conf":
+            if cmd == "get_conf":
                 response = {"queue": []}
                 modz = self.can_engine.get_modules_list()
                 try:
@@ -168,6 +164,9 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     body = "{ \"error\": "+json.dumps(str(e))+"}"
 
         else:  # Static content request
+            if self.path == "/":
+                self.path = "/index.html"
+
             content = self.root + self.path
             try:
                 with open(content, "rb") as ins:
@@ -251,10 +250,12 @@ class UserInterface:
         WebConsole.can_engine = self.CANEngine
         server = ThreadingSimpleServer(('', port), WebConsole)
         print("CANtoolz WEB started at port: ", port)
+        print("\tTo exit CTRL-C...")
         try:
             sys.stdout.flush()
             server.serve_forever()
         except KeyboardInterrupt:
+            server.server_close()
             print("gg bb")
 
 

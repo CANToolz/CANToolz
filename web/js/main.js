@@ -112,8 +112,8 @@ function initControls(scenario) {
     function handleResult(error, result) {
       if (result !== undefined) {
 
-        //redrawCircuit(scenario);
-        //redrawOptions(scenario.queue[index], index);
+        redrawCircuit(scenario);
+        redrawOptions(scenario.queue[index], index);
       } else {
         console.error(error);
       }
@@ -152,7 +152,7 @@ function initControls(scenario) {
       d3.json('/api/edit/' + index)
           .post(JSON.stringify(step.params), handleResult);
     }
-    main();
+    d3.json('/api/get_conf', init);
   });
 }
 
