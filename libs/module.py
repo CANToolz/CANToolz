@@ -1,4 +1,5 @@
 import threading
+import collections
 
 '''
 Generic class for modules
@@ -11,7 +12,7 @@ class CANModule:
     help = "No help available"
     id = 0
     version = 0.0
-    _cmdList = {}  # Command list (doInit section)
+
     _active = True  # Enabled/Disabled
     thr_block = threading.Event()  # Blocking mode (using events)
 
@@ -60,10 +61,8 @@ class CANModule:
         self.DEBUG = int(params.get('debug', 0))
         self._bus = int(params.get('bus', 0))
         self._active = False if params.get('active') in ["False", "false", "0", "-1"] else True
-
-        self._cmdList = {
-            's': ["Stop/Activate current module", 0, "", self.do_activate]
-        }
+        self._cmdList = collections.OrderedDict()  # Command list (doInit section)
+        self._cmdList['s'] = ["Stop/Activate current module", 0, "", self.do_activate]
 
         self.do_init(params)
 

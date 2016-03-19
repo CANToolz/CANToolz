@@ -150,7 +150,7 @@ class CANSploit:
         # Load all modules and params form config file
 
     def load_config(self, fullpath):  # Load config from file
-
+        fullpath = fullpath.replace('\\', '/')
         parts = fullpath.split("/")
 
         if len(parts)>1:

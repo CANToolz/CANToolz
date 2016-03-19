@@ -66,17 +66,16 @@ class mod_stat(CANModule):
             self._cmdList['f'] = ["Print table to configured file", 0, "", self.do_flash_file]
             self.do_open_files()
 
-        if 'shift' in params:
-            self.UDSList = UDSMessage(params['shift'])
-        else:
-            self.UDSList = UDSMessage()
+        self.shift = params.get('shift', 8)
+        self.UDSList = UDSMessage(self.shift)
 
         self._cmdList['p'] = ["Print current table", 0, "", self.do_print]
+        self._cmdList['a'] = ["Analyses of captured traffic", 0, "", self.do_anal]
         self._cmdList['c'] = ["Clean table, remove alerts", 0, "", self.do_clean]
         self._cmdList['m'] = ["Enable alert mode and insert mark into the table", 1, "<ID>", self.add_alert]
-        self._cmdList['a'] = ["Analyses of captured traffic", 0, "", self.do_anal]
         self._cmdList['i'] = ["Dump ISO to file", 1, " <filename> ", self.do_dump_iso]
         self._cmdList['r'] = ["Dump ALL in replay format", 1, " <filename>", self.do_dump_replay]
+
 
     def do_anal(self):
         ret_str = "ISO TP Messages:\n"
@@ -239,6 +238,7 @@ class mod_stat(CANModule):
         self._bodyList = collections.OrderedDict()
         self._alert = False
         self.ISOList = collections.OrderedDict()
+        self.UDSList = UDSMessage(self.shift)
         return ""
 
         # Effect (could be fuzz operation, sniff, filter or whatever)
