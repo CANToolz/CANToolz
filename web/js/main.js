@@ -373,5 +373,6 @@ function init(error, scenario) {
  */
 function main() {
   d3.json('/api/get_conf', init);
+  setInterval( "redrawHeader()", 1000 );
 }
 

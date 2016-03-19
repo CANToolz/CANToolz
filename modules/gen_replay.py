@@ -60,12 +60,12 @@ class gen_replay(CANModule):
             except:
                 self.dprint(2, "can't open files with CAN messages!")
 
+        self._cmdList['g'] = ["Enable/Disable sniff mode to collect packets", 0, "", self.sniff_mode]
         self._cmdList['p'] = ["Print count of loaded packets", 0, "", self.cnt_print]
         self._cmdList['r'] = ["Replay range from loaded, from number X to number Y", 1, " <X>-<Y> ", self.replay_mode]
         self._cmdList['d'] = ["Save range of loaded packets, from X to Y", 1, " <X>-<Y> (if no parameters then all)",
                               self.save_dump]
         self._cmdList['c'] = ["Clean loaded table", 0, "", self.clean_table]
-        self._cmdList['g'] = ["Enable/Disable sniff mode to collect packets", 0, "", self.sniff_mode]
         self._cmdList['l'] = ["Load packets from file", 1, " <file> ", self.cmd_load]
 
     def clean_table(self):

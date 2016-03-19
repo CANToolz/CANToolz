@@ -1,5 +1,6 @@
 from optparse import OptionParser
 from libs.engine import *
+import collections
 import re
 import SimpleHTTPServer
 import SocketServer
@@ -129,7 +130,7 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
             elif cmd == "help" and path_parts[3]:
                 try:
                     help_list = self.can_engine.get_modules_list()[self.can_engine.find_module(str(path_parts[3]))][1]._cmdList
-                    response_help = {}
+                    response_help = collections.OrderedDict()
                     for cmd, body in help_list.iteritems():
                         response_help[cmd] = {'descr': body[0], 'descr_param':body[2], 'param_count': body[1]}
                     body = json.dumps(response_help, ensure_ascii=False)
