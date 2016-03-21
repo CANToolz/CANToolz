@@ -2,7 +2,7 @@ import sys
 import unittest
 import time
 
-class ModUdsTests(unittest.TestCase):
+class ModFuzzTests(unittest.TestCase):
     def tearDown(self):
         self.CANEngine.stop_loop()
         self.CANEngine = None
@@ -25,7 +25,7 @@ class ModUdsTests(unittest.TestCase):
     def test_fuzz_iso(self):
         self.CANEngine = CANSploit()
         self.CANEngine.load_config("tests/test_6.py")
-        self.CANEngine.edit_module(0, {'id': [111], 'data': [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18],\
+        self.CANEngine.edit_module(0, {'id': [[111,112]], 'data': [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18],\
                                        'delay': 0,'index':[5,16],'mode':'ISO'})
         self.CANEngine.start_loop()
         time.sleep(1)
@@ -308,7 +308,7 @@ class ModFirewallTests(unittest.TestCase):
     def test_blockedBody(self):
         self.CANEngine = CANSploit()
         self.CANEngine.load_config("tests/test_1.py")
-        self.CANEngine.edit_module(2, {'pipe': 2, 'black_body': [1, 2, 3, 6, 5]})
+        self.CANEngine.edit_module(2, {'pipe': 2, 'black_body': [[1, 2, 3, 6, 5]]})
         self.CANEngine.start_loop()
         index = 3
 
@@ -326,7 +326,7 @@ class ModFirewallTests(unittest.TestCase):
         #self.assertFalse(mod.frame_id == 4, "We should be able to find ID 4")
         self.CANEngine._enabledList[index][1].CANList = None
 
-        self.CANEngine.edit_module(2, {'pipe': 2, 'white_body': [1, 2, 3, 6, 5]})
+        self.CANEngine.edit_module(2, {'pipe': 2, 'white_body': [[1, 2, 3, 6, 5]]})
 
         self.CANEngine.call_module(0, "t 4:5:0102030605")  # pass
         time.sleep(1)

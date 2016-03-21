@@ -32,7 +32,7 @@ CANToolz can work with CAN network by using next hardware:
 - mod_fuzz1        - Simple 'Proxy' fuzzer  (1 byte) Can be combined with gen_ping/gen_replay
 - mod_printMessage - printing CAN messages
 - mod_stat         - CAN messages statistic (with .csv file output)
-                     Analyses option (c mod_stat a) will try to find UDS/ISO TP messages
+                     Analysis option (c mod_stat a) will try to find UDS/ISO TP messages
 - gen_ping         - generating CAN messages with chosen IDs (ECU/Service discovery)
 - gen_replay       - save and replay packets
 

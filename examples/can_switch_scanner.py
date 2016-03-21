@@ -10,9 +10,9 @@ load_modules = {
 actions = [
     {'hw_USBtin':    {'action': 'read','pipe': 1}},     # Read to PIPE 1 from IVI
     {'hw_USBtin~2':  {'action': 'read','pipe': 2}},     # Read to PIPE 2 from OBD2 port
-    {'mod_firewall': {'white_body':[1,2,3,4,5,6,7,8],'pipe': 1}}, # Block all other CAN frames, but let frames with
+    {'mod_firewall': {'white_body':[[1,2,3,4,5,6,7,8]],'pipe': 1}}, # Block all other CAN frames, but let frames with
                                                                   #  data "\x01\x02\x03\x04\x05\x06\x07\x08" pass
-    {'mod_firewall': {'white_body':[1,2,3,4,5,6,7,8], 'pipe': 2}},
+    {'mod_firewall': {'white_body':[[1,2,3,4,5,6,7,8]], 'pipe': 2}},
 
     {'mod_stat': {'pipe': 1}}, {'mod_stat': {'pipe': 2}}, # read from both pipes after filtration
 
@@ -56,11 +56,11 @@ actions = [
 #                 ||
 #                 ||
 #                 \/
-# (2)     -       mod_firewall            {'pipe': 1, 'white_body': [1, 2, 3, 4, 5, 6, 7, 8]}          Enabled: True
+# (2)     -       mod_firewall            {'pipe': 1, 'white_body': [[1, 2, 3, 4, 5, 6, 7, 8]]}          Enabled: True
 #                 ||
 #                 ||
 #                 \/
-# (3)     -       mod_firewall            {'pipe': 2, 'white_body': [1, 2, 3, 4, 5, 6, 7, 8]}          Enabled: True
+# (3)     -       mod_firewall            {'pipe': 2, 'white_body': [[1, 2, 3, 4, 5, 6, 7, 8]]}          Enabled: True
 #                 ||
 #                 ||
 #                 \/

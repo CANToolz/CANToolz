@@ -45,6 +45,9 @@ import ast
 
 class ThreadingSimpleServer(SocketServer.ThreadingMixIn,
                    BaseHTTPServer.HTTPServer):
+    daemon_threads = True
+    # much faster rebinding
+    allow_reuse_address = True
     pass
 
 # WEB class
@@ -256,9 +259,9 @@ class UserInterface:
             sys.stdout.flush()
             server.serve_forever()
         except KeyboardInterrupt:
-            self.CANEngine.stop_loop()
-            server.server_close()
             server.shutdown()
+            server.server_close()
+            self.CANEngine.stop_loop()
             print("gg bb")
             exit()
 

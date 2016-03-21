@@ -34,11 +34,11 @@ class mod_firewall(CANModule):
                 can_msg.CANData = False
                 self.dprint(2, "Message " + str(can_msg.CANFrame.frame_id) + " has been blocked(WL) (BUS = " + str(
                     can_msg.bus) + ")")
-            elif 'white_body' in args and can_msg.CANFrame.frame_data != args.get('white_body',[]):
+            if 'white_body' in args and can_msg.CANFrame.frame_data not in args.get('white_body',[]):
                 can_msg.CANData = False
                 self.dprint(2, "Message " + str(can_msg.CANFrame.frame_id) + " has been blocked(WB) (BUS = " + str(
                     can_msg.bus) + ")")
-            elif 'black_body' in args and can_msg.CANFrame.frame_data == args.get('black_body',[]):
+            elif 'black_body' in args and can_msg.CANFrame.frame_data in args.get('black_body',[]):
                 can_msg.CANData = False
                 self.dprint(2, "Message " + str(can_msg.CANFrame.frame_id) + " has been blocked(BB) (BUS = " + str(
                     can_msg.bus) + ")")

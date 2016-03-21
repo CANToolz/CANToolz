@@ -13,7 +13,7 @@ class gen_fuzz(CANModule):
     
     Module parameters: 
 
-      'id'  - [0,1,2,111,333] - ID to fuzz
+      'id'  - [0,1,2,111,333,[334,339]] - ID to fuzz. If list have sublist, than sublist should be a range
       'data'   - default data
       'delay'  - delay between frames (0 by default)
       'index'  - [1,4] - list of bytes (indexes) that should be fuzzed
@@ -37,21 +37,28 @@ class gen_fuzz(CANModule):
         self.queue_messages = []
         iso_mode = 1 if args.get('mode') in ['ISO', 'iso', 'ISOTP', 'isotp'] else 0
         if 'id' in args:
-            for i in args['id']:
-                _body = list(args.get('data', []))
-                _i = 0
-                while _i < len(_body):
-                    if _i in args.get('index', range(0, len(_body))):
-                        for byte in range(0, 256):
-                            _body2 = list(args.get('data', []))
-                            _body2[_i] = byte
-                            if iso_mode == 1:
-                                iso_list = ISOTPMessage.generate_can(i, _body2)
-                                iso_list.reverse()
-                                self.queue_messages.extend(iso_list)
-                            else:
-                                self.queue_messages.append(CANMessage.init_data(i, len(_body2), _body2[:8]))
-                    _i += 1
+            for z in args['id']:
+                if isinstance(z,list) and len(z)==2:
+                    x = range(z[0], z[1])
+                elif isinstance(z, int):
+                    x = [z]
+                else:
+                    break
+                for i in x:
+                    _body = list(args.get('data', []))
+                    _i = 0
+                    while _i < len(_body):
+                        if _i in args.get('index', range(0, len(_body))):
+                            for byte in range(0, 256):
+                                _body2 = list(args.get('data', []))
+                                _body2[_i] = byte
+                                if iso_mode == 1:
+                                    iso_list = ISOTPMessage.generate_can(i, _body2)
+                                    iso_list.reverse()
+                                    self.queue_messages.extend(iso_list)
+                                else:
+                                    self.queue_messages.append(CANMessage.init_data(i, len(_body2), _body2[:8]))
+                        _i += 1
 
 
 
