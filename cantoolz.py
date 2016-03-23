@@ -100,6 +100,7 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     body = "{ \"error\": "+json.dumps(str(e))+"}"
 
         self.send_response(resp_code)
+        self.send_header('X-Clacks-Overhead', 'GNU Terry Pratchett')
         self.send_header('Content-Type', cont_type)
         self.send_header('Connection', 'closed')
         self.send_header('Content-Length', len(body))
@@ -194,6 +195,7 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 body = str(e)
 
         self.send_response(resp_code)
+        self.send_header('X-Clacks-Overhead', 'GNU Terry Pratchett')
         self.send_header('Content-Type', cont_type)
         self.send_header('Connection', 'closed')
         self.send_header('Content-Length', len(body))
