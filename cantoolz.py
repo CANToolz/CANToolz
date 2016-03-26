@@ -93,7 +93,7 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 try:
                     paramz = json.loads(post_data).get("cmd")
                     text = self.can_engine.call_module(self.can_engine.find_module(str(path_parts[3])), str(paramz))
-                    body = json.dumps({"response": text})
+                    body = json.dumps({"response": unicode(text, "ISO-8859-1")})
                     resp_code = 200
                 except Exception as e:
                     resp_code = 500

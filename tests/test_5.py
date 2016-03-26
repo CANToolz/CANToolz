@@ -2,7 +2,7 @@
 #  Load modules
 load_modules = {
     'gen_ping'  : {'bus': 31},
-    'mod_stat'    : {'debug': 2, 'save_to': 'tests/dump.save'},
+    'mod_stat'    : {'debug': 2},
     'gen_replay'   : {'load_from': 'tests/test_responses.save'}
 }
 

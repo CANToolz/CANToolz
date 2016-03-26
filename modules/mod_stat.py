@@ -11,24 +11,14 @@ class mod_stat(CANModule):
     This module doing statistic for found CAN messages, putting into STDOUT or file (text/csv).
     Good to see anomalies, behaviour and discovery new IDs
     
-    Init parameters:
-
-        'file'  : 'stats.csv'  # file to save output
-        'count' : 200          # update file after each <count> messages
-        'format': 'csv'        # format to save, csv or text
+    Init parameters: NONE
        
     """
 
-    _file = None
-    _fname = "mod_stat.txt"
-    _counter = 0
-    _chkCounter = 0
     _bodyList = None
     _logFile = False
     ISOList = None
     UDSList = None
-    _format = 0  # 0 - plain text, 1 - CSV
-    _formats = {'CSV': 1, 'text': 0, 'csv': 1, 'txt': 0}
     id = 3
     _active = True
     version = 1.0
@@ -52,19 +42,6 @@ class mod_stat(CANModule):
 
         self._bodyList = collections.OrderedDict()
         self.ISOList = collections.OrderedDict()
-        if 'file' in params:
-            self._logFile = True
-            self._fname = params['file']
-
-            if 'count' in params:
-                self._chkCounter = int(params['count'])
-            else:
-                self._chkCounter = 100
-            if 'format' in params:
-                self._format = self._formats[params['format']]
-
-            self._cmdList['f'] = ["Print table to configured file", 0, "", self.do_flash_file]
-            self.do_open_files()
 
         self.shift = params.get('shift', 8)
         self.UDSList = UDSMessage(self.shift)
@@ -73,8 +50,8 @@ class mod_stat(CANModule):
         self._cmdList['a'] = ["Analyses of captured traffic", 0, "", self.do_anal]
         self._cmdList['c'] = ["Clean table, remove alerts", 0, "", self.do_clean]
         self._cmdList['m'] = ["Enable alert mode and insert mark into the table", 1, "<ID>", self.add_alert]
-        self._cmdList['i'] = ["Dump ISO to file", 1, " <filename> ", self.do_dump_iso]
         self._cmdList['r'] = ["Dump ALL in replay format", 1, " <filename>", self.do_dump_replay]
+        self._cmdList['d'] = ["Dump ALL in CSV format", 1, " <filename>", self.do_dump_csv]
 
 
     def do_anal(self):
@@ -92,6 +69,8 @@ class mod_stat(CANModule):
                         self.ISOList[fid] = []
                     self.ISOList[fid].append((bus, message_iso.message_length, message_iso.message_data))
                     ret_str += "\tID " + str(fid) + " and length " + str(message_iso.message_length) + "\n"
+                    ret_str += "\t\tData: " + ''.join(struct.pack("!B", b).encode('hex') for b in message_iso.message_data)
+                    ret_str += "\n\t\tASCII: " + ''.join(struct.pack("!B", b) for b in message_iso.message_data)+"\n\n"
                     # Check for UDS
                     self.UDSList.handle_message(message_iso)
                     message_iso = ISOTPMessage(fid)
@@ -128,76 +107,17 @@ class mod_stat(CANModule):
         except:
             self.dprint(2, "can't open log")
 
-    def do_dump_iso(self, name):
+    def do_dump_csv(self, name):
         _name = None
         try:
             _name = open(name.strip(), 'w')
+            _name.write("BUS,ID,LENGTH,MESSAGE,COUNT\n")
+            for fid, lst in self._bodyList.iteritems():
+                for (len, msg, bus, mod), cnt in lst.iteritems():
+                    _name.write(str(bus) + "," + str(fid) + "," + str(len) + "," + msg.encode('hex') +
+                                     ',' + str(cnt) + "\n")
         except:
             self.dprint(2, "can't open log")
-        if self._format == 0:
-            try:
-                self.do_dump_iso_file(_name)
-            except:
-                self.dprint(2, "can't open log")
-        elif self._format == 1:
-            try:
-                self.do_dump_iso_csv(_name)
-            except:
-                self.dprint(2, "can't open log")
-        _name.close()
-        return ""
-
-    def do_dump_file(self):
-        self._file.seek(0)
-        self._file.truncate()
-        self._file.write("BUS\tID\tLEN\t\tMESSAGE\t\t\tCOUNT\n")
-        self._file.write("")
-        for fid, lst in self._bodyList.iteritems():
-            for (lenX, msg, bus, mod), cnt in lst.iteritems():
-                if mod:
-                    modx = "\t"
-                else:
-                    modx = "\t\t"
-                sp = " " * (16 - len(msg) * 2)
-                self._file.write(str(bus) + "\t" + str(fid) + "\t" + str(lenX) + modx + msg.encode('hex') +
-                                 sp + '\t' + str(cnt) + "\n")
-        return ""
-
-    def do_dump_iso_file(self, _name):
-
-        self._file.seek(0)
-        self._file.truncate()
-        self._file.write("")
-        for id, lst in self.ISOList.iteritems():
-            for (bus, length, data) in lst:
-                _name.write("\nPacket ID: " + str(id) + "\nBUS:\t" + str(bus) +
-                            "\nLength:\t" + str(length) + "\n----------HEX-----------\n" +
-                            ''.join(struct.pack("!B", b) for b in data).encode('hex') +
-                            '\n----------ASCII--------------\n' +
-                            ''.join(struct.pack("!B", b) for b in data) + '\n----------------------\n\n')
-        return ""
-
-    def do_dump_iso_csv(self, _name):
-
-        self._file.seek(0)
-        self._file.truncate()
-        self._file.write("BUS,ID,LENGTH,MESSAGE,ASCII\n")
-        self._file.write("")
-        for fid, lst in self.ISOList.iteritems():
-            for (bus, length, data) in lst:
-                _name.write(str(bus) + "," + str(fid) +
-                            "," + str(length) + "," + ''.join(struct.pack("!B", b) for b in data).encode('hex') +
-                            "," + ''.join(struct.pack("!B", b) for b in data) + "\n")
-        return ""
-
-    def do_dump_csv(self):
-        self._file.seek(0)
-        self._file.truncate()
-        self._file.write("BUS,ID,LENGTH,MESSAGE,COUNT\n")
-        for fid, lst in self._bodyList.iteritems():
-            for (len, msg, bus, mod), cnt in lst.iteritems():
-                self._file.write(str(bus) + "," + str(fid) + "," + str(len) + "," + msg.encode('hex') +
-                                 ',' + str(cnt) + "\n")
         return ""
 
     def do_print(self):
@@ -222,19 +142,6 @@ class mod_stat(CANModule):
         self._alert = True
         return ""
 
-    def do_flash_file(self):
-        if self._format == 0:
-            try:
-                self.do_dump_file()
-            except:
-                self.dprint(2, "can't open log")
-
-        elif self._format == 1:
-            try:
-                self.do_dump_csv()
-            except:
-                self.dprint(2, "can't open log")
-        return ""
 
     def do_clean(self):
         self._bodyList = collections.OrderedDict()
@@ -276,11 +183,5 @@ class mod_stat(CANModule):
                         can_msg.bus,
                         can_msg.CANFrame.frame_ext)
                     ] += 1
-
-            if self._logFile:
-                self._counter += 1
-                if self._counter >= self._chkCounter:
-                    self._counter = 0
-                    self.do_flash_file()
 
         return can_msg
