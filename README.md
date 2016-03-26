@@ -24,6 +24,9 @@ CANToolz can work with CAN network by using next hardware:
 1. [USBtin](http://www.fischl.de/usbtin/)
 2. [CANBus Triple](https://canb.us/)
 
+### Fast start
+sudo python cantoolz.py -g w -c examples/can_sniff.py 
+  
 ## Modules
 
 - hw_CANBusTriple  - IO module for CANBus Triple HW
