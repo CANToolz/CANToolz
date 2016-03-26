@@ -82,6 +82,8 @@ class mod_stat(CANModule):
         for fid, lst in self._bodyList.iteritems():
             message_iso = ISOTPMessage(fid)
             for (lenX, msg, bus, mod), cnt in lst.iteritems():
+                if lenX < 2:
+                    continue
                 ret = message_iso.add_can(CANMessage.init_data(fid, len(msg), [struct.unpack("B", x)[0] for x in msg])) # TODO NEED RET?
                 #if ret < 0 or message_iso.message_length < 1:
                 #     message_iso = ISOTPMessage(fid)
