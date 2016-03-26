@@ -85,8 +85,8 @@ class mod_stat(CANModule):
                 if lenX < 2:
                     continue
                 ret = message_iso.add_can(CANMessage.init_data(fid, len(msg), [struct.unpack("B", x)[0] for x in msg])) # TODO NEED RET?
-                #if ret < 0 or message_iso.message_length < 1:
-                #     message_iso = ISOTPMessage(fid)
+                if ret < 0:
+                     message_iso = ISOTPMessage(fid)
                 if message_iso.message_finished and message_iso.message_length > 0 and ret == 1:
                     if fid not in self.ISOList:
                         self.ISOList[fid] = []
