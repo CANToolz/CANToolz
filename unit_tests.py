@@ -2,6 +2,54 @@ import sys
 import unittest
 import time
 
+class ModStatMetaTests(unittest.TestCase):
+    def tearDown(self):
+        self.CANEngine.stop_loop()
+        self.CANEngine = None
+        print("stopped")
+
+    def test_meta_add(self):
+        self.CANEngine = CANSploit()
+        self.CANEngine.load_config("tests/test_5.py")
+        self.CANEngine.start_loop()
+        time.sleep(1)
+        self.CANEngine.call_module(0, "r 0-9")
+        time.sleep(2)
+        mod_stat = 1
+        self.CANEngine.call_module(mod_stat, "i 1800 , TEST UDS")
+        time.sleep(1)
+        self.CANEngine.call_module(mod_stat, "z tests/meta.txt")
+        ret = self.CANEngine.call_module(mod_stat, "p")
+        print(ret)
+        idx = ret.find("TEST UDS")
+        self.assertTrue(0 < idx, "Comment 'TEST UDS' should be found 1 times")
+        idx2 = ret.find("TEST UDS", idx + 8)
+        self.assertTrue(0 < idx2, "Comment 'TEST UDS' should be found 2 times")
+        idx3 = ret.find("TEST UDS", idx2 + 8)
+        self.assertTrue(0 < idx3, "Comment 'TEST UDS' should be found 3 times")
+
+    def test_meta_add2(self):
+        self.CANEngine = CANSploit()
+        self.CANEngine.load_config("tests/test_5.py")
+        self.CANEngine.start_loop()
+        time.sleep(1)
+        self.CANEngine.call_module(0, "r 0-9")
+        time.sleep(2)
+        mod_stat = 1
+        ret = self.CANEngine.call_module(mod_stat, "p")
+        idx = ret.find("TEST UDS")
+        self.assertTrue(-1 == idx, "Comment 'TEST UDS' should NOT be found")
+        time.sleep(1)
+        self.CANEngine.call_module(mod_stat, "l tests/meta.txt")
+        ret = self.CANEngine.call_module(mod_stat, "p")
+        print(ret)
+        idx = ret.find("TEST UDS")
+        self.assertTrue(0 < idx, "Comment 'TEST UDS' should be found 1 times")
+        idx2 = ret.find("TEST UDS", idx + 8)
+        self.assertTrue(0 < idx2, "Comment 'TEST UDS' should be found 2 times")
+        idx3 = ret.find("TEST UDS", idx2 + 8)
+        self.assertTrue(0 < idx3, "Comment 'TEST UDS' should be found 3 times")
+
 class ModFuzzTests(unittest.TestCase):
     def tearDown(self):
         self.CANEngine.stop_loop()

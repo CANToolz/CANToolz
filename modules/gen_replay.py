@@ -28,7 +28,7 @@ class gen_replay(CANModule):
 
     def cmd_load(self, name):
         try:
-            with open(name, "r") as ins:
+            with open(name.strip(), "r") as ins:
                 for line in ins:
                     fid = line[:-1].split(":")[0]
                     length = line[:-1].split(":")[1]

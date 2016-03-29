@@ -1,6 +1,7 @@
 ## DRAFT Version 1.1-?
 ### CHANGES
- - mod_stat fixes: ASCII detection (print ASCII if found in the traffic)
+ - mod_stat feature added: ASCII detection (print ASCII if found in the traffic)
+ - mod_stat feature added: Marking CAN frames via metafile/metadata (COMMENTS for ID)
  - ???
 
 ## Version 1.1-1

@@ -46,12 +46,57 @@ class mod_stat(CANModule):
         self.shift = params.get('shift', 8)
         self.UDSList = UDSMessage(self.shift)
 
+        self.meta_data = {}
+
+        if 'meta_file' in params:
+            self.dprint(1, self.do_load_meta(params['meta']))
+
         self._cmdList['p'] = ["Print current table", 0, "", self.do_print]
         self._cmdList['a'] = ["Analyses of captured traffic", 0, "", self.do_anal]
         self._cmdList['c'] = ["Clean table, remove alerts", 0, "", self.do_clean]
         self._cmdList['m'] = ["Enable alert mode and insert mark into the table", 1, "<ID>", self.add_alert]
+        self._cmdList['i'] = ["Meta-data: add description for ID", 1, "<ID>, <description>", self.do_add_meta_descr]
+        self._cmdList['l'] = ["Load meta-data", 1, "<filename>", self.do_load_meta]
+        self._cmdList['z'] = ["Save meta-data", 1, "<filename>", self.do_save_meta]
         self._cmdList['r'] = ["Dump ALL in replay format", 1, " <filename>", self.do_dump_replay]
         self._cmdList['d'] = ["Dump ALL in CSV format", 1, " <filename>", self.do_dump_csv]
+
+    def do_add_meta_descr(self, input_params):
+        try:
+            fid, descr = input_params.split(',')
+            if int(fid) not in self.meta_data:
+                self.meta_data[int(fid)] = {}
+            self.meta_data[int(fid)]['id_descr'] = descr.strip()
+            return "Description added"
+        except Exception as e:
+            return "Description META error: " + str(e)
+
+    def do_load_meta(self, filename):
+        try:
+            with open(filename.strip(), "r") as ins:
+                for line in ins:
+                    frame_id = int(line[:-1].split(":")[0].strip())
+                    type_data = line[:-1].split(":")[1].strip()
+                    data = line[:-1].split(":")[2].strip()
+
+                    if frame_id not in self.meta_data:
+                        self.meta_data[frame_id] = {}
+
+                    self.meta_data[frame_id][type_data] = data
+        except Exception as e:
+            return "Can't load META: " + str(e)
+        return "Loaded META from " + filename
+
+    def do_save_meta(self, filename):
+        try:
+            _file = open(filename.strip(), 'w')
+            for (key, value) in self.meta_data.iteritems():
+                for (tp, data) in value.iteritems():
+                    _file.write(str(key) + ":" + tp + ":" + data + "\n")
+            _file.close()
+        except Exception as e:
+            return "Can't save META: " + str(e)
+        return "Saved META to " + filename
 
     # Detect ASCII data
     @staticmethod
@@ -145,7 +190,7 @@ class mod_stat(CANModule):
         _name = None
         try:
             _name = open(name.strip(), 'w')
-            _name.write("BUS,ID,LENGTH,MESSAGE,ASCII,COUNT\n")
+            _name.write("BUS,ID,LENGTH,MESSAGE,ASCII,COMMENT,COUNT\n")
             for fid, lst in self._bodyList.iteritems():
                 for (len, msg, bus, mod), cnt in lst.iteritems():
                     if self.is_ascii([struct.unpack("B", x)[0] for x in msg]):
@@ -153,8 +198,8 @@ class mod_stat(CANModule):
                     else:
                         data_ascii = ""
                     _name.write(
-                        str(bus) + "," + str(fid) + "," + str(len) + "," + msg.encode('hex') + ',' + data_ascii + \
-                        ',' + str(cnt) + "\n"
+                        str(bus) + "," + str(fid) + "," + str(len) + "," + msg.encode('hex') + ',' + data_ascii + ',' +\
+                        "\"" + self.meta_data.get(fid, {}).get('id_descr', "") + "\"" + ',' + str(cnt) + "\n"
                     )
         except:
             self.dprint(2, "can't open log")
@@ -162,7 +207,7 @@ class mod_stat(CANModule):
 
     def do_print(self):
         table = "\n"
-        table += "BUS\tID\tLENGTH\t\tMESSAGE\t\tASCII\t\t\tCOUNT"
+        table += "BUS\tID\tLENGTH\t\tMESSAGE\t\tASCII\t\t\tDESCR\t\tCOUNT"
         table += "\n"
         for fid, lst in self._bodyList.iteritems():
             for (lenX, msg, bus, mod), cnt in lst.iteritems():
@@ -176,8 +221,9 @@ class mod_stat(CANModule):
                 else:
                     data_ascii = "\t\t"
                 table += str(bus) + "\t" + str(fid) + "\t" + str(lenX) + modx + msg.encode(
-                    'hex') + sp + '\t' + data_ascii + \
+                    'hex') + sp + '\t' + data_ascii + self.meta_data.get(fid, {}).get('id_descr', "") + "\t" +\
                          str(cnt) + "\n"
+                self.meta_data.get(fid, {}).get('id_descr', "")
         table += ""
         return table
 
@@ -194,8 +240,7 @@ class mod_stat(CANModule):
         self.UDSList = UDSMessage(self.shift)
         return ""
 
-        # Effect (could be fuzz operation, sniff, filter or whatever)
-
+    # Effect (could be fuzz operation, sniff, filter or whatever)
     def do_effect(self, can_msg, args):
         if can_msg.CANData:
             if can_msg.CANFrame.frame_id not in self._bodyList:
