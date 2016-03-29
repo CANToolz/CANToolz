@@ -62,18 +62,24 @@ class gen_replay(CANModule):
 
         self._cmdList['g'] = ["Enable/Disable sniff mode to collect packets", 0, "", self.sniff_mode]
         self._cmdList['p'] = ["Print count of loaded packets", 0, "", self.cnt_print]
-        self._cmdList['r'] = ["Replay range from loaded, from number X to number Y", 1, " <X>-<Y> ", self.replay_mode]
-        self._cmdList['d'] = ["Save range of loaded packets, from X to Y", 1, " <X>-<Y> (if no parameters then all)",
-                              self.save_dump]
-        self._cmdList['c'] = ["Clean loaded table", 0, "", self.clean_table]
         self._cmdList['l'] = ["Load packets from file", 1, " <file> ", self.cmd_load]
+        self._cmdList['r'] = ["Replay range from loaded, from number X to number Y", 1, " <X>-<Y> ", self.replay_mode]
+        self._cmdList['d'] = ["Save range of loaded packets, from X to Y", 1, " <X>-<Y>, <filename>",self.save_dump]
+        self._cmdList['c'] = ["Clean loaded table", 0, "", self.clean_table]
+
 
     def clean_table(self):
         self.CANList = []
         return ""
 
-    def save_dump(self, indexes):
-        ret = "Saved to " + self._fname
+    def save_dump(self, input_params):
+        fname = self._fname
+        indexes = input_params.split(',')[0].strip()
+        if len(input_params.split(',')) > 1:
+            fname = input_params.split(',')[1].strip()
+
+        ret = "Saved to " + fname
+
         try:
             _num1 = int(indexes.split("-")[0])
             _num2 = int(indexes.split("-")[1])
@@ -82,7 +88,7 @@ class gen_replay(CANModule):
             _num2 = len(self.CANList)
         if len(self.CANList) >= _num2 > _num1 >= 0:
             try:
-                _file = open(self._fname, 'w')
+                _file = open(fname, 'w')
                 for i in range(_num1, _num2):
                     _file.write(str(self.CANList[i].frame_id) + ":" + str(self.CANList[i].frame_length) + ":" + str(
                         self.CANList[i].frame_raw_data.encode('hex')) + "\n")

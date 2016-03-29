@@ -53,6 +53,30 @@ class mod_stat(CANModule):
         self._cmdList['r'] = ["Dump ALL in replay format", 1, " <filename>", self.do_dump_replay]
         self._cmdList['d'] = ["Dump ALL in CSV format", 1, " <filename>", self.do_dump_csv]
 
+    # Detect ASCII data
+    @staticmethod
+    def is_ascii(text_array):
+        bool_ascii = False
+        ascii_cnt = 0
+        pre_byte = False
+
+        for byte in text_array:
+            if 31 < byte < 127:
+                if pre_byte:
+                    ascii_cnt += 1
+                    if ascii_cnt > 1:
+                        bool_ascii = True
+                        break
+                else:
+                    pre_byte = True
+            else:
+                pre_byte = False
+                ascii_cnt = 0
+
+        if ascii_cnt > 5:
+            bool_ascii = True
+
+        return bool_ascii
 
     def do_anal(self):
         ret_str = "ISO TP Messages:\n"
@@ -61,16 +85,23 @@ class mod_stat(CANModule):
             for (lenX, msg, bus, mod), cnt in lst.iteritems():
                 if lenX < 2:
                     continue
-                ret = message_iso.add_can(CANMessage.init_data(fid, len(msg), [struct.unpack("B", x)[0] for x in msg])) # TODO NEED RET?
+                ret = message_iso.add_can(
+                    CANMessage.init_data(fid, len(msg), [struct.unpack("B", x)[0] for x in msg]))  # TODO NEED RET?
                 if ret < 0:
-                     message_iso = ISOTPMessage(fid)
+                    message_iso = ISOTPMessage(fid)
                 if message_iso.message_finished and message_iso.message_length > 0 and ret == 1:
                     if fid not in self.ISOList:
                         self.ISOList[fid] = []
                     self.ISOList[fid].append((bus, message_iso.message_length, message_iso.message_data))
                     ret_str += "\tID " + str(fid) + " and length " + str(message_iso.message_length) + "\n"
-                    ret_str += "\t\tData: " + ''.join(struct.pack("!B", b).encode('hex') for b in message_iso.message_data)
-                    ret_str += "\n\t\tASCII: " + ''.join(struct.pack("!B", b) for b in message_iso.message_data)+"\n\n"
+                    ret_str += "\t\tData: " + ''.join(
+                        struct.pack("!B", b).encode('hex') for b in message_iso.message_data)
+                    if self.is_ascii(message_iso.message_data):
+                        ret_str += "\n\t\tASCII: " + ''.join(
+                            struct.pack("!B", b) for b in message_iso.message_data) + "\n\n"
+                    else:
+                        ret_str += "\n\n"
+
                     # Check for UDS
                     self.UDSList.handle_message(message_iso)
                     message_iso = ISOTPMessage(fid)
@@ -87,10 +118,13 @@ class mod_stat(CANModule):
                         text = " (" + UDSMessage.services_base[service][0].values()[0] + ") "
                 if body['status'] == 1:
                     data = ''.join(struct.pack("!B", b) for b in body['response']['data'])
+                    data_ascii = "\n"
+                    if self.is_ascii(body['response']['data']):
+                        data_ascii = " ASCII: " + data+"\n"
                     ret_str += "\n\tID: " + str(fid) + " Service: " + str(hex(service)) + " Sub: " + (str(
-                        hex(body['sub'])) if body['sub'] else "None") + text + "\n\t\tResponse: " + data.encode('hex') + " ASCII: " + data
+                        hex(body['sub'])) if body['sub'] else "None") + text + "\n\t\tResponse: " + data.encode('hex') + data_ascii
                 elif body['status'] == 2:
-                    ret_str += "\n\tID: " + str(fid) + " Service: " + str(hex(service)) + " Sub: " + (str(
+                   ret_str += "\n\tID: " + str(fid) + " Service: " + str(hex(service)) + " Sub: " + (str(
                         hex(body['sub'])) if body['sub'] else "None") + text + "\n\t\tError: " + body['response']['error']
 
         return ret_str
@@ -111,18 +145,24 @@ class mod_stat(CANModule):
         _name = None
         try:
             _name = open(name.strip(), 'w')
-            _name.write("BUS,ID,LENGTH,MESSAGE,COUNT\n")
+            _name.write("BUS,ID,LENGTH,MESSAGE,ASCII,COUNT\n")
             for fid, lst in self._bodyList.iteritems():
                 for (len, msg, bus, mod), cnt in lst.iteritems():
-                    _name.write(str(bus) + "," + str(fid) + "," + str(len) + "," + msg.encode('hex') +
-                                     ',' + str(cnt) + "\n")
+                    if self.is_ascii([struct.unpack("B", x)[0] for x in msg]):
+                        data_ascii = '"' + msg + '"'
+                    else:
+                        data_ascii = ""
+                    _name.write(
+                        str(bus) + "," + str(fid) + "," + str(len) + "," + msg.encode('hex') + ',' + data_ascii + \
+                        ',' + str(cnt) + "\n"
+                    )
         except:
             self.dprint(2, "can't open log")
         return ""
 
     def do_print(self):
         table = "\n"
-        table += "BUS\tID\tLENGTH\t\tMESSAGE\t\t\tCOUNT"
+        table += "BUS\tID\tLENGTH\t\tMESSAGE\t\tASCII\t\t\tCOUNT"
         table += "\n"
         for fid, lst in self._bodyList.iteritems():
             for (lenX, msg, bus, mod), cnt in lst.iteritems():
@@ -131,8 +171,13 @@ class mod_stat(CANModule):
                 else:
                     modx = "\t\t"
                 sp = " " * (16 - len(msg) * 2)
-                table += str(bus) + "\t" + str(fid) + "\t" + str(lenX) + modx + msg.encode('hex') + sp + '\t' + str(
-                    cnt) + "\n"
+                if self.is_ascii([struct.unpack("B", x)[0] for x in msg]):
+                    data_ascii = msg + "\t\t"
+                else:
+                    data_ascii = "\t\t"
+                table += str(bus) + "\t" + str(fid) + "\t" + str(lenX) + modx + msg.encode(
+                    'hex') + sp + '\t' + data_ascii + \
+                         str(cnt) + "\n"
         table += ""
         return table
 
@@ -141,7 +186,6 @@ class mod_stat(CANModule):
         self._bodyList[int(x)][(0, "MARK", 0, False)] = 1
         self._alert = True
         return ""
-
 
     def do_clean(self):
         self._bodyList = collections.OrderedDict()
