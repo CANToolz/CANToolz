@@ -1,3 +1,8 @@
+## DRAFT Version 1.1-?
+### CHANGES
+ - mod_stat fixes: ASCII detection (print ASCII if found in the traffic)
+ - ???
+
 ## Version 1.1-1
 ### CHANGES
  - mod_stat fixes: better output, simple dump functions
