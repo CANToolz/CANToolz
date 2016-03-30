@@ -1,5 +1,6 @@
 from libs.module import *
 from libs.uds import *
+from libs.frag import *
 import collections
 
 
@@ -42,6 +43,7 @@ class mod_stat(CANModule):
 
         self._bodyList = collections.OrderedDict()
         self.ISOList = collections.OrderedDict()
+        self.FRGList = collections.OrderedDict()
 
         self.shift = params.get('shift', 8)
         self.UDSList = UDSMessage(self.shift)
@@ -56,6 +58,7 @@ class mod_stat(CANModule):
         self._cmdList['c'] = ["Clean table, remove alerts", 0, "", self.do_clean]
         self._cmdList['m'] = ["Enable alert mode and insert mark into the table", 1, "<ID>", self.add_alert]
         self._cmdList['i'] = ["Meta-data: add description for ID", 1, "<ID>, <description>", self.do_add_meta_descr]
+        self._cmdList['x'] = ["Meta-data: add index-byte for ID", 1, "<ID>, <index>-<range>-<start_value>", self.do_add_meta_index]
         self._cmdList['l'] = ["Load meta-data", 1, "<filename>", self.do_load_meta]
         self._cmdList['z'] = ["Save meta-data", 1, "<filename>", self.do_save_meta]
         self._cmdList['r'] = ["Dump ALL in replay format", 1, " <filename>", self.do_dump_replay]
@@ -68,6 +71,20 @@ class mod_stat(CANModule):
                 self.meta_data[int(fid)] = {}
             self.meta_data[int(fid)]['id_descr'] = descr.strip()
             return "Description added"
+        except Exception as e:
+            return "Description META error: " + str(e)
+
+    def do_add_meta_index(self, input_params):
+        try:
+            fid, idx = input_params.split(',')
+            fid = int(fid)
+            if idx.find("-") > 0 and int(idx.split('-')[0]) >= 0 and int(idx.split('-')[1]) >= 0 and int(idx.split('-')[2]) >= 0:
+                if int(fid) not in self.meta_data:
+                    self.meta_data[fid] = {}
+                self.meta_data[fid]['id_index'] = idx.strip()
+                return "Index added"
+            else:
+                return "Wrong INDEX format (Should be: <from_index> -  <to_index> - <start_value_of_index>)"
         except Exception as e:
             return "Description META error: " + str(e)
 
@@ -100,6 +117,17 @@ class mod_stat(CANModule):
 
     # Detect ASCII data
     @staticmethod
+    def ret_ascii(text_array):
+        return_str = ""
+        for byte in text_array:
+            if 31 < ord(byte) < 127:
+                return_str += byte
+            else:
+                return_str += '.'
+        return return_str
+
+    # Detect ASCII data
+    @staticmethod
     def is_ascii(text_array):
         bool_ascii = False
         ascii_cnt = 0
@@ -124,14 +152,28 @@ class mod_stat(CANModule):
         return bool_ascii
 
     def do_anal(self):
-        ret_str = "ISO TP Messages:\n"
+        ret_str = "ISO TP Messages:\n\n"
         for fid, lst in self._bodyList.iteritems():
             message_iso = ISOTPMessage(fid)
+            self.FRGList[fid] = FragmentedCAN()
             for (lenX, msg, bus, mod), cnt in lst.iteritems():
                 if lenX < 2:
                     continue
+
+                # Fragmented packets
+                index_bytes = self.meta_data.get(fid, {}).get('id_index', None)
+                if index_bytes: # We have META data
+                    idx1, idx2, strt = index_bytes.strip().split('-')
+                    idx1 = int(idx1)
+                    idx2 = int(idx2)
+                    strt = int(strt)
+                    self.FRGList[fid].add_can_meta(CANMessage.init_data(fid, len(msg), [struct.unpack("!B", x)[0] for x in msg]), idx1, idx2, strt)
+                else:
+                    self.FRGList[fid].add_can(CANMessage.init_data(fid, len(msg), [struct.unpack("!B", x)[0] for x in msg]))
+
+                # ISO-TP detection part
                 ret = message_iso.add_can(
-                    CANMessage.init_data(fid, len(msg), [struct.unpack("B", x)[0] for x in msg]))  # TODO NEED RET?
+                    CANMessage.init_data(fid, len(msg), [struct.unpack("!B", x)[0] for x in msg]))  # TODO NEED RET?
                 if ret < 0:
                     message_iso = ISOTPMessage(fid)
                 if message_iso.message_finished and message_iso.message_length > 0 and ret == 1:
@@ -142,8 +184,8 @@ class mod_stat(CANModule):
                     ret_str += "\t\tData: " + ''.join(
                         struct.pack("!B", b).encode('hex') for b in message_iso.message_data)
                     if self.is_ascii(message_iso.message_data):
-                        ret_str += "\n\t\tASCII: " + ''.join(
-                            struct.pack("!B", b) for b in message_iso.message_data) + "\n\n"
+                        ret_str += "\n\t\tASCII: " + self.ret_ascii(''.join(
+                            struct.pack("!B", b) for b in message_iso.message_data)) + "\n\n"
                     else:
                         ret_str += "\n\n"
 
@@ -165,13 +207,21 @@ class mod_stat(CANModule):
                     data = ''.join(struct.pack("!B", b) for b in body['response']['data'])
                     data_ascii = "\n"
                     if self.is_ascii(body['response']['data']):
-                        data_ascii = " ASCII: " + data+"\n"
+                        data_ascii = "\n\t\tASCII: " + self.ret_ascii(data)+"\n"
                     ret_str += "\n\tID: " + str(fid) + " Service: " + str(hex(service)) + " Sub: " + (str(
                         hex(body['sub'])) if body['sub'] else "None") + text + "\n\t\tResponse: " + data.encode('hex') + data_ascii
                 elif body['status'] == 2:
                    ret_str += "\n\tID: " + str(fid) + " Service: " + str(hex(service)) + " Sub: " + (str(
                         hex(body['sub'])) if body['sub'] else "None") + text + "\n\t\tError: " + body['response']['error']
 
+        ret_str += "\n\nDe-Fragmented frames:\n"
+        for fid, data in self.FRGList.iteritems():
+            data.clean_build()
+            for message in data.messages:
+                ret_str += "\n\tID " + str(fid) + " and length " + str(message['message_length']) + "\n"
+                ret_str += "\t\tData: " + ''.join(struct.pack("!B", b).encode('hex') for b in message['message_data'])
+                if self.is_ascii(message['message_data']):
+                    ret_str += "\n\t\tASCII: " + self.ret_ascii(''.join(struct.pack("!B", b) for b in message['message_data'])) + "\n\n"
         return ret_str
 
     def do_dump_replay(self, name):
@@ -194,7 +244,7 @@ class mod_stat(CANModule):
             for fid, lst in self._bodyList.iteritems():
                 for (len, msg, bus, mod), cnt in lst.iteritems():
                     if self.is_ascii([struct.unpack("B", x)[0] for x in msg]):
-                        data_ascii = '"' + msg + '"'
+                        data_ascii = '"' + self.ret_ascii(msg) + '"'
                     else:
                         data_ascii = ""
                     _name.write(
@@ -217,7 +267,7 @@ class mod_stat(CANModule):
                     modx = "\t\t"
                 sp = " " * (16 - len(msg) * 2)
                 if self.is_ascii([struct.unpack("B", x)[0] for x in msg]):
-                    data_ascii = msg + "\t\t"
+                    data_ascii = self.ret_ascii(msg) + "\t\t"
                 else:
                     data_ascii = "\t\t"
                 table += str(bus) + "\t" + str(fid) + "\t" + str(lenX) + modx + msg.encode(
@@ -237,6 +287,7 @@ class mod_stat(CANModule):
         self._bodyList = collections.OrderedDict()
         self._alert = False
         self.ISOList = collections.OrderedDict()
+        self.FRGList = collections.OrderedDict()
         self.UDSList = UDSMessage(self.shift)
         return ""
 

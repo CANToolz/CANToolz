@@ -1,7 +1,9 @@
-## DRAFT Version 1.1-?
+## DRAFT Version 1.2-?
 ### CHANGES
  - mod_stat feature added: ASCII detection (print ASCII if found in the traffic)
  - mod_stat feature added: Marking CAN frames via metafile/metadata (COMMENTS for ID)
+ - mod_stat feature added: Marking control bytes via metafile/metada  to re-assemble fragmented frames 
+ - mod_stat feature added: experimental chain detection (re-assemble fragmented frames)
  - ???
 
 ## Version 1.1-1

@@ -2,6 +2,36 @@ import sys
 import unittest
 import time
 
+class ModStatMetaChainTests(unittest.TestCase):
+    def tearDown(self):
+        self.CANEngine.stop_loop()
+        self.CANEngine = None
+        print("stopped")
+
+    def test_meta_add(self):
+        self.CANEngine = CANSploit()
+        self.CANEngine.load_config("tests/test_5.py")
+        self.CANEngine.start_loop()
+        time.sleep(1)
+        self.CANEngine.call_module(0, "l tests/replay.save")
+        self.CANEngine.call_module(0, "r 0-17")
+        time.sleep(2)
+        mod_stat = 1
+        ret = self.CANEngine.call_module(mod_stat, "a")
+        print(ret)
+        idx = ret.find("ID 31337 and length 12")
+        idx2 = ret.find("ID 31338 and length 14")
+        idx3 = ret.find("ID 31339 and length 14")
+
+        self.assertTrue(0 < idx, "Comment 'ID 31337' should be found 1 times")
+        self.assertTrue(0 < idx2, "Comment 'ID 31338' should be found 2 times")
+        self.assertFalse(0 < idx3, "Comment 'ID 31339' should NOT be found 3 times")
+        self.CANEngine.call_module(mod_stat, "x 31339,0-1-1")
+        ret = self.CANEngine.call_module(mod_stat, "a")
+        idx3 = ret.find("ID 31339 and length 14")
+        print(ret)
+        self.assertTrue(0 < idx3, "Comment 'ID 31339' should be found 3 times")
+
 class ModStatMetaTests(unittest.TestCase):
     def tearDown(self):
         self.CANEngine.stop_loop()
@@ -128,10 +158,19 @@ class ModUdsTests(unittest.TestCase):
             0,
             False
         )], "Should be 1 packed replayed")
+
+        self.assertTrue(0 < ret.find("ASCII: .1G1ZT53826F109149"), "TEXT should be found in response")
+        self.assertTrue(0 < ret.find("Response: 00"), "TEXT should be found in response")
+        self.assertTrue(0 < ret.find("ASCII: I..1G1ZT53826F109149"), "TEXT should be found in response")
+        self.assertTrue(0 < ret.find("ID 1800 and length 20"), "TEXT should be found in response")
+        self.assertTrue(0 < ret.find("Data: 4902013147315a54353338323646313039313439"), "TEXT should be found in response")
+        self.assertTrue(0 < ret.find("Error: Service not supported in active session"), "TEXT should be found in response")
         self.assertTrue(1791 in _udsList, "1791 should be there")
         self.assertTrue(1792 in _udsList, "1792 should be there")
         self.assertTrue(1793 in _udsList, "1793 should be there")
         self.assertTrue(1 in _udsList[1791], "1 should be there")
+        self.assertTrue(1 == len(_udsList[1791][1]['response']['data']), "1 byte size should be in response")
+        self.assertTrue(0x00 == _udsList[1791][1]['response']['data'][0], "0 should be as response")
         self.assertTrue(0x2f in _udsList[1793], "0x2f should be there")
         self.assertTrue(0x09 in _udsList[1792], "0x09 should be there")
         self.assertTrue(2 == _udsList[1792][9]['sub'], "2 should be there")
