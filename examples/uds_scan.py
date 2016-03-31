@@ -21,7 +21,8 @@ actions = [
                     {'service': 0x27, 'sub': 0x01}], # more data "\x07\x03\x00\x00" for this service
         'mode':'UDS'}
     },
-    {'mod_stat':    {'pipe': 2}}
+    {'mod_stat':    {'pipe': 2}},
+     {'hw_USBtin':   {'action': 'write','pipe':2}}
     ]
 
 
