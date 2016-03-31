@@ -1,3 +1,7 @@
+## Version 1.2-2
+### CHANGES
+ - WEB interface fix: dependences from Intrnet connection (d3 external web) 
+
 ## Version 1.2-1
 ### CHANGES
  - mod_stat fix: table print format 
