@@ -7,6 +7,7 @@ import SocketServer
 import BaseHTTPServer
 import json
 import ast
+import traceback
 
 ######################################################
 #                                                    # 
@@ -80,6 +81,15 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 try:
                     paramz = json.loads(post_data)
                     if self.can_engine.edit_module(int(path_parts[3]), paramz) >= 0:
+
+                        mode = 1 if self.can_engine.get_modules_list()[int(path_parts[3])][1].is_active else 0
+                        if mode == 1:
+                            self.can_engine.get_modules_list()[int(path_parts[3])][1].do_activate(0)
+                        self.can_engine.get_modules_list()[int(path_parts[3])][1].do_stop(paramz)
+                        self.can_engine.get_modules_list()[int(path_parts[3])][1].do_start(paramz)
+                        if mode == 1:
+                            self.can_engine.get_modules_list()[int(path_parts[3])][1].do_activate(1)
+
                         new_params = self.can_engine.get_module_params(int(path_parts[3]))
                         body = json.dumps(new_params, ensure_ascii=False)
                         resp_code = 200
@@ -89,6 +99,8 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 except Exception as e:
                     resp_code = 500
                     body = "{ \"error\": "+json.dumps(str(e))+"}"
+                    traceback.print_exc()
+
             elif cmd == "cmd" and path_parts[3]:
                 try:
                     paramz = json.loads(post_data).get("cmd")
@@ -98,6 +110,7 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 except Exception as e:
                     resp_code = 500
                     body = "{ \"error\": "+json.dumps(str(e))+"}"
+                    traceback.print_exc()
 
         self.send_response(resp_code)
         self.send_header('X-Clacks-Overhead', 'GNU Terry Pratchett')

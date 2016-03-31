@@ -14,7 +14,7 @@ actions = [
     {'mod_stat':{'pipe': 1}},
     {'gen_ping'      : {
         'pipe':2,
-        'range': [1790, 1794],
+        'range': [1790, 1810],
         'services':[
             {'service':0x01, 'sub':0x0d},
             {'service':0x09, 'sub':0x02},

@@ -15,10 +15,10 @@ actions = [
     {'mod_stat':    {}},                 # Mod stat (with CAN traffic analyzer)
     {'gen_ping':    {                    # Generate UDS requests
         'pipe': 2,
-        'range': [1790, 1794],           # ID range (from 1790 to 1794)
+        'range': [1, 2047],           # ID range (from 1790 to 1794)
         'services':[{'service': 0x01, 'sub': 0x0d}, # Service mode and subcommand to check
                     {'service': 0x09, 'sub': 0x02},
-                    {'service': 0x2F, 'sub': 0x03, 'data': [7,3,0,0]}], # more data "\x07\x03\x00\x00" for this service
+                    {'service': 0x27, 'sub': 0x01}], # more data "\x07\x03\x00\x00" for this service
         'mode':'UDS'}
     },
     {'mod_stat':    {'pipe': 2}}

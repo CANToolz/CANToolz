@@ -55,7 +55,7 @@ class ISOTPMessage:
                 return 2
             else:
                 return -2
-        elif pciType == self.ConsecutiveFrame:  # All next frames until last one
+        elif pciType == self.ConsecutiveFrame and self._seq > 0:  # All next frames until last one
             if sz != self._seq:  # Wrong seq
                 return -3
             _left = self.message_length - self._counterSize

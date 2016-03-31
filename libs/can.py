@@ -74,8 +74,8 @@ class CANMessage:
         else:
             self.frame_id = struct.unpack("!I", self.frame_raw_id)[0]
 
-        self.frame_length = struct.unpack("B", self.frame_raw_length)[0]
-        self.frame_data = [struct.unpack("B", x)[0] for x in self.frame_raw_data]
+        self.frame_length = struct.unpack("!B", self.frame_raw_length)[0]
+        self.frame_data = [struct.unpack("!B", x)[0] for x in self.frame_raw_data]
 
 
 '''
