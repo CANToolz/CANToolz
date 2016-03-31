@@ -40,7 +40,7 @@ class CANModule:
         self.thr_block.clear()
         if string[0] in self._cmdList:
             cmd = self._cmdList[string[0]]
-            if len(string) > 2:
+            if len(string.strip()) > 2:
                 ret = cmd[3](string[2:])
             else:
                 ret = cmd[3]()

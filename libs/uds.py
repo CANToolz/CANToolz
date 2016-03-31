@@ -142,36 +142,31 @@ class UDSMessage:
             return 1
 
     def check_status(self, _input_message):
-        if _input_message.message_id in self.sessions:
-            if _input_message.message_data[0] in self.sessions[_input_message.message_id]:
-                return 1
-            else:
-                return -1
-        elif (_input_message.message_id - self.shift) in self.sessions:
-            if (_input_message.message_data[0] - 0x40) in self.sessions[_input_message.message_id - self.shift]:
-                return 2
-            else:
-                return -2
-        else:
+        if _input_message.message_id in self.sessions and _input_message.message_data[0] in self.sessions[_input_message.message_id]:
+            return -1
+        elif (_input_message.message_id - self.shift) in self.sessions and (_input_message.message_data[0] - 0x40) in self.sessions[_input_message.message_id - self.shift]:
+            return 2
+        elif (_input_message.message_id - self.shift) in self.sessions and _input_message.message_data[0] in self.error_responses:
+            return 3
+        elif _input_message.message_id not in self.sessions or _input_message.message_data[0] not in self.sessions[_input_message.message_id]:
             return 0
+        else:
+            return -3
 
     # Method to handle messages ISO TP messages
     def handle_message(self, _input_message):
-        if self.check_status(_input_message) == 1:
-            return False
-        elif self.check_status(_input_message) == 2:  # Possible response came
+
+        if self.check_status(_input_message) == 2:  # Possible response came
             sts = self.sessions[_input_message.message_id - self.shift][_input_message.message_data[0]-0x40]['status']
             if sts == 0:  # Ok, now we have Response... looks like
                 return self.add_raw_response(_input_message)
             return False
-        elif self.check_status(_input_message) == -1:  # New service request
-            self.add_raw_request(_input_message)
-            return True
-        elif self.check_status(_input_message) == -2:  # Maybe error
+        elif self.check_status(_input_message) == 3:  # Maybe error
             return self.add_raw_response(_input_message)
-        else:                                         # New Service request and new ID
+        elif self.check_status(_input_message) == 0:  # New service request                                       # New Service request and new ID
             self.add_raw_request(_input_message)
             return True
+
         return False
 
     def add_request(self, _id, _service, _subcommand, _data):
@@ -193,6 +188,7 @@ class UDSMessage:
     def add_raw_request(self, _input_message):
         if _input_message.message_id not in self.sessions:
             self.start_session(_input_message.message_id)
+
         self.sessions[_input_message.message_id][_input_message.message_data[0]] = {
                 'sub': _input_message.message_data[1] if len(_input_message.message_data) > 1 else None,
                 'data': _input_message.message_data[2:],
