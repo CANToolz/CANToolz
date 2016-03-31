@@ -342,23 +342,21 @@ class mod_stat(CANModule):
     def do_print(self):
         self._bodyList = self.create_short_table()
         table = "\n"
-        table += "BUS\tID\tLENGTH\t\tMESSAGE\t\tASCII\t\t\tDESCR\t\tCOUNT"
-        table += "\n"
+        rows = [['BUS', 'ID', 'LENGTH', 'MESSAGE', 'ASCII', 'DESCR', 'COUNT']]
+        # http://stackoverflow.com/questions/3685195/line-up-columns-of-numbers-print-output-in-table-format
         for fid, lst in self._bodyList.iteritems():
             for (lenX, msg, bus, mod), cnt in lst.iteritems():
-                if mod:
-                    modx = "\t"
-                else:
-                    modx = "\t\t"
-                sp = " " * (16 - len(msg) * 2)
                 if self.is_ascii([struct.unpack("B", x)[0] for x in msg]):
-                    data_ascii = self.ret_ascii(msg) + "\t\t"
+                    data_ascii = self.ret_ascii(msg)
                 else:
-                    data_ascii = "\t\t"
-                table += str(bus) + "\t" + str(fid) + "\t" + str(lenX) + modx + msg.encode(
-                    'hex') + sp + '\t' + data_ascii + self.meta_data.get(fid, {}).get('id_descr', "") + "\t" +\
-                         str(cnt) + "\n"
-                self.meta_data.get(fid, {}).get('id_descr', "")
+                    data_ascii = "  "
+                rows.append([str(bus),str(fid), str(lenX), msg.encode('hex'), data_ascii, self.meta_data.get(fid, {}).get('id_descr', "   "), str(cnt)])
+
+        cols = zip(*rows)
+        col_widths = [ max(len(value) for value in col) for col in cols ]
+        format_table = ' '.join(['%%-%ds' % width for width in col_widths ])
+        for row in rows:
+            table += format_table % tuple(row) + "\n"
         table += ""
         return table
 
