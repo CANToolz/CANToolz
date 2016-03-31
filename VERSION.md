@@ -1,3 +1,7 @@
+## Version 1.2-1
+### CHANGES
+ - mod_stat fix: table print format 
+
 ## Version 1.2-0
 ### CHANGES
  - mod_stat feature added: ASCII detection (print ASCII if found in the traffic)
