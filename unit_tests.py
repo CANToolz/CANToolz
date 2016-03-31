@@ -14,7 +14,7 @@ class ModStatMetaChainTests(unittest.TestCase):
         self.CANEngine.start_loop()
         time.sleep(1)
         self.CANEngine.call_module(0, "l tests/replay.save")
-        self.CANEngine.call_module(0, "r 0-17")
+        self.CANEngine.call_module(0, "r 0-21")
         time.sleep(2)
         mod_stat = 1
         ret = self.CANEngine.call_module(mod_stat, "a")
@@ -22,16 +22,16 @@ class ModStatMetaChainTests(unittest.TestCase):
 
         idx2 = ret.find("ID 31339 and length 28")
         idx3 = ret.find("ID 31338 and length 14")
-        idx = ret.find("ID 31339 and length 14")
+        idx = ret.find("ID 31340 and length 6")
 
         self.assertTrue(0 < idx2, "Comment 'ID 31339' should be found ")
         self.assertTrue(0 < idx3, "Comment 'ID 31338' should  be found ")
         self.assertFalse(0 < idx, "Comment 'ID 31338' should NOT be found 3 times")
-        self.CANEngine.call_module(mod_stat, "x 31339,0-1-1")
+        self.CANEngine.call_module(mod_stat, "x 31340,0-2-1")
         ret = self.CANEngine.call_module(mod_stat, "a")
-        idx = ret.find("ID 31339 and length 14")
+        idx = ret.find("ID 31340 and length 6")
         print(ret)
-        self.assertTrue(0 < idx, "'ID 31339' should be found")
+        self.assertTrue(0 < idx, "'ID 31340' should be found")
 
 class ModStatMetaTests(unittest.TestCase):
     def tearDown(self):

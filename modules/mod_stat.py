@@ -312,8 +312,11 @@ class mod_stat(CANModule):
             for can_msg in self.all_frames:
                 _name.write(str(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + can_msg.CANFrame.frame_raw_data.encode('hex') + "\n")
             _name.close()
-        except:
+        except Exception as e:
             self.dprint(2, "can't open log")
+            return str(e)
+        return "Saved into " + name.strip()
+
 
     def do_dump_csv(self, name):
         self._bodyList = self.create_short_table()
@@ -331,9 +334,10 @@ class mod_stat(CANModule):
                         str(bus) + "," + str(fid) + "," + str(len) + "," + msg.encode('hex') + ',' + data_ascii + ',' +\
                         "\"" + self.meta_data.get(fid, {}).get('id_descr', "") + "\"" + ',' + str(cnt) + "\n"
                     )
-        except:
+        except Exception as e:
             self.dprint(2, "can't open log")
-        return ""
+            return str(e)
+        return "Saved into " + name.strip()
 
     def do_print(self):
         self._bodyList = self.create_short_table()

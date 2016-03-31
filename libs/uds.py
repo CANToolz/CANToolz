@@ -186,37 +186,39 @@ class UDSMessage:
             return ISOTPMessage.generate_can(_id, byte_data)
 
     def add_raw_request(self, _input_message):
-        if _input_message.message_id not in self.sessions:
-            self.start_session(_input_message.message_id)
+        if len(_input_message.message_data) >= 2:
+            if _input_message.message_id not in self.sessions:
+                self.start_session(_input_message.message_id)
 
-        self.sessions[_input_message.message_id][_input_message.message_data[0]] = {
-                'sub': _input_message.message_data[1] if len(_input_message.message_data) > 1 else None,
-                'data': _input_message.message_data[2:],
-                'response': {
-                    'id': None, 'sub': None, 'data': None, 'error': None
-                },
-                'status': 0
-            }
+            self.sessions[_input_message.message_id][_input_message.message_data[0]] = {
+                    'sub': _input_message.message_data[1] if len(_input_message.message_data) > 1 else None,
+                    'data': _input_message.message_data[2:],
+                    'response': {
+                        'id': None, 'sub': None, 'data': None, 'error': None
+                    },
+                    'status': 0
+                }
         return True
 
     def add_raw_response(self, _input_message):
         response_id = _input_message.message_id - self.shift
-        if response_id in self.sessions:
-            response_byte = _input_message.message_data[0] - 0x40
-            if response_byte in self.sessions[response_id]:
-                self.sessions[response_id][response_byte]['response']['id'] = _input_message.message_id
-                self.sessions[response_id][response_byte]['response']['sub'] = _input_message.message_data[1] if len(_input_message.message_data) > 1 else None
-                self.sessions[response_id][response_byte]['response']['data'] = _input_message.message_data[2:]
-                self.sessions[response_id][response_byte]['status'] = 1
-                return True
-            elif _input_message.message_data[0] in self.error_responses:
-                x = self.sessions[response_id].keys()[-1]
-                self.sessions[response_id][x]['response']['id'] = _input_message.message_id
-                self.sessions[response_id][x]['response']['sub'] = None
-                self.sessions[response_id][x]['response']['data'] = None
-                self.sessions[response_id][x]['status'] = 2
-                self.sessions[response_id][x]['response']['error'] = self.error_responses[_input_message.message_data[0]]
-                return True
+        if len(_input_message.message_data) >= 2:
+            if response_id in self.sessions:
+                response_byte = _input_message.message_data[0] - 0x40
+                if response_byte in self.sessions[response_id]:
+                    self.sessions[response_id][response_byte]['response']['id'] = _input_message.message_id
+                    self.sessions[response_id][response_byte]['response']['sub'] = _input_message.message_data[1] if len(_input_message.message_data) > 1 else None
+                    self.sessions[response_id][response_byte]['response']['data'] = _input_message.message_data[2:]
+                    self.sessions[response_id][response_byte]['status'] = 1
+                    return True
+                elif _input_message.message_data[0] in self.error_responses:
+                    x = self.sessions[response_id].keys()[-1]
+                    self.sessions[response_id][x]['response']['id'] = _input_message.message_id
+                    self.sessions[response_id][x]['response']['sub'] = None
+                    self.sessions[response_id][x]['response']['data'] = None
+                    self.sessions[response_id][x]['status'] = 2
+                    self.sessions[response_id][x]['response']['error'] = self.error_responses[_input_message.message_data[0]]
+                    return True
         return False
 
     def get_last_response(self, _id, _service):
