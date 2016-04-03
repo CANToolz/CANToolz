@@ -51,7 +51,7 @@ class mod_stat(CANModule):
             self.dprint(1, self.do_load_meta(params['meta']))
 
         self._cmdList['p'] = ["Print current table", 0, "", self.do_print]
-        self._cmdList['a'] = ["Analyses of captured traffic", 0, "", self.do_anal]
+        self._cmdList['a'] = ["Analyses of captured traffic", 1, "<UDS|ISO|FRAG|ALL(defaulr)>", self.do_anal]
         self._cmdList['c'] = ["Clean table, remove alerts", 0, "", self.do_clean]
         self._cmdList['i'] = ["Meta-data: add description for ID", 1, "<ID>, <description>", self.do_add_meta_descr]
         self._cmdList['x'] = ["Meta-data: add index-byte for ID", 1, "<ID>, <index>-<range>-<start_value>", self.do_add_meta_index]
@@ -227,15 +227,16 @@ class mod_stat(CANModule):
 
         return frg_list
 
-    def do_anal(self):
+    def do_anal(self, format = "ALL"):
         self._bodyList = self.create_short_table()
         iso_tp_list = self.find_iso_tp()
         uds_list = self.find_uds(iso_tp_list)
         frag_list = self.find_frags()
         loops_list = self.find_loops()
+        ret_str = ""
 
-        # Print out ISOTP messages
-        ret_str = "ISO TP Messages:\n\n"
+        format.upper()
+
         _iso_tbl = collections.OrderedDict()
         for msg in iso_tp_list:
             if msg.message_id not in _iso_tbl:
@@ -247,61 +248,67 @@ class mod_stat(CANModule):
                 else:
                     _iso_tbl[msg.message_id][(msg.message_length, ''.join([struct.pack("!B", b) for b in msg.message_data]))] = 1
 
-        for fid, lst in _iso_tbl.iteritems():
-            ret_str += "\tID: " + str(fid) + "\n"
-            for (lenX, msg), cnt in lst.iteritems():
-                ret_str += "\t\tDATA: " + msg.encode('hex')
-                if self.is_ascii([struct.unpack("!B", x)[0] for x in msg]):
-                    ret_str += "\n\t\tASCII: " + self.ret_ascii(msg)
-                ret_str += "\n"
+        if format.strip() not in ["ISO","FRAG"]:
+            # Print out UDS
+            ret_str += "UDS Detected:\n\n"
+            for fid, services in uds_list.sessions.iteritems():
+                for service, body in services.iteritems():
+                    text = " (N/A) "
+                    if service in UDSMessage.services_base:
+                        for sub in UDSMessage.services_base[service]:
+                            if sub.keys()[0] == body['sub'] or None:
+                                text = " (" + sub.values()[0] + ") "
+                        if text == " (N/A) ":
+                            text = " (" + UDSMessage.services_base[service][0].values()[0] + ") "
+                    if body['status'] == 1:
+                        data = ''.join(struct.pack("!B", b) for b in body['response']['data'])
+                        data_ascii = "\n"
+                        if self.is_ascii(body['response']['data']):
+                            data_ascii = "\n\t\tASCII: " + self.ret_ascii(data)+"\n"
+                        ret_str += "\n\tID: " + str(fid) + " Service: " + str(hex(service)) + " Sub: " + (str(
+                            hex(body['sub'])) if body['sub'] else "None") + text + "\n\t\tResponse: " + data.encode('hex') + data_ascii
+                    elif body['status'] == 2:
+                       ret_str += "\n\tID: " + str(fid) + " Service: " + str(hex(service)) + " Sub: " + (str(
+                            hex(body['sub'])) if body['sub'] else "None") + text + "\n\t\tError: " + body['response']['error']
 
-        # Print out UDS
-        ret_str += "UDS Detected:\n\n"
-        for fid, services in uds_list.sessions.iteritems():
-            for service, body in services.iteritems():
-                text = " (N/A) "
-                if service in UDSMessage.services_base:
-                    for sub in UDSMessage.services_base[service]:
-                        if sub.keys()[0] == body['sub'] or None:
-                            text = " (" + sub.values()[0] + ") "
-                    if text == " (N/A) ":
-                        text = " (" + UDSMessage.services_base[service][0].values()[0] + ") "
-                if body['status'] == 1:
-                    data = ''.join(struct.pack("!B", b) for b in body['response']['data'])
-                    data_ascii = "\n"
-                    if self.is_ascii(body['response']['data']):
-                        data_ascii = "\n\t\tASCII: " + self.ret_ascii(data)+"\n"
-                    ret_str += "\n\tID: " + str(fid) + " Service: " + str(hex(service)) + " Sub: " + (str(
-                        hex(body['sub'])) if body['sub'] else "None") + text + "\n\t\tResponse: " + data.encode('hex') + data_ascii
-                elif body['status'] == 2:
-                   ret_str += "\n\tID: " + str(fid) + " Service: " + str(hex(service)) + " Sub: " + (str(
-                        hex(body['sub'])) if body['sub'] else "None") + text + "\n\t\tError: " + body['response']['error']
+        if format.strip() not in ["ISO","UDS"]:
+            # Print detected loops
+            ret_str += "\n\nDe-Fragmented frames (using loop-based detection):\n"
+            local_temp = {}
+            for fid, data in loops_list.iteritems():
+                data.clean_build_loop()
+                for message in data.messages:
+                    if (fid, ''.join(struct.pack("!B", b).encode('hex') for b in message['message_data'])) not in local_temp:
+                        ret_str += "\n\tID " + str(fid) + " and length " + str(message['message_length']) + "\n"
+                        ret_str += "\t\tData: " + ''.join(struct.pack("!B", b).encode('hex') for b in message['message_data'])
+                        if self.is_ascii(message['message_data']):
+                            ret_str += "\n\t\tASCII: " + self.ret_ascii(''.join(struct.pack("!B", b) for b in message['message_data'])) + "\n\n"
+                        local_temp[(fid, ''.join(struct.pack("!B", b).encode('hex') for b in message['message_data']))] = None
 
-        # Print detected loops
-        ret_str += "\n\nDe-Fragmented frames (using loop-based detection):\n"
-        local_temp = {}
-        for fid, data in loops_list.iteritems():
-            data.clean_build_loop()
-            for message in data.messages:
-                if (fid, ''.join(struct.pack("!B", b).encode('hex') for b in message['message_data'])) not in local_temp:
-                    ret_str += "\n\tID " + str(fid) + " and length " + str(message['message_length']) + "\n"
-                    ret_str += "\t\tData: " + ''.join(struct.pack("!B", b).encode('hex') for b in message['message_data'])
-                    if self.is_ascii(message['message_data']):
-                        ret_str += "\n\t\tASCII: " + self.ret_ascii(''.join(struct.pack("!B", b) for b in message['message_data'])) + "\n\n"
-                    local_temp[(fid, ''.join(struct.pack("!B", b).encode('hex') for b in message['message_data']))] = None
+            # Print detected fragments
+            ret_str += "\n\nDe-Fragmented frames (using user's META data):\n"
+            local_temp = {}
+            for fid, data in frag_list.iteritems():
+                data.clean_build_meta()
+                for message in data.messages:
+                    if (fid, ''.join(struct.pack("!B", b).encode('hex') for b in message['message_data'])) not in local_temp:
+                        ret_str += "\n\tID " + str(fid) + " and length " + str(message['message_length']) + "\n"
+                        ret_str += "\t\tData: " + ''.join(struct.pack("!B", b).encode('hex') for b in message['message_data'])
+                        if self.is_ascii(message['message_data']):
+                            ret_str += "\n\t\tASCII: " + self.ret_ascii(''.join(struct.pack("!B", b) for b in message['message_data'])) + "\n\n"
+                        local_temp[(fid, ''.join(struct.pack("!B", b).encode('hex') for b in message['message_data']))] = None
 
-        # Print detected fragments
-        ret_str += "\n\nDe-Fragmented frames (using user's META data):\n"
-        local_temp = {}
-        for fid, data in frag_list.iteritems():
-            data.clean_build_meta()
-            for message in data.messages:
-                if (fid, ''.join(struct.pack("!B", b).encode('hex') for b in message['message_data'])) not in local_temp:
-                    ret_str += "\n\tID " + str(fid) + " and length " + str(message['message_length']) + "\n"
-                    ret_str += "\t\tData: " + ''.join(struct.pack("!B", b).encode('hex') for b in message['message_data'])
-                    if self.is_ascii(message['message_data']):
-                        ret_str += "\n\t\tASCII: " + self.ret_ascii(''.join(struct.pack("!B", b) for b in message['message_data'])) + "\n\n"
-                    local_temp[(fid, ''.join(struct.pack("!B", b).encode('hex') for b in message['message_data']))] = None
+
+        if format.strip() not in ["UDS","FRAG"]:
+            # Print out ISOTP messages
+            ret_str += "ISO TP Messages:\n\n"
+            for fid, lst in _iso_tbl.iteritems():
+                ret_str += "\tID: " + str(fid) + "\n"
+                for (lenX, msg), cnt in lst.iteritems():
+                    ret_str += "\t\tDATA: " + msg.encode('hex')
+                    if self.is_ascii([struct.unpack("!B", x)[0] for x in msg]):
+                        ret_str += "\n\t\tASCII: " + self.ret_ascii(msg)
+                    ret_str += "\n"
 
         return ret_str
 

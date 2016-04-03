@@ -33,6 +33,7 @@ class UDSMessage:
         ],
         0x10: [
             {None: 'Diagnostic Session Control'},
+            {0x01: 'Enter diag session'},
             {0x03: 'Extended Diag Session'}
         ],
         0x11: [
@@ -52,7 +53,7 @@ class UDSMessage:
             {0x02: 'Resposne', 'data': [0x01, 0x02, 0x03]}
         ],
         0x28: [{None: 'Communication Control'}],
-        0x3E: [{None: 'Tester Present'}],
+        0x3E: [{None: 'Tester Present'}, {0x01: "Tester present"}],
         0x83: [{None: 'Access Timing Parameters'}],
         0x84: [{None: 'Secured Data Transmission'}],
         0x85: [{None: 'Control DTC Settings'}],
@@ -172,7 +173,6 @@ class UDSMessage:
     def add_request(self, _id, _service, _subcommand, _data):
         if _id not in self.sessions:
             self.start_session(_id)
-
             self.sessions[_id][_service] = {
                 'sub': _subcommand,
                 'data': _data,
@@ -181,8 +181,11 @@ class UDSMessage:
                 },
                 'status': 0
             }
-
-            byte_data = [_service, _subcommand] + _data
+            if not _subcommand:
+                _subcommand = []
+            else:
+                _subcommand = [_subcommand]
+            byte_data = [_service] + _subcommand + _data
             return ISOTPMessage.generate_can(_id, byte_data)
 
     def add_raw_request(self, _input_message):

@@ -1,3 +1,9 @@
+## Version 1.2-3
+### CHANGES
+ - mod_stat design change: now Analysis function is parametrized, if you do not want to see all output
+ - gen_ping fix: uds scan for non sub-commands fixed, new subbcomands added
+ - example uds_scan changed
+
 ## Version 1.2-2
 ### CHANGES
  - WEB interface fix: dependences from Intrnet connection (d3 external web) 
