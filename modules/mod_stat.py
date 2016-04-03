@@ -185,7 +185,7 @@ class mod_stat(CANModule):
             if can_msg.CANFrame.frame_id not in message_iso:
                 message_iso[can_msg.CANFrame.frame_id] = ISOTPMessage(can_msg.CANFrame.frame_id)
 
-            if 2 < can_msg.CANFrame.frame_length:
+            if 1 < can_msg.CANFrame.frame_length:
                 ret = message_iso[can_msg.CANFrame.frame_id].add_can(can_msg.CANFrame)
                 if ret < 0:
                     del message_iso[can_msg.CANFrame.frame_id]
