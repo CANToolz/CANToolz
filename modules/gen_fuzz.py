@@ -31,6 +31,9 @@ class gen_fuzz(CANModule):
     def do_init(self, params):
         self._active = False
 
+    def get_status(self):
+        return "Current status: " + str(self._active) + "\nFrames in queue: " + str(len(self.queue_messages))
+
     def do_start(self, args):
         self._i = 0
         self.last = time.clock()

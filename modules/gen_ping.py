@@ -23,6 +23,9 @@ class gen_ping(CANModule):
     def do_init(self, params):
         self._active = False
 
+    def get_status(self):
+        return "Current status: " + str(self._active) + "\nFrames in queue: " + str(len(self.queue_messages))
+
     def do_ping(self, params):
         if not self.queue_messages:
             self._active = False

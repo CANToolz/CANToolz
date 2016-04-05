@@ -1,3 +1,7 @@
+## Version 1.2-4
+### CHANGES
+ - libs/module.py workaround feature added: Now we can get current status of the module. This is needed because you need to know when ping/fuzz finished. Later we will think about proper status-bar 
+ 
 ## Version 1.2-3
 ### CHANGES
  - mod_stat design change: now Analysis function is parametrized, if you do not want to see all output
