@@ -20,6 +20,9 @@ class CANModule:
     def is_active(self):
         return self._active
 
+    def get_status(self):
+        return "Current status: " + str(self._active)
+
     def do_activate(self, mode = -1):
         if mode == -1:
             self._active = not self._active
@@ -62,6 +65,7 @@ class CANModule:
         self._bus = int(params.get('bus', 0))
         self._active = False if params.get('active') in ["False", "false", "0", "-1"] else True
         self._cmdList = collections.OrderedDict()  # Command list (doInit section)
+        self._cmdList['S'] = ["Current status", 0, "", self.get_status]
         self._cmdList['s'] = ["Stop/Activate current module", 0, "", self.do_activate]
 
         self.do_init(params)

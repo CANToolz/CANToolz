@@ -26,6 +26,10 @@ class gen_replay(CANModule):
     _replay = False
     _sniff = False
 
+    def get_status(self):
+        return "Current status: " + str(self._active) + "\nSniff mode: " + str(self._sniff) +\
+               "\nReplay mode: " + str(self._replay) +"\nFrames in queue: " + str(len(self.CANList))
+
     def cmd_load(self, name):
         try:
             with open(name.strip(), "r") as ins:
@@ -38,6 +42,7 @@ class gen_replay(CANModule):
                 self.dprint(1, "Loaded " + str(len(self.CANList)) + " frames")
         except:
             self.dprint(2, "can't open files with CAN messages!")
+        return "Loaded: " + str(len(self.CANList))
 
     def do_init(self, params):
         self.CANList = []
@@ -70,7 +75,7 @@ class gen_replay(CANModule):
 
     def clean_table(self):
         self.CANList = []
-        return ""
+        return "Replay buffer is clean!"
 
     def save_dump(self, input_params):
         fname = self._fname
@@ -117,11 +122,11 @@ class gen_replay(CANModule):
         except:
             self._replay = False
 
-        return str(self._replay)
+        return "Replay mode changed to: " + str(self._replay)
 
     def cnt_print(self):
         ret = str(len(self.CANList))
-        return ret
+        return "Loaded packets: " + ret
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
     def do_effect(self, can_msg, args):

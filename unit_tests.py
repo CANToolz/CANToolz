@@ -179,7 +179,7 @@ class ModReplayTests(unittest.TestCase):
         time.sleep(2)
         self.CANEngine.call_module(2, "s")
         num = self.CANEngine.call_module(1, "p")
-        self.assertTrue(int(num) == 0, "Should be be 0 packets")
+        self.assertTrue(0 <= num.find("Loaded packets: 0"), "Should be be 0 packets")
         self.CANEngine.call_module(1, "g")
         self.CANEngine.call_module(0, "t 4:8:1122334411111111")
         time.sleep(1)
@@ -191,8 +191,8 @@ class ModReplayTests(unittest.TestCase):
         time.sleep(1)
         num = self.CANEngine.call_module(1, "p")
 
-        print("num is " + num)
-        self.assertTrue(int(num) == 4, "Should be be 4 packets")
+        #print("num is " + num)
+        self.assertTrue(0 <= num.find("Loaded packets: 4"), "Should be be 4 packets")
         ret = self.CANEngine.call_module(1, "d 0-4")
         time.sleep(1)
         print(ret)
@@ -204,7 +204,7 @@ class ModReplayTests(unittest.TestCase):
         time.sleep(1)
         num = self.CANEngine.call_module(1, "p")
         time.sleep(1)
-        self.assertTrue(int(num) == 0, "Should be be 0 packets")
+        self.assertTrue(0 <= num.find("Loaded packets: 0"), "Should be be 0 packets")
         index = 2
         ret = self.CANEngine.call_module(2, "p")
         _bodyList = self.CANEngine._enabledList[index][1]._bodyList
@@ -218,10 +218,9 @@ class ModReplayTests(unittest.TestCase):
         self.CANEngine.start_loop()
         num = self.CANEngine.call_module(1, "p")
         time.sleep(1)
-        print("num is " + num)
-        self.assertTrue(int(num) == 4, "Should be be 4 packets")
+        self.assertTrue(0 <= num.find("Loaded packets: 4"), "Should be be 4 packets")
         index = 2
-        ret = self.CANEngine.call_module(2, "p")
+        self.CANEngine.call_module(2, "p")
         _bodyList = self.CANEngine._enabledList[index][1]._bodyList
         self.assertTrue(len(_bodyList) == 0, "Should be 0 packets sent")
         self.CANEngine.call_module(1, "r 2-4")
@@ -240,7 +239,7 @@ class ModReplayTests(unittest.TestCase):
         self.CANEngine.call_module(1, "l tests/new.save")
         ret = self.CANEngine.call_module(1, "p")
         print(ret)
-        self.assertTrue(int(ret) == 6, "Should be 6 packets")
+        self.assertTrue(0 <= ret.find("Loaded packets: 6"), "Should be 6 packets")
 
 
 class ModPingTests(unittest.TestCase):
