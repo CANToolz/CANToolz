@@ -213,10 +213,6 @@ function redrawMenu(name, module) {
     var form = enter.append('div')
         .classed('input-group', true);
 
-      //form.append('span')
-      //    .classed('command-name', true)
-      //    .classed('input-group-addon', true);
-
       form.append('input')
           .attr('type', 'text')
           .classed('form-control', true);
@@ -232,7 +228,6 @@ function redrawMenu(name, module) {
 
   commands.exit().remove();
 
-  //commands.select('.command-name').text(commandName);
   commands.select('.command-run').text(function(r) { return r.value.descr; });
   commands.select('input')
       .classed('hide', function (r) { return r.value.param_count === 0; })
@@ -315,7 +310,9 @@ function redrawOptions(step, index) {
   fields.select('input')
       .attr('param', paramName)
       .attr('format', paramFormat)
-      .attr('value', paramValue);
+      .each(function(record) {
+        this.value = paramValue(record)
+      });
 
   fields.select('p').text(function(record) {
     return record.key;
@@ -360,8 +357,6 @@ function init(error, scenario) {
     scenario.running = false;
 
     initControls(scenario);
-
-    //redrawHeader(scenario);
     redrawCircuit(scenario);
   } else {
     console.error(error);
@@ -373,6 +368,7 @@ function init(error, scenario) {
  */
 function main() {
   d3.json('/api/get_conf', init);
-  setInterval( "redrawHeader()", 1000 );
+
+  setInterval(redrawHeader, 1000);
 }
 
