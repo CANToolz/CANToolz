@@ -73,7 +73,7 @@ class CANModule:
     def get_status_bar(self):
         self.thr_block.wait(3)
         self.thr_block.clear()
-        status = self._status
+        status = int(self._status)
         self.thr_block.set()
         return status
 

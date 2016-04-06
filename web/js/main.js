@@ -65,6 +65,13 @@ function redrawStatus(status) {
     d3.select('.loop-action')
       .classed('btn-success', !status.status)
       .classed('btn-danger', status.status)
+
+    currentName = d3.select('.step.well.current');
+    if (currentName[0][0]!=null){
+      name = currentName[0][0].__data__.name;
+      bar = status.progress[name].bar;
+      redrawProgressBar(bar);
+    }
   }
 
   return status.status;
@@ -242,6 +249,18 @@ function redrawMenu(name, module) {
       .attr('module', name)
 }
 
+/**
+ * @param {!Precent} percent
+ * @param {number} index
+ */
+function redrawProgressBar(percent) {
+
+ progressBar = d3.select('.progress-bar.progress-bar-info.progress-bar-striped');
+ progressBar.attr('aria-valuenow',percent);
+ progressBar.attr('style','width:'+percent+'%');
+ progressBar.text(percent+'%');
+
+}
 
 /**
  * @param {!Step} step
