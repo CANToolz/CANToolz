@@ -232,7 +232,10 @@ function redrawMenu(name, module) {
   commands.select('input')
       .classed('hide', function (r) { return r.value.param_count === 0; })
       .attr('command', commandName)
-      .attr('placeholder', function(r) { return r.value.descr_param; });
+      .attr('placeholder', function(r) { return r.value.descr_param; })
+      .each(function(record) {
+        this.value = ""
+      });;
 
   commands.select('.command-run')
       .attr('command', commandName)

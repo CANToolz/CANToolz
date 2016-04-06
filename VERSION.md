@@ -1,3 +1,7 @@
+## Version 1.2-5
+### CHANGES
+ - FrontEnd fix: now parameters and options showing actual status (by Sergey Kononenko)
+ 
 ## Version 1.2-4
 ### CHANGES
  - libs/module.py workaround feature added: Now we can get current status of the module. This is needed because you need to know when ping/fuzz finished. Later we will think about proper status-bar 
