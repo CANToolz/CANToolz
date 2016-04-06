@@ -30,6 +30,8 @@ class gen_fuzz(CANModule):
 
     def do_init(self, params):
         self._active = False
+        self._last = 0
+        self._full = 1
 
     def get_status(self):
         return "Current status: " + str(self._active) + "\nFrames in queue: " + str(len(self.queue_messages))
@@ -62,7 +64,8 @@ class gen_fuzz(CANModule):
                                 else:
                                     self.queue_messages.append(CANMessage.init_data(i, len(_body2), _body2[:8]))
                         _i += 1
-
+        self._full = len(self.queue_messages)
+        self._last += 0
 
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
@@ -77,7 +80,13 @@ class gen_fuzz(CANModule):
                     self.last = time.clock()
                     can_msg.CANFrame = self.queue_messages.pop()
                     can_msg.CANData = True
+                    self._last += 1
+                    self._status = self._last/(self._full/100.0)
+
             else:
                 can_msg.CANFrame = self.queue_messages.pop()
                 can_msg.CANData = True
+                self._last += 1
+                self._status = self._last/(self._full/100.0)
+
         return can_msg

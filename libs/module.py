@@ -67,8 +67,15 @@ class CANModule:
         self._cmdList = collections.OrderedDict()  # Command list (doInit section)
         self._cmdList['S'] = ["Current status", 0, "", self.get_status]
         self._cmdList['s'] = ["Stop/Activate current module", 0, "", self.do_activate]
-
+        self._status = 0
         self.do_init(params)
+
+    def get_status_bar(self):
+        self.thr_block.wait(3)
+        self.thr_block.clear()
+        status = self._status
+        self.thr_block.set()
+        return status
 
     def do_init(self, params):  # Call for some pre-calculation
         return 0

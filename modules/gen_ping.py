@@ -23,6 +23,8 @@ class gen_ping(CANModule):
 
     def do_init(self, params):
         self._active = False
+        self._last = 0
+        self._full = 1
 
     def get_status(self):
         return "Current status: " + str(self._active) + "\nFrames in queue: " + str(len(self.queue_messages))
@@ -87,6 +89,9 @@ class gen_ping(CANModule):
         else:
             self.dprint(1, "No range specified")
             self._active = False
+        self._full = len(self.queue_messages)
+        self._last = 0
+
 
     def do_effect(self, can_msg, args):
         d_time = float(args.get('delay', 0))
@@ -94,6 +99,7 @@ class gen_ping(CANModule):
             if time.clock() - self.last >= d_time:
                 self.last = time.clock()
                 can_msg.CANFrame = self.do_ping(args)
+
             else:
                 can_msg.CANFrame = None
         else:
@@ -101,6 +107,8 @@ class gen_ping(CANModule):
 
         if can_msg.CANFrame:
             can_msg.CANData = True
+            self._last += 1
+            self._status = self._last/(self._full/100.0)
         else:
             can_msg.CANData = False
 

@@ -175,7 +175,11 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
             elif cmd == "status":
                 try:
                     modz = self.can_engine.status_loop
-                    body = json.dumps({"status": modz})
+                    modz2 = self.can_engine.get_modules_list()
+                    modz3 = {}
+                    for name, module, params in modz2:
+                        modz3[name] = {"bar": module.get_status_bar(), "status": module.is_active}
+                    body = json.dumps({"status": modz, "progress": modz3})
                     resp_code = 200
                 except Exception as e:
                     resp_code = 500

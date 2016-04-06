@@ -3,7 +3,8 @@
  - CAN module change: now we do not store additional raw data. We have saved up to 50% memory! But now "write" operation a little bit longer...
  - BUS name as any string now (except CBT, should be num 1, 2 or 3)
  - mod_ping/ gen_replay - delay added. This could be helpful when USBtin is overflowed with "write requests"
- - ???
+ - WEB API: Status bar added
+ - FrontEnd status bar ??? not done yet
  
 ## Version 1.2-5
 ### CHANGES

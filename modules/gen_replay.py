@@ -49,6 +49,8 @@ class gen_replay(CANModule):
     def do_init(self, params):
         self.CANList = []
         self.last = time.clock()
+        self._last = 0
+        self._full = 1
         self._num1 = 0
         self._num2 = 0
         if 'save_to' in params:
@@ -104,15 +106,19 @@ class gen_replay(CANModule):
             self._sniff = True
         return str(self._sniff)
 
-    def replay_mode(self, indexes):
+    def replay_mode(self, indexes = None):
         self._replay = False
         self._sniff = False
+        if not indexes:
+            indexes = "0-"+str(len(self.CANList))
         try:
             self._num1 = int(indexes.split("-")[0])
             self._num2 = int(indexes.split("-")[1])
             if self._num2 > self._num1 and self._num1 < len(self.CANList) and self._num2 <= len(
                     self.CANList) and self._num1 >= 0 and self._num2 > 0:
                 self._replay = True
+                self._full = self._num2 - self._num1
+                self._last = 0
         except:
             self._replay = False
 
@@ -134,10 +140,14 @@ class gen_replay(CANModule):
                     can_msg.CANFrame = self.CANList[self._num1]
                     self._num1 += 1
                     can_msg.CANData = True
+                    self._last += 1
+                    self._status = self._last/(self._full/100.0)
             else:
                 can_msg.CANFrame = self.CANList[self._num1]
                 self._num1 += 1
                 can_msg.CANData = True
+                self._last += 1
+                self._status = self._last/(self._full/100.0)
 
             if self._num1 == self._num2:
                 self._replay = False
