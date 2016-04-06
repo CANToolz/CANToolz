@@ -35,7 +35,7 @@ class hw_USBtin(CANModule):
 
     id = 6
 
-    _bus = 60
+    _bus = "USBTin"
 
     def get_info(self):  # Read info
         self._serialPort.write("S0\r")
@@ -79,7 +79,7 @@ class hw_USBtin(CANModule):
     def do_init(self, params):  # Get device and open serial port
         self.DEBUG = int(params.get('debug', 0))
         self.dprint(1, "Init phase started...")
-        self._bus = int(params.get('bus', 60))
+        self._bus = (params.get('bus', "USBTin"))
         if 'port' in params:
             self._COMPort = params['port']
             if params['port'] == 'auto':
@@ -133,7 +133,7 @@ class hw_USBtin(CANModule):
 
                 data += byte
                 if data[-1:] == "\r":
-                    can_msg.bus = self._bus  # Bus USBtin as BUS 60...
+                    can_msg.bus = self._bus  # Bus USBtin
                     if data[0] == "t":
                         # "t10F81122334455667788"
                         _length = int(data[4])

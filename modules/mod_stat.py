@@ -32,12 +32,7 @@ class mod_stat(CANModule):
             except:
                 self.dprint(2, "can't open log")
 
-                #    def doStop(self):
-                #        if self._logFile:
-                #            try:
-                #                self._file.close()
-                #            except:
-                #                self.dprint(2,"can't open log")
+
     def get_status(self):
         return "Current status: " + str(self._active) + "\nSniffed frames: " + str(len(self.all_frames))
 

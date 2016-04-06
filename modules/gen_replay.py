@@ -1,6 +1,6 @@
 from libs.module import *
 from libs.can import *
-
+import time
 
 class gen_replay(CANModule):
     name = "Replay module"
@@ -13,6 +13,7 @@ class gen_replay(CANModule):
         save_to    - save to file (mod_replay.save by default)
 
     Module parameters: none
+        delay  - delay between frames (0 by default)
 
     """
 
@@ -28,7 +29,8 @@ class gen_replay(CANModule):
 
     def get_status(self):
         return "Current status: " + str(self._active) + "\nSniff mode: " + str(self._sniff) +\
-               "\nReplay mode: " + str(self._replay) +"\nFrames in queue: " + str(len(self.CANList))
+               "\nReplay mode: " + str(self._replay) +"\nFrames in memory: " + str(len(self.CANList)) +\
+               "\nFrames in queue: " + str(self._num2 - self._num1)
 
     def cmd_load(self, name):
         try:
@@ -46,24 +48,16 @@ class gen_replay(CANModule):
 
     def do_init(self, params):
         self.CANList = []
+        self.last = time.clock()
+        self._num1 = 0
+        self._num2 = 0
         if 'save_to' in params:
             self._fname = params['save_to']
         else:
             self._fname = "mod_replay.save"
 
         if 'load_from' in params:
-            try:
-                with open(params['load_from'], "r") as ins:
-                    for line in ins:
-                        fid = line[:-1].split(":")[0]
-                        length = line[:-1].split(":")[1]
-                        data = line[:-1].split(":")[2]
-                        self.CANList.append(
-                            CANMessage.init_data(int(fid), int(length), [struct.unpack("B", x)[0] for x in
-                                                                         data.decode('hex')[:8]]))
-                self.dprint(1, "Loaded " + str(len(self.CANList)) + " frames")
-            except:
-                self.dprint(2, "can't open files with CAN messages!")
+            self.cmd_load(params['load_from'])
 
         self._cmdList['g'] = ["Enable/Disable sniff mode to collect packets", 0, "", self.sniff_mode]
         self._cmdList['p'] = ["Print count of loaded packets", 0, "", self.cnt_print]
@@ -133,9 +127,18 @@ class gen_replay(CANModule):
         if self._sniff and can_msg.CANData:
             self.CANList.append(can_msg.CANFrame)
         elif self._replay:
-            can_msg.CANFrame = self.CANList[self._num1]
-            self._num1 += 1
-            can_msg.CANData = True
+            d_time = float(args.get('delay', 0))
+            if d_time > 0:
+                if time.clock() - self.last >= d_time:
+                    self.last = time.clock()
+                    can_msg.CANFrame = self.CANList[self._num1]
+                    self._num1 += 1
+                    can_msg.CANData = True
+            else:
+                can_msg.CANFrame = self.CANList[self._num1]
+                self._num1 += 1
+                can_msg.CANData = True
+
             if self._num1 == self._num2:
                 self._replay = False
         return can_msg

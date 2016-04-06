@@ -134,12 +134,12 @@ class ModUdsTests(unittest.TestCase):
         self.assertTrue(1790 in _bodyList, "1790 should be there")
         self.assertTrue(1791 in _bodyList, "1791 should be there")
         self.assertTrue(1792 in _bodyList, "1792 should be there")
-        self.assertTrue((3, "02010d".decode('hex'), 0, False) in _bodyList[1792], "020902 as packet should be there")
-        self.assertTrue((7, "062f0307030000".decode('hex'), 0, False) in _bodyList[1792],
+        self.assertTrue((3, "02010d".decode('hex'), "Default", False) in _bodyList[1792], "020902 as packet should be there")
+        self.assertTrue((7, "062f0307030000".decode('hex'), "Default", False) in _bodyList[1792],
                         "062f0307030000 as packet should be there")
-        self.assertTrue((3, "020902".decode('hex'), 0, False) in _bodyList[1792], "020901 as packet should be there")
-        self.assertTrue((3, "02010d".decode('hex'), 0, False) in _bodyList[1790], "02010d as packet should be there")
-        self.assertFalse((3, "020904".decode('hex'), 0, False) in _bodyList[1791],
+        self.assertTrue((3, "020902".decode('hex'), "Default", False) in _bodyList[1792], "020901 as packet should be there")
+        self.assertTrue((3, "02010d".decode('hex'), "Default", False) in _bodyList[1790], "02010d as packet should be there")
+        self.assertFalse((3, "020904".decode('hex'), "Default", False) in _bodyList[1791],
                          "020904 as packet should not be there")
         _bodyList = self.CANEngine._enabledList[index][1]._bodyList
         ret = self.CANEngine.call_module(1, "p")
@@ -154,7 +154,7 @@ class ModUdsTests(unittest.TestCase):
         self.assertTrue(1 == _bodyList[1800][(
             8,
             "1014490201314731".decode('hex'),
-            0,
+            "Default",
             False
         )], "Should be 1 packed replayed")
 

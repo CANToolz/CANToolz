@@ -203,9 +203,9 @@ class hw_CANBusTriple(CANModule):
         self.do_stop(params)
         self.read_all()
 
-        self._readBus = int(params.get('bus_1', 1))
+        self._readBus = str(params.get('bus_1', 1))
         self._bus = self._readBus
-        self._writeBus = int(params.get('bus_2', self._readBus))
+        self._writeBus = str(params.get('bus_2', self._readBus))
 
         self.dprint(1, "Port : " + self._COMPort)
         self.dprint(1, "Bus 1: " + str(self._readBus))
@@ -268,7 +268,7 @@ class hw_CANBusTriple(CANModule):
 
                         can_msg.CANFrame = CANMessage(_id, _length, _data, False, CANMessage.DataFrame)
 
-                        can_msg.bus = int(struct.unpack("B", data[1])[0])
+                        can_msg.bus = str((struct.unpack("B", data[1])[0]))
                         can_msg.CANData = True
 
                     elif data[0] == '{' and data[-3] == '}':  # Debug info
