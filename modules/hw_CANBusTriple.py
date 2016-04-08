@@ -240,7 +240,7 @@ class hw_CANBusTriple(CANModule):
         if args.get('action') == 'read':
             can_msg = self.do_read(can_msg)
         elif args.get('action') == 'write':
-            self.do_write(can_msg)
+            self.do_write(can_msg, args)
         else:
             self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
         return can_msg
@@ -280,9 +280,12 @@ class hw_CANBusTriple(CANModule):
                     self.dprint(2, "READ: " + data.encode('hex'))
         return can_msg
 
-    def do_write(self, can_msg):
+    def do_write(self, can_msg, params):
         if can_msg.CANData and not can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.DataFrame:  # Only 11 bit support now..., only DataFrame
-            if can_msg.bus == self._readBus:
+            bs = int(params.get('bus','0'))
+            if bs != 0:
+                bus = bs
+            elif can_msg.bus == self._readBus:
                 bus = self._writeBus
             elif can_msg.bus == self._writeBus:
                 bus = self._readBus
@@ -297,4 +300,3 @@ class hw_CANBusTriple(CANModule):
             self._serialPort.write(write_buf)
             self.dprint(2, "WRITE: " + write_buf.encode('hex'))
 
-            return can_msg
