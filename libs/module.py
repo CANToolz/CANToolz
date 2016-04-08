@@ -62,13 +62,20 @@ class CANModule:
     def __init__(self, params):
 
         self.DEBUG = int(params.get('debug', 0))
-        self._bus = int(params.get('bus', 0))
+        self._bus = params.get('bus', "module")
         self._active = False if params.get('active') in ["False", "false", "0", "-1"] else True
         self._cmdList = collections.OrderedDict()  # Command list (doInit section)
         self._cmdList['S'] = ["Current status", 0, "", self.get_status]
         self._cmdList['s'] = ["Stop/Activate current module", 0, "", self.do_activate]
-
+        self._status = 0
         self.do_init(params)
+
+    def get_status_bar(self):
+        self.thr_block.wait(3)
+        self.thr_block.clear()
+        status = int(self._status)
+        self.thr_block.set()
+        return status
 
     def do_init(self, params):  # Call for some pre-calculation
         return 0

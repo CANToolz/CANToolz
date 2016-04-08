@@ -1,6 +1,6 @@
 from libs.module import *
 from libs.uds import *
-
+import time
 
 class gen_ping(CANModule):
     name = "Sending CAN pings"
@@ -13,6 +13,7 @@ class gen_ping(CANModule):
        body           -  data HEX that will be used in CAN for discovery (by default body is 0000000000000000)
        mode           -  by default CAN, but also support ISOTP and UDS
        range          -  [0,1000] - ID range
+       delay          - delay between frames (0 by default)
          {'body':'0011223344556677889900aabbccddeeff','mode':'isotp'}  ; ISO-TP
          {'body':'001122334455667788','mode':'CAN'}  ; ISO-TP
          {'services':[{'service':0x01, 'sub':0x0d},{'service':0x09, 'sub':0x02},{'service':0x2F, 'sub':0x03, 'data':[7,3,0,0]}],'mode':'UDS'}  ; UDS
@@ -22,6 +23,8 @@ class gen_ping(CANModule):
 
     def do_init(self, params):
         self._active = False
+        self._last = 0
+        self._full = 1
 
     def get_status(self):
         return "Current status: " + str(self._active) + "\nFrames in queue: " + str(len(self.queue_messages))
@@ -36,6 +39,7 @@ class gen_ping(CANModule):
 
     def do_start(self, args):
         self.queue_messages = []
+        self.last = time.clock()
         if 'body' in args:
             try:
                 _data = [struct.unpack("B", x)[0] for x in (args['body'].decode('hex'))]
@@ -85,12 +89,26 @@ class gen_ping(CANModule):
         else:
             self.dprint(1, "No range specified")
             self._active = False
+        self._full = len(self.queue_messages)
+        self._last = 0
+
 
     def do_effect(self, can_msg, args):
-        can_msg.CANFrame = self.do_ping(args)  # get frame
+        d_time = float(args.get('delay', 0))
+        if d_time > 0:
+            if time.clock() - self.last >= d_time:
+                self.last = time.clock()
+                can_msg.CANFrame = self.do_ping(args)
+
+            else:
+                can_msg.CANFrame = None
+        else:
+            can_msg.CANFrame = self.do_ping(args)
 
         if can_msg.CANFrame:
             can_msg.CANData = True
+            self._last += 1
+            self._status = self._last/(self._full/100.0)
         else:
             can_msg.CANData = False
 
