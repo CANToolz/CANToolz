@@ -1,3 +1,7 @@
+## Version 1.3-1
+### CHANGES
+ - USBTin default bitrates added to the list 
+
 ## Version 1.3-0
 ### CHANGES
  - CAN module change: now we do not store additional raw data. We have saved up to 50% memory! But now "write" operation a little bit longer...
