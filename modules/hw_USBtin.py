@@ -29,8 +29,8 @@ class hw_USBtin(CANModule):
 
     _serialPort = None
     _COMPort = None
-    _speed = {500: 'S6\r', 1000: 'S8\r', 10: 'S0\r', 100: 'S3\r', 50: 'S2\r'}
-    _currentSpeed = 10
+    _currentSpeed = 500
+    _speed = {500: 'S6\r', 1000: 'S8\r', 10: 'S0\r', 100: 'S3\r', 50: 'S2\r', 125:'S4\r', 250:'S5\r'}
     version = 1.0
 
     id = 6
@@ -55,8 +55,56 @@ class hw_USBtin(CANModule):
         time.sleep(1)
         self.read_all()
 
+    def set_speed(self, speed):
+
+
+
+        ## This code snipped ported from CANBus Tiple
+        """
+        bit_rate = 1.0 / self._currentSpeed * 1024
+        BRP = 0
+        bt = 0
+        for i in range(0,8):
+            tq = 2.0 * (i + 1) / 16
+            temp = bit_rate / tq
+            BRP = i
+            if temp <= 25:
+                bt = int(temp)
+                if (temp - bt) == 0:
+                    break
+        print bt
+        SPT =  int (0.8 * bt)
+        print SPT
+        PRSEG = int((SPT - 1) / 2)
+        PHSEG1 = int(SPT - PRSEG - 1)
+        PHSEG2 = int(bt - PHSEG1 - PRSEG - 1)
+
+        SJW = 1
+
+        if (PRSEG + PHSEG1 < PHSEG2):
+            return "SPEED Error 1"
+        if(PHSEG2 <= SJW):
+            return "SPEED Error 2"
+
+        BTLMODE = 1
+        SAM = 0
+
+
+        config1 = (((SJW-1) << 6) | BRP)
+        config2 = ((BTLMODE << 7) | (SAM << 6) | ((PHSEG1-1) << 3) | (PRSEG-1))
+        config3 = (0 | (PHSEG2-1))
+        self.dprint(0, "CNF1 = "+hex(config1)+" CNF2 = "+hex(config2)+" CNF3= "+hex(config3))
+        #self._serialPort.write(sxxyyzz[CR])
+        """
+        if int(speed) not in self._speed:
+            return "ERROR: speed is not supported"
+        self._currentSpeed = int(speed)
+        self._serialPort.write(self._speed[self._currentSpeed])
+        time.sleep(1)
+        return "Speed: " + str(self._currentSpeed)
+
     def do_start(self, params):  # enable reading
-        self._serialPort.write(self._speed[self._currentSpeed] + "\r")
+        self.set_speed(self._currentSpeed)
         time.sleep(1)
         self._serialPort.write("O\r")
         time.sleep(1)
@@ -106,6 +154,7 @@ class hw_USBtin(CANModule):
         self.dprint(1, "Speed: " + str(self._currentSpeed))
         self.dprint(1, "USBtin device found!")
 
+        self._cmdList['S'] = ["Set device speed (kBaud)", 1, " <speed> ", self.set_speed]
         self._cmdList['t'] = ["Send direct command to the device, like t0010411223344", 1, " <cmd> ", self.dev_write]
 
     def dev_write(self, data):
