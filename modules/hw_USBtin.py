@@ -29,8 +29,8 @@ class hw_USBtin(CANModule):
 
     _serialPort = None
     _COMPort = None
-    _currentSpeed = 500
-    _speed = {500: 'S6\r', 1000: 'S8\r', 10: 'S0\r', 100: 'S3\r', 50: 'S2\r', 125:'S4\r', 250:'S5\r'}
+
+
     version = 1.0
 
     id = 6
@@ -56,56 +56,78 @@ class hw_USBtin(CANModule):
         self.read_all()
 
     def set_speed(self, speed):
+        sjw_user = 3
+        ## This code ported from here:
+        # https://www.kvaser.com/wp-content/themes/kvaser/inc/vc/js/bittiming.js
+        if len(str(speed).split(",")) > 1:
+            sjw_user = int(str(speed).split(",")[1])
+            self._sjw = sjw_user
+            self._currentSpeed = int(str(speed).split(",")[0])
+        else:
+            self._currentSpeed = int(speed)
+            sjw_user = self._sjw
 
 
+        clock = 24 * 1000000.0
+        bitrate = self._currentSpeed * 1000.0
 
-        ## This code snipped ported from CANBus Tiple
-        """
-        bit_rate = 1.0 / self._currentSpeed * 1024
-        BRP = 0
-        bt = 0
-        for i in range(0,8):
-            tq = 2.0 * (i + 1) / 16
-            temp = bit_rate / tq
-            BRP = i
-            if temp <= 25:
-                bt = int(temp)
-                if (temp - bt) == 0:
-                    break
-        print bt
-        SPT =  int (0.8 * bt)
-        print SPT
-        PRSEG = int((SPT - 1) / 2)
-        PHSEG1 = int(SPT - PRSEG - 1)
-        PHSEG2 = int(bt - PHSEG1 - PRSEG - 1)
+        final_cnf1 = 0
+        final_cnf2 = 0
+        final_cnf3 = 0
+        ch_btr0 = None
+        ch_btr1 = None
+        ch_btr2 = None
 
-        SJW = 1
+        matches = 0
+        exactMatches = 0
+        maxPrescaler = 64
 
-        if (PRSEG + PHSEG1 < PHSEG2):
-            return "SPEED Error 1"
-        if(PHSEG2 <= SJW):
-            return "SPEED Error 2"
+        tmp = clock / bitrate / 2
+        for presc  in range(1 , maxPrescaler+1):
+            tmp2 = tmp / presc
+            btq = round(tmp2)
+            if btq >= 4 and btq <= 32:
+                err = - (tmp2 / btq - 1)
+                err = round(err * 10000) / 10000.0
+                if (abs(err) > 0):
+                    continue
 
-        BTLMODE = 1
-        SAM = 0
+                for  t1 in range(3,18):
+                    t2 = btq - t1
+                    if (t1 < t2) or (t2 > 8) or (t2 < 2):
+                        continue
+                    for sjw in range(1, 5):
+                        prop = round(t1 / 2)
+                        phase = t1 - prop
+                        btr0 = (presc-1) + (sjw - 1) * 64
+                        btr1 = (prop-2) + (phase-1) * 8 + 128
+                        btr2 = t2-1
 
+                        matches += 1
+                        if err == 0:
+                            ch_btr0 = struct.pack("B", btr0).encode("hex")
+                            ch_btr1 = struct.pack("B", btr1).encode("hex")
+                            ch_btr2 = struct.pack("B", btr2).encode("hex")
 
-        config1 = (((SJW-1) << 6) | BRP)
-        config2 = ((BTLMODE << 7) | (SAM << 6) | ((PHSEG1-1) << 3) | (PRSEG-1))
-        config3 = (0 | (PHSEG2-1))
-        self.dprint(0, "CNF1 = "+hex(config1)+" CNF2 = "+hex(config2)+" CNF3= "+hex(config3))
-        #self._serialPort.write(sxxyyzz[CR])
-        """
-        if int(speed) not in self._speed:
-            return "ERROR: speed is not supported"
-        self._currentSpeed = int(speed)
-        self._serialPort.write(self._speed[self._currentSpeed])
-        time.sleep(1)
-        return "Speed: " + str(self._currentSpeed)
+                            if sjw == sjw_user:
+                                final_cnf1 = ch_btr0
+                                final_cnf2 = ch_btr1
+                                final_cnf3 = ch_btr2
+
+                            exactMatches += 1
+
+        if final_cnf1 == 0 and final_cnf2 == 0 and final_cnf3 == 0 and ch_btr0 and ch_btr1 and ch_btr2:
+            final_cnf1 = ch_btr0
+            final_cnf2 = ch_btr1
+            final_cnf3 = ch_btr2
+        if final_cnf1 == 0 and final_cnf2 == 0 and final_cnf3 == 0:
+            return "Speed ERROR!"
+        else:
+            self.dprint(0, "CNF1 = " + final_cnf1 + " CNF2 = " + final_cnf2+" CNF3 = " + final_cnf3)
+            self._serialPort.write("s" + final_cnf1 + final_cnf2 + final_cnf3 + "\r")
+            return "Speed: " + str(self._currentSpeed)
 
     def do_start(self, params):  # enable reading
-        self.set_speed(self._currentSpeed)
-        time.sleep(1)
         self._serialPort.write("O\r")
         time.sleep(1)
 
@@ -146,15 +168,13 @@ class hw_USBtin(CANModule):
             return 0
 
         self.do_stop({})
-        # data=self.readAll()
-        self._currentSpeed = int(params.get('speed', 500))
-
+        self.set_speed(str(params.get('speed', '500')) + ", " + str(params.get('sjw', '3')))
         # print str(self._serialPort)
         self.dprint(1, "PORT: " + self._COMPort)
         self.dprint(1, "Speed: " + str(self._currentSpeed))
         self.dprint(1, "USBtin device found!")
 
-        self._cmdList['S'] = ["Set device speed (kBaud)", 1, " <speed> ", self.set_speed]
+        self._cmdList['S'] = ["Set device speed (kBaud) and SJW level(optional)", 1, " <speed>,<SJW> ", self.set_speed]
         self._cmdList['t'] = ["Send direct command to the device, like t0010411223344", 1, " <cmd> ", self.dev_write]
 
     def dev_write(self, data):

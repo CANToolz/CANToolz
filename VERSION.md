@@ -1,3 +1,7 @@
+## Version 1.3-2
+### CHANGES
+ - USBTin default bitrates calc added. Any speed/rate supported!
+ 
 ## Version 1.3-1
 ### CHANGES
  - USBTin default bitrates added to the list 
