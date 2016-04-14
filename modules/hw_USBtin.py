@@ -62,9 +62,9 @@ class hw_USBtin(CANModule):
         if len(str(speed).split(",")) > 1:
             sjw_user = int(str(speed).split(",")[1])
             self._sjw = sjw_user
-            self._currentSpeed = int(str(speed).split(",")[0])
+            self._currentSpeed = float(str(speed).split(",")[0])
         else:
-            self._currentSpeed = int(speed)
+            self._currentSpeed = float(speed)
             sjw_user = self._sjw
 
 
