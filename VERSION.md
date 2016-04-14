@@ -1,3 +1,7 @@
+## Version 1.3-3
+### CHANGES
+ - USBTin default bitrates calc added. Any speed/rate supported! (forgot that rate can be float... now it is fixed)
+ 
 ## Version 1.3-2
 ### CHANGES
  - USBTin default bitrates calc added. Any speed/rate supported!
