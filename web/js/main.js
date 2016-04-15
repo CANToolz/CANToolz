@@ -70,11 +70,26 @@ function redrawStatus(status) {
     if (currentName[0][0]!=null){
       name = currentName[0][0].__data__.name;
       bar = status.progress[name].bar;
+      btns = status.progress[name].buttons;
       redrawProgressBar(bar);
+      redrawButtons(btns)
     }
   }
 
   return status.status;
+}
+
+function redrawButtons(buttons){
+
+    d3.selectAll('.command-run')  //here's how you get all the nodes
+    .each(function(d) {
+      if (buttons[d.key] == true){
+        d3.select(this).classed("disabled", false);
+      }else{
+        d3.select(this).classed("disabled", true);
+      }
+    });
+
 }
 
 /**

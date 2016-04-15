@@ -229,7 +229,7 @@ class hw_CANBusTriple(CANModule):
             struct.pack("B", int(self._writeBus)))  # TODO refactor to right names
 
         self._cmdList['t'] = ["Send direct command to the device, like 02010011112233440000000008", 1, " <cmd> ",
-                              self.dev_write]
+                              self.dev_write, True]
 
     def dev_write(self, data):
         self.dprint(1, "CMD: " + data)

@@ -2,11 +2,60 @@ import sys
 import unittest
 import time
 
+class ModStatDiffTests(unittest.TestCase):
+    def tearDown(self):
+        self.CANEngine.stop_loop()
+        self.CANEngine = None
+        print("stopped")
+
+
 class ModStatMetaChainTests(unittest.TestCase):
     def tearDown(self):
         self.CANEngine.stop_loop()
         self.CANEngine = None
         print("stopped")
+
+    def test_meta_add(self):
+        self.CANEngine = CANSploit()
+        self.CANEngine.load_config("tests/test_5.py")
+        self.CANEngine.start_loop()
+        time.sleep(1)
+        self.CANEngine.call_module(0, "r 0-3")
+        time.sleep(1)
+        self.CANEngine.call_module(1, "D")
+        time.sleep(1)
+        self.CANEngine.call_module(0, "r 0-4")
+        time.sleep(1)
+        ret = self.CANEngine.call_module(1, "I")
+        self.assertTrue("" == ret, "Should be empty diff")
+        self.CANEngine.call_module(0, "r 0-7")
+        time.sleep(1)
+        ret = self.CANEngine.call_module(1, "I")
+        self.assertTrue(0 < ret.find("New ID found: 1799"), "Should not be empty diff")
+        self.assertTrue(0 < ret.find("New ID found: 1800"), "Should not be empty diff")
+        self.assertTrue(0 < ret.find("03410d00"), "Should not be empty diff")
+        ret = self.CANEngine.call_module(1, "p")
+        self.assertFalse(0 < ret.find(" 1800 "), "No 1800 in print")
+        self.assertTrue(0 < ret.find(" 1803 "), " 1803 in print")
+        self.CANEngine.call_module(1, "D")
+        time.sleep(1)
+        ret = self.CANEngine.call_module(1, "p")
+        ret = self.CANEngine.call_module(1, "p")
+        self.assertTrue(0 < ret.find(" 1800 "), "1800 in print")
+        self.CANEngine.call_module(1, "D")
+        time.sleep(1)
+        self.CANEngine.call_module(1, "D")
+        time.sleep(1)
+        ret = self.CANEngine.call_module(1, "I")
+        self.assertTrue("" == ret, "Should be empty diff")
+        self.CANEngine.call_module(0, "r 6-8")
+        time.sleep(1)
+        ret = self.CANEngine.call_module(1, "I")
+        self.assertFalse(0 < ret.find("New ID found: 1799"), "Should  be not found")
+        self.assertFalse(0 < ret.find("New ID found: 1800"), "Should  be not found")
+        self.assertTrue(0 < ret.find("New data frames in exists ID 1800"), "Should  be found")
+
+
 
     def test_meta_add(self):
         self.CANEngine = CANSploit()
@@ -193,6 +242,7 @@ class ModReplayTests(unittest.TestCase):
 
         #print("num is " + num)
         self.assertTrue(0 <= num.find("Loaded packets: 4"), "Should be be 4 packets")
+        self.CANEngine.call_module(1, "g")
         ret = self.CANEngine.call_module(1, "d 0-4")
         time.sleep(1)
         print(ret)

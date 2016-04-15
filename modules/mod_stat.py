@@ -34,28 +34,32 @@ class mod_stat(CANModule):
 
 
     def get_status(self):
-        return "Current status: " + str(self._active) + "\nSniffed frames: " + str(len(self.all_frames))
+        return "Current status: " + str(self._active) + "\nSniffed frames: " + str(len(self.all_frames))+"\nDiff mode: " + str(self._diff) +\
+            "\nSniffed in Diff mode: " + str(len(self.all_diff_frames))
 
     def do_init(self, params):
         self.all_frames = []
+        self.all_diff_frames = []
         self.meta_data = {}
         self._bodyList = collections.OrderedDict()
-
+        self._diff = False
 
         self.shift = params.get('uds_shift', 8)
 
         if 'meta_file' in params:
             self.dprint(1, self.do_load_meta(params['meta']))
 
-        self._cmdList['p'] = ["Print current table", 0, "", self.do_print]
-        self._cmdList['a'] = ["Analyses of captured traffic", 1, "<UDS|ISO|FRAG|ALL(defaulr)>", self.do_anal]
-        self._cmdList['c'] = ["Clean table, remove alerts", 0, "", self.do_clean]
-        self._cmdList['i'] = ["Meta-data: add description for ID", 1, "<ID>, <description>", self.do_add_meta_descr]
-        self._cmdList['x'] = ["Meta-data: add index-byte for ID", 1, "<ID>, <index>-<range>-<start_value>", self.do_add_meta_index]
-        self._cmdList['l'] = ["Load meta-data", 1, "<filename>", self.do_load_meta]
-        self._cmdList['z'] = ["Save meta-data", 1, "<filename>", self.do_save_meta]
-        self._cmdList['r'] = ["Dump ALL in replay format", 1, " <filename>", self.do_dump_replay]
-        self._cmdList['d'] = ["Dump STAT in CSV format", 1, " <filename>", self.do_dump_csv]
+        self._cmdList['p'] = ["Print current table", 0, "", self.do_print, True]
+        self._cmdList['a'] = ["Analyses of captured traffic", 1, "<UDS|ISO|FRAG|ALL(defaut)>", self.do_anal, True]
+        self._cmdList['D'] = ["Enable/Disable Diff mode", 0, "", self.enable_diff, True]
+        self._cmdList['I'] = ["Print Diff frames", 0, "", self.print_diff, False]
+        self._cmdList['c'] = ["Clean table, remove alerts", 0, "", self.do_clean, True]
+        self._cmdList['i'] = ["Meta-data: add description for ID", 1, "<ID>, <description>", self.do_add_meta_descr, True]
+        self._cmdList['x'] = ["Meta-data: add index-byte for ID", 1, "<ID>, <index>-<range>-<start_value>", self.do_add_meta_index, True]
+        self._cmdList['l'] = ["Load meta-data", 1, "<filename>", self.do_load_meta, True]
+        self._cmdList['z'] = ["Save meta-data", 1, "<filename>", self.do_save_meta, True]
+        self._cmdList['r'] = ["Dump ALL in replay format", 1, " <filename>", self.do_dump_replay, True]
+        self._cmdList['d'] = ["Dump STAT in CSV format", 1, " <filename>", self.do_dump_csv, True]
 
     def do_add_meta_descr(self, input_params):
         try:
@@ -144,9 +148,10 @@ class mod_stat(CANModule):
 
         return bool_ascii
 
-    def create_short_table(self):
+    @staticmethod
+    def create_short_table(input_frames):
         _bodyList = collections.OrderedDict()
-        for can_msg in self.all_frames:
+        for can_msg in input_frames:
             if can_msg.CANFrame.frame_id not in _bodyList:
                 _bodyList[can_msg.CANFrame.frame_id] = collections.OrderedDict()
                 _bodyList[can_msg.CANFrame.frame_id][(
@@ -225,7 +230,10 @@ class mod_stat(CANModule):
         return frg_list
 
     def do_anal(self, format = "ALL"):
-        self._bodyList = self.create_short_table()
+        if self._diff:
+            self.enable_diff()
+
+        self._bodyList = self.create_short_table(self.all_frames)
         iso_tp_list = self.find_iso_tp()
         uds_list = self.find_uds(iso_tp_list)
         frag_list = self.find_frags()
@@ -311,6 +319,8 @@ class mod_stat(CANModule):
 
     def do_dump_replay(self, name):
         _name = None
+        if self._diff:
+            self.enable_diff()
         try:
             _name = open(name.strip(), 'w')
             for can_msg in self.all_frames:
@@ -323,7 +333,7 @@ class mod_stat(CANModule):
 
 
     def do_dump_csv(self, name):
-        self._bodyList = self.create_short_table()
+        self._bodyList = self.create_short_table(self.all_frames)
         _name = None
         try:
             _name = open(name.strip(), 'w')
@@ -343,8 +353,70 @@ class mod_stat(CANModule):
             return str(e)
         return "Saved into " + name.strip()
 
+    def print_diff(self):
+        if not self._diff:
+            return "Error: Diff mode disabled..."
+        table1 = self.create_short_table(self.all_frames)
+        table2 = self.create_short_table(self.all_diff_frames)
+        table = ""
+        for fid2, lst2 in table2.iteritems():
+            if fid2 not in table1.keys():
+                table += "\nNew ID found: " + str(fid2) + "\n"
+                rows = [['BUS', 'ID', 'LENGTH', 'MESSAGE', 'ASCII', 'DESCR', 'COUNT']]
+                for (lenX, msg, bus, mod), cnt in lst2.iteritems():
+                    if self.is_ascii([struct.unpack("B", x)[0] for x in msg]):
+                        data_ascii = self.ret_ascii(msg)
+                    else:
+                        data_ascii = "  "
+                    rows.append([str(bus),str(fid2), str(lenX), msg.encode('hex'), data_ascii, self.meta_data.get(fid2, {}).get('id_descr', "   "), str(cnt)])
+
+                cols = zip(*rows)
+                col_widths = [max(len(value) for value in col) for col in cols]
+                format_table = ' '.join(['%%-%ds' % width for width in col_widths ])
+                for row in rows:
+                    table += format_table % tuple(row) + "\n"
+                table += "\n"
+            else:
+
+                for (lenX, msg, bus, mod), cnt in lst2.iteritems():
+                    if (lenX, msg, bus, mod) not in  table1[fid2]:
+                        table += "\nNew data frames in exists ID " + str(fid2) + "\n"
+                        rows = [['BUS', 'ID', 'LENGTH', 'MESSAGE', 'ASCII', 'DESCR', 'COUNT']]
+                        if self.is_ascii([struct.unpack("B", x)[0] for x in msg]):
+                            data_ascii = self.ret_ascii(msg)
+                        else:
+                            data_ascii = "  "
+                        rows.append([str(bus),str(fid2), str(lenX), msg.encode('hex'), data_ascii, self.meta_data.get(fid2, {}).get('id_descr', "   "), str(cnt)])
+
+                        cols = zip(*rows)
+                        col_widths = [ max(len(value) for value in col) for col in cols ]
+                        format_table = ' '.join(['%%-%ds' % width for width in col_widths ])
+                        for row in rows:
+                            table += format_table % tuple(row) + "\n"
+                            table += "\n"
+        return table
+
+    def enable_diff(self):
+        if self._diff:
+            self.all_frames += self.all_diff_frames
+            self.all_diff_frames = []
+            #self._cmdList['p'][4] = True
+            self._cmdList['a'][4] = True
+            self._cmdList['r'][4] = True
+            self._cmdList['d'][4] = True
+            self._cmdList['I'][4] = False
+        else:
+            #self._cmdList['p'][4] = False
+            self._cmdList['a'][4] = False
+            self._cmdList['r'][4] = False
+            self._cmdList['d'][4] = False
+            self._cmdList['I'][4] = True
+        self._diff = not self._diff
+        return "Diff mode: "+str(self._diff)
+
+
     def do_print(self):
-        self._bodyList = self.create_short_table()
+        self._bodyList = self.create_short_table(self.all_frames)
         table = "\n"
         rows = [['BUS', 'ID', 'LENGTH', 'MESSAGE', 'ASCII', 'DESCR', 'COUNT']]
         # http://stackoverflow.com/questions/3685195/line-up-columns-of-numbers-print-output-in-table-format
@@ -367,11 +439,16 @@ class mod_stat(CANModule):
     def do_clean(self):
         self._alert = False
         self.all_frames = []
+        self.all_diff_frames = []
+        self._diff = False
         return ""
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
     def do_effect(self, can_msg, args):
         if can_msg.CANData:
-            self.all_frames.append(can_msg)
+            if not self._diff:
+                self.all_frames.append(can_msg)
+            else:
+                self.all_diff_frames.append(can_msg)
 
         return can_msg
