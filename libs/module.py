@@ -43,10 +43,13 @@ class CANModule:
         self.thr_block.clear()
         if string[0] in self._cmdList:
             cmd = self._cmdList[string[0]]
-            if len(string.strip()) > 2:
-                ret = cmd[3](string[2:])
+            if cmd[4]:
+                if len(string.strip()) > 2:
+                    ret = cmd[3](string[2:])
+                else:
+                    ret = cmd[3]()
             else:
-                ret = cmd[3]()
+                ret = "Error: command is disabled!"
         self.thr_block.set()
         return ret
 
@@ -65,8 +68,8 @@ class CANModule:
         self._bus = params.get('bus', "module")
         self._active = False if params.get('active') in ["False", "false", "0", "-1"] else True
         self._cmdList = collections.OrderedDict()  # Command list (doInit section)
-        self._cmdList['S'] = ["Current status", 0, "", self.get_status]
-        self._cmdList['s'] = ["Stop/Activate current module", 0, "", self.do_activate]
+        self._cmdList['S'] = ["Current status", 0, "", self.get_status, True]
+        self._cmdList['s'] = ["Stop/Activate current module", 0, "", self.do_activate, True]
         self._status = 0
         self.do_init(params)
 

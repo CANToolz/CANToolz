@@ -1,3 +1,8 @@
+## Version 1.4-0
+### CHANGES
+ - mod_stat diff mode added: now we can compare "new" traffic and "old" to fins new ID/frames
+ - now commands can be disabled (in Diff mod of mod_stat you can't use some commands)
+
 ## Version 1.3-3
 ### CHANGES
  - USBTin default bitrates calc added. Any speed/rate supported! (forgot that rate can be float... now it is fixed)

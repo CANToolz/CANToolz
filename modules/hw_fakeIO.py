@@ -32,7 +32,7 @@ class hw_fakeIO(CANModule):
 
     def do_init(self, params):  # Get device and open serial port
         self._cmdList['t'] = ["Send direct command to the device, like 13:8:1122334455667788", 1, " <cmd> ",
-                              self.dev_write]
+                              self.dev_write, True]
         return 1
 
     def dev_write(self, line):

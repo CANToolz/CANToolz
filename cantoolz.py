@@ -149,7 +149,7 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     help_list = self.can_engine.get_modules_list()[self.can_engine.find_module(str(path_parts[3]))][1]._cmdList
                     response_help = collections.OrderedDict()
                     for cmd, body in help_list.iteritems():
-                        response_help[cmd] = {'descr': body[0], 'descr_param':body[2], 'param_count': body[1]}
+                        response_help[cmd] = {'descr': body[0], 'descr_param': body[2], 'param_count': body[1]}
                     body = json.dumps(response_help, ensure_ascii=False)
                     resp_code = 200
                 except Exception as e:
@@ -178,7 +178,10 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     modz2 = self.can_engine.get_modules_list()
                     modz3 = {}
                     for name, module, params in modz2:
-                        modz3[name] = {"bar": module.get_status_bar(), "status": module.is_active}
+                        btns = {}
+                        for btn, bdy in module._cmdList.iteritems():
+                            btns[btn] = bdy[4]
+                        modz3[name] = {"bar": module.get_status_bar(), "status": module.is_active, "buttons":btns}
                     body = json.dumps({"status": modz, "progress": modz3})
                     resp_code = 200
                 except Exception as e:
