@@ -377,11 +377,12 @@ class mod_stat(CANModule):
                     table += format_table % tuple(row) + "\n"
                 table += "\n"
             else:
-
+                rows = [['BUS', 'ID', 'LENGTH', 'MESSAGE', 'ASCII', 'DESCR', 'COUNT']]
                 for (lenX, msg, bus, mod), cnt in lst2.iteritems():
+
                     if (lenX, msg, bus, mod) not in  table1[fid2]:
-                        table += "\nNew data frames in exists ID " + str(fid2) + "\n"
-                        rows = [['BUS', 'ID', 'LENGTH', 'MESSAGE', 'ASCII', 'DESCR', 'COUNT']]
+
+
                         if self.is_ascii([struct.unpack("B", x)[0] for x in msg]):
                             data_ascii = self.ret_ascii(msg)
                         else:
