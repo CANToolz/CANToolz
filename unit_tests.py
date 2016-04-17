@@ -8,14 +8,7 @@ class ModStatDiffTests(unittest.TestCase):
         self.CANEngine = None
         print("stopped")
 
-
-class ModStatMetaChainTests(unittest.TestCase):
-    def tearDown(self):
-        self.CANEngine.stop_loop()
-        self.CANEngine = None
-        print("stopped")
-
-    def test_meta_add(self):
+    def test_diff(self):
         self.CANEngine = CANSploit()
         self.CANEngine.load_config("tests/test_5.py")
         self.CANEngine.start_loop()
@@ -24,37 +17,60 @@ class ModStatMetaChainTests(unittest.TestCase):
         time.sleep(1)
         self.CANEngine.call_module(1, "D")
         time.sleep(1)
-        self.CANEngine.call_module(0, "r 0-4")
+        self.CANEngine.call_module(0, "r 0-3")
         time.sleep(1)
         ret = self.CANEngine.call_module(1, "I")
-        self.assertTrue("" == ret, "Should be empty diff")
-        self.CANEngine.call_module(0, "r 0-7")
+        self.assertFalse(0 < ret.find(" 1799 "), "Should be empty diff")
+        self.assertFalse(0 < ret.find(" 700 "), "Should be empty diff")
+        self.assertFalse(0 < ret.find(" 1803 "), "Should be empty diff")
+        self.assertFalse(0 < ret.find(" 1801 "), "Should be empty diff")
+        self.CANEngine.call_module(0, "r 0-6")
         time.sleep(1)
-        ret = self.CANEngine.call_module(1, "I")
-        self.assertTrue(0 < ret.find("New ID found: 1799"), "Should not be empty diff")
-        self.assertTrue(0 < ret.find("New ID found: 1800"), "Should not be empty diff")
-        self.assertTrue(0 < ret.find("03410d00"), "Should not be empty diff")
-        ret = self.CANEngine.call_module(1, "p")
-        self.assertFalse(0 < ret.find(" 1800 "), "No 1800 in print")
-        self.assertTrue(0 < ret.find(" 1803 "), " 1803 in print")
-        self.CANEngine.call_module(1, "D")
-        time.sleep(1)
-        ret = self.CANEngine.call_module(1, "p")
-        ret = self.CANEngine.call_module(1, "p")
-        self.assertTrue(0 < ret.find(" 1800 "), "1800 in print")
-        self.CANEngine.call_module(1, "D")
-        time.sleep(1)
-        self.CANEngine.call_module(1, "D")
-        time.sleep(1)
-        ret = self.CANEngine.call_module(1, "I")
-        self.assertTrue("" == ret, "Should be empty diff")
-        self.CANEngine.call_module(0, "r 6-8")
-        time.sleep(1)
-        ret = self.CANEngine.call_module(1, "I")
-        self.assertFalse(0 < ret.find("New ID found: 1799"), "Should  be not found")
-        self.assertFalse(0 < ret.find("New ID found: 1800"), "Should  be not found")
-        self.assertTrue(0 < ret.find("New data frames in exists ID 1800"), "Should  be found")
 
+        ret = self.CANEngine.call_module(1, "I")
+        self.assertTrue(0 < ret.find(" 1799 "), "Should be empty diff")
+        self.assertTrue(0 < ret.find(" 1800 "), "Should be empty diff")
+        self.assertTrue(0 < ret.find("03410d00"), "Should not be empty diff")
+        self.assertTrue(0 < ret.find("1014490201314731"), "Should not be empty diff")
+        self.assertFalse(0 < ret.find(" 700 "), "Should be empty diff")
+        self.assertFalse(0 < ret.find(" 1803 "), "Should be empty diff")
+        self.assertFalse(0 < ret.find(" 1801 "), "Should be empty diff")
+        ret = self.CANEngine.call_module(1, "N")
+        self.assertTrue(0 < ret.find(" 1799 "), "Should be empty diff")
+        self.assertTrue(0 < ret.find(" 1800 "), "Should be empty diff")
+        self.assertTrue(0 < ret.find("03410d00"), "Should not be empty diff")
+        self.assertTrue(0 < ret.find("1014490201314731"), "Should not be empty diff")
+        self.assertFalse(0 < ret.find(" 700 "), "Should be empty diff")
+        self.assertFalse(0 < ret.find(" 1803 "), "Should be empty diff")
+        self.assertFalse(0 < ret.find(" 1801 "), "Should be empty diff")
+
+        self.CANEngine.call_module(1, "D")
+        time.sleep(1)
+        self.CANEngine.call_module(1, "D")
+        time.sleep(1)
+        self.CANEngine.call_module(0, "r")
+        time.sleep(1)
+        ret = self.CANEngine.call_module(1, "I")
+        self.assertFalse(0 < ret.find(" 1799 "), "Should be empty diff")
+        self.assertTrue(0 < ret.find(" 1800 "), "Should be empty diff")
+        self.assertFalse(0 < ret.find("03410d00"), "Should not be empty diff")
+        self.assertFalse(0 < ret.find("1014490201314731"), "Should be empty diff")
+        self.assertTrue(0 < ret.find("215a543533383236"), "Should not be empty diff")
+        self.assertTrue(0 < ret.find("2246313039313439"), "Should not be empty diff")
+        ret = self.CANEngine.call_module(1, "N")
+        self.assertFalse(0 < ret.find(" 1799 "), "Should be empty diff")
+        self.assertFalse(0 < ret.find(" 1800 "), "Should be empty diff")
+        self.assertFalse(0 < ret.find("03410d00"), "Should not be empty diff")
+        self.assertFalse(0 < ret.find("1014490201314731"), "Should be empty diff")
+        self.assertFalse(0 < ret.find("215a543533383236"), "Should not be empty diff")
+        self.assertFalse(0 < ret.find("2246313039313439"), "Should not be empty diff")
+
+
+class ModStatMetaChainTests(unittest.TestCase):
+    def tearDown(self):
+        self.CANEngine.stop_loop()
+        self.CANEngine = None
+        print("stopped")
 
 
     def test_meta_add(self):

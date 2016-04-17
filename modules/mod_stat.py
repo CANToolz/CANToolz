@@ -53,6 +53,7 @@ class mod_stat(CANModule):
         self._cmdList['a'] = ["Analyses of captured traffic", 1, "<UDS|ISO|FRAG|ALL(defaut)>", self.do_anal, True]
         self._cmdList['D'] = ["Enable/Disable Diff mode", 0, "", self.enable_diff, True]
         self._cmdList['I'] = ["Print Diff frames", 0, "", self.print_diff, False]
+        self._cmdList['N'] = ["Print Diff frames (new ID only)", 0, "", self.print_diff_id, False]
         self._cmdList['c'] = ["Clean table, remove alerts", 0, "", self.do_clean, True]
         self._cmdList['i'] = ["Meta-data: add description for ID", 1, "<ID>, <description>", self.do_add_meta_descr, True]
         self._cmdList['x'] = ["Meta-data: add index-byte for ID", 1, "<ID>, <index>-<range>-<start_value>", self.do_add_meta_index, True]
@@ -354,47 +355,43 @@ class mod_stat(CANModule):
         return "Saved into " + name.strip()
 
     def print_diff(self):
+        return self.print_diff_orig(0)
+
+    def print_diff_id(self):
+        return self.print_diff_orig(1)
+
+    def print_diff_orig(self, mode = 0):
         if not self._diff:
             return "Error: Diff mode disabled..."
         table1 = self.create_short_table(self.all_frames)
         table2 = self.create_short_table(self.all_diff_frames)
         table = ""
+        rows = [['BUS', 'ID', 'LENGTH', 'MESSAGE', 'ASCII', 'DESCR', 'COUNT']]
         for fid2, lst2 in table2.iteritems():
             if fid2 not in table1.keys():
-                table += "\nNew ID found: " + str(fid2) + "\n"
-                rows = [['BUS', 'ID', 'LENGTH', 'MESSAGE', 'ASCII', 'DESCR', 'COUNT']]
+
                 for (lenX, msg, bus, mod), cnt in lst2.iteritems():
                     if self.is_ascii([struct.unpack("B", x)[0] for x in msg]):
                         data_ascii = self.ret_ascii(msg)
                     else:
                         data_ascii = "  "
                     rows.append([str(bus),str(fid2), str(lenX), msg.encode('hex'), data_ascii, self.meta_data.get(fid2, {}).get('id_descr', "   "), str(cnt)])
-
-                cols = zip(*rows)
-                col_widths = [max(len(value) for value in col) for col in cols]
-                format_table = ' '.join(['%%-%ds' % width for width in col_widths ])
-                for row in rows:
-                    table += format_table % tuple(row) + "\n"
-                table += "\n"
-            else:
-                rows = [['BUS', 'ID', 'LENGTH', 'MESSAGE', 'ASCII', 'DESCR', 'COUNT']]
+            elif mode == 0:
                 for (lenX, msg, bus, mod), cnt in lst2.iteritems():
 
                     if (lenX, msg, bus, mod) not in  table1[fid2]:
-
-
                         if self.is_ascii([struct.unpack("B", x)[0] for x in msg]):
                             data_ascii = self.ret_ascii(msg)
                         else:
                             data_ascii = "  "
                         rows.append([str(bus),str(fid2), str(lenX), msg.encode('hex'), data_ascii, self.meta_data.get(fid2, {}).get('id_descr', "   "), str(cnt)])
 
-                        cols = zip(*rows)
-                        col_widths = [ max(len(value) for value in col) for col in cols ]
-                        format_table = ' '.join(['%%-%ds' % width for width in col_widths ])
-                        for row in rows:
-                            table += format_table % tuple(row) + "\n"
-                            table += "\n"
+        cols = zip(*rows)
+        col_widths = [max(len(value) for value in col) for col in cols]
+        format_table = '    '.join(['%%-%ds' % width for width in col_widths ])
+        for row in rows:
+            table += format_table % tuple(row) + "\n"
+        table += "\n"
         return table
 
     def enable_diff(self):
@@ -406,12 +403,14 @@ class mod_stat(CANModule):
             self._cmdList['r'][4] = True
             self._cmdList['d'][4] = True
             self._cmdList['I'][4] = False
+            self._cmdList['N'][4] = False
         else:
             #self._cmdList['p'][4] = False
             self._cmdList['a'][4] = False
             self._cmdList['r'][4] = False
             self._cmdList['d'][4] = False
             self._cmdList['I'][4] = True
+            self._cmdList['N'][4] = True
         self._diff = not self._diff
         return "Diff mode: "+str(self._diff)
 
@@ -431,7 +430,7 @@ class mod_stat(CANModule):
 
         cols = zip(*rows)
         col_widths = [ max(len(value) for value in col) for col in cols ]
-        format_table = ' '.join(['%%-%ds' % width for width in col_widths ])
+        format_table = '    '.join(['%%-%ds' % width for width in col_widths ])
         for row in rows:
             table += format_table % tuple(row) + "\n"
         table += ""
