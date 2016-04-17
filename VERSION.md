@@ -1,3 +1,8 @@
+## Version 1.4-2
+### CHANGES
+ - mod_stat: added dump diff to replay format... 
+ - fixed lib FRAG crash on 0 size frames...
+ 
 ## Version 1.4-1
 ### CHANGES
  - new web design/logo (thx my wife Sevtalana Sintcova!)

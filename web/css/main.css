@@ -27,7 +27,6 @@
 .command-run {
     border: 2 none;
     background-color: rgb(233,233,226);
-    font-weight: 300;
-    letter-spacing: 1px;
-    text-transform: uppercase;
+    font-weight: 10;
+    font-size: 1;
 }
