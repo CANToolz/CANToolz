@@ -1,6 +1,11 @@
+## Version 1.4-1
+### CHANGES
+ - new web design/logo (thx my wife Sevtalana Sintcova!)
+
 ## Version 1.4-0
 ### CHANGES
  - mod_stat diff mode added: now we can compare "new" traffic and "old" to fins new ID/frames
+ -- details: http://asintsov.blogspot.de/2016/04/cantoolz-modstat-diff-mode.html
  - now commands can be disabled (in Diff mod of mod_stat you can't use some commands)
 
 ## Version 1.3-3
