@@ -321,11 +321,16 @@ class mod_stat(CANModule):
 
     def print_dump_diff(self, name):
         _name = None
-
+        table1 = self.create_short_table(self.all_frames)
         try:
             _name = open(name.strip(), 'w')
             for can_msg in self.all_diff_frames:
-                _name.write(str(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + can_msg.CANFrame.frame_raw_data.encode('hex') + "\n")
+                if can_msg.CANFrame.frame_id not in table1:
+                    _name.write(str(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + can_msg.CANFrame.frame_raw_data.encode('hex') + "\n")
+                else:
+                    for (len2, msg, bus, mod), cnt in table1[can_msg.CANFrame.frame_id].iteritems():
+                        if msg != can_msg.CANFrame.frame_raw_data:
+                            _name.write(str(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + can_msg.CANFrame.frame_raw_data.encode('hex') + "\n")
             _name.close()
         except Exception as e:
             self.dprint(2, "can't open log")
