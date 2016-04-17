@@ -54,6 +54,7 @@ class mod_stat(CANModule):
         self._cmdList['D'] = ["Enable/Disable Diff mode", 0, "", self.enable_diff, True]
         self._cmdList['I'] = ["Print Diff frames", 0, "", self.print_diff, False]
         self._cmdList['N'] = ["Print Diff frames (new ID only)", 0, "", self.print_diff_id, False]
+        self._cmdList['Y'] = ["Dump Diff in replay format", 1, " <filename> ", self.print_dump_diff, False]
         self._cmdList['c'] = ["Clean table, remove alerts", 0, "", self.do_clean, True]
         self._cmdList['i'] = ["Meta-data: add description for ID", 1, "<ID>, <description>", self.do_add_meta_descr, True]
         self._cmdList['x'] = ["Meta-data: add index-byte for ID", 1, "<ID>, <index>-<range>-<start_value>", self.do_add_meta_index, True]
@@ -318,10 +319,27 @@ class mod_stat(CANModule):
 
         return ret_str
 
+    def print_dump_diff(self, name):
+        _name = None
+        table1 = self.create_short_table(self.all_frames)
+        try:
+            _name = open(name.strip(), 'w')
+            for can_msg in self.all_diff_frames:
+                if can_msg.CANFrame.frame_id not in table1:
+                    _name.write(str(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + can_msg.CANFrame.frame_raw_data.encode('hex') + "\n")
+                else:
+                    for (len2, msg, bus, mod), cnt in table1[can_msg.CANFrame.frame_id].iteritems():
+                        if msg != can_msg.CANFrame.frame_raw_data:
+                            _name.write(str(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + can_msg.CANFrame.frame_raw_data.encode('hex') + "\n")
+            _name.close()
+        except Exception as e:
+            self.dprint(2, "can't open log")
+            return str(e)
+        return "Saved into " + name.strip()
+
     def do_dump_replay(self, name):
         _name = None
-        if self._diff:
-            self.enable_diff()
+
         try:
             _name = open(name.strip(), 'w')
             for can_msg in self.all_frames:
@@ -404,6 +422,7 @@ class mod_stat(CANModule):
             self._cmdList['d'][4] = True
             self._cmdList['I'][4] = False
             self._cmdList['N'][4] = False
+            self._cmdList['Y'][4] = False
         else:
             #self._cmdList['p'][4] = False
             self._cmdList['a'][4] = False
@@ -411,6 +430,7 @@ class mod_stat(CANModule):
             self._cmdList['d'][4] = False
             self._cmdList['I'][4] = True
             self._cmdList['N'][4] = True
+            self._cmdList['Y'][4] = True
         self._diff = not self._diff
         return "Diff mode: "+str(self._diff)
 
