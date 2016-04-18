@@ -248,16 +248,21 @@ class hw_USBtin(CANModule):
     def do_write(self, can_msg):
         if can_msg.CANData:
             cmd_byte = None
+            id_f = None
             if not can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.DataFrame:  # 11 bit format
                 cmd_byte = "t"
+                id_f = can_msg.CANFrame.frame_raw_id.encode('hex').zfill(4)[1:4]
             elif can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.DataFrame:
                 cmd_byte = "T"
+                id_f = can_msg.CANFrame.frame_raw_id.encode('hex').zfill(8)[0:8]
             elif not can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.RemoteFrame:
                 cmd_byte = "r"
+                id_f = can_msg.CANFrame.frame_raw_id.encode('hex').zfill(4)[1:4]
             elif can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.RemoteFrame:
                 cmd_byte = "R"
+                id_f = can_msg.CANFrame.frame_raw_id.encode('hex').zfill(8)[0:8]
             if cmd_byte:
-                write_buf = cmd_byte + can_msg.CANFrame.frame_raw_id.encode('hex')[1:] + \
+                write_buf = cmd_byte + id_f + \
                     str(can_msg.CANFrame.frame_length) + can_msg.CANFrame.frame_raw_data.encode('hex') + "\r"
                 self._serialPort.write(write_buf)
                 self.dprint(2, "WRITE: " + write_buf)
