@@ -1,3 +1,7 @@
+## Version 1.5-0
+### CHANGES
+ - hw_USBtin fix - bug with writing 29bits ID... very bad bug. Sorry 8)
+
 ## Version 1.4-2
 ### CHANGES
  - mod_stat: added dump diff to replay format... 
