@@ -195,7 +195,9 @@ class hw_CANBusTriple(CANModule):
                     self.dprint(0, 'Can\'t init device!')
                     exit()
             else:
-                self.init_port()
+                if self.init_port() != 1:
+                    self.dprint(0, 'Can\'t init device!')
+                    exit()
         else:
             self.dprint(0, 'No port in config!')
             exit()
