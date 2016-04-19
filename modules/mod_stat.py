@@ -23,15 +23,6 @@ class mod_stat(CANModule):
     id = 3
     _active = True
     version = 1.0
-    _alert = False
-
-    def do_open_files(self):
-        if self._logFile:
-            try:
-                self._file = open(self._fname, 'w')
-            except:
-                self.dprint(2, "can't open log")
-
 
     def get_status(self):
         return "Current status: " + str(self._active) + "\nSniffed frames: " + str(len(self.all_frames))+"\nDiff mode: " + str(self._diff) +\
@@ -460,11 +451,16 @@ class mod_stat(CANModule):
         return table
 
     def do_clean(self):
-        self._alert = False
         self.all_frames = []
         self.all_diff_frames = []
         self._diff = False
-        return ""
+        self._cmdList['a'][4] = True
+        self._cmdList['r'][4] = True
+        self._cmdList['d'][4] = True
+        self._cmdList['I'][4] = False
+        self._cmdList['N'][4] = False
+        self._cmdList['Y'][4] = False
+        return "Buffers cleaned!"
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
     def do_effect(self, can_msg, args):
