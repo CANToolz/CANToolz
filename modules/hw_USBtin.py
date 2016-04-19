@@ -161,8 +161,9 @@ class hw_USBtin(CANModule):
                     self.dprint(0, 'Can\'t init device!')
                     exit()
             else:
-                self.init_port()
-                exit()
+                if self.init_port() != 1:
+                    self.dprint(0, 'Can\'t init device!')
+                    exit()
         else:
             self.dprint(0, 'No port in config!')
             return 0

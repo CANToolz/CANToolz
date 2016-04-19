@@ -1,3 +1,8 @@
+## Version 1.5-1
+### CHANGES
+ - hw_USBtin fix: direct name/path to serial port now should work
+ - hw_CANBusTriple fix: when direct name/path to serial port used, do checking if device is there
+ 
 ## Version 1.5-0
 ### CHANGES
  - hw_USBtin fix - bug with writing 29bits ID... very bad bug. Sorry 8)
