@@ -27,7 +27,8 @@ class ModStatDiffTests(unittest.TestCase):
         self.CANEngine.call_module(0, "r 0-6")
         time.sleep(1)
 
-        ret = self.CANEngine.call_module(1, "I")
+        ret = self.CANEngine.call_module(1, "I 1")
+        print(ret)
         self.assertTrue(0 < ret.find(" 1799 "), "Should be empty diff")
         self.assertTrue(0 < ret.find(" 1800 "), "Should be empty diff")
         self.assertTrue(0 < ret.find("03410d00"), "Should not be empty diff")
@@ -35,7 +36,23 @@ class ModStatDiffTests(unittest.TestCase):
         self.assertFalse(0 < ret.find(" 700 "), "Should be empty diff")
         self.assertFalse(0 < ret.find(" 1803 "), "Should be empty diff")
         self.assertFalse(0 < ret.find(" 1801 "), "Should be empty diff")
-        ret = self.CANEngine.call_module(1, "N")
+
+        self.CANEngine.call_module(0, "r 0-6")
+        time.sleep(1)
+
+        ret = self.CANEngine.call_module(1, "I 1")
+
+        print(ret)
+        self.assertFalse(0 < ret.find(" 1799 "), "Should be empty diff")
+        self.assertFalse(0 < ret.find(" 1800 "), "Should be empty diff")
+
+        ret = self.CANEngine.call_module(1, "I 2")
+
+        print(ret)
+        self.assertTrue(0 < ret.find(" 1799 "), "Should be empty diff")
+        self.assertTrue(0 < ret.find(" 1800 "), "Should be empty diff")
+
+        ret = self.CANEngine.call_module(1, "N 2")
         self.assertTrue(0 < ret.find(" 1799 "), "Should be empty diff")
         self.assertTrue(0 < ret.find(" 1800 "), "Should be empty diff")
         self.assertTrue(0 < ret.find("03410d00"), "Should not be empty diff")
@@ -43,6 +60,27 @@ class ModStatDiffTests(unittest.TestCase):
         self.assertFalse(0 < ret.find(" 700 "), "Should be empty diff")
         self.assertFalse(0 < ret.find(" 1803 "), "Should be empty diff")
         self.assertFalse(0 < ret.find(" 1801 "), "Should be empty diff")
+
+        ret = self.CANEngine.call_module(1, "N ")
+        self.assertTrue(0 < ret.find(" 1799 "), "Should be empty diff")
+        self.assertTrue(0 < ret.find(" 1800 "), "Should be empty diff")
+        self.assertTrue(0 < ret.find("03410d00"), "Should not be empty diff")
+        self.assertTrue(0 < ret.find("1014490201314731"), "Should not be empty diff")
+        self.assertFalse(0 < ret.find(" 700 "), "Should be empty diff")
+        self.assertFalse(0 < ret.find(" 1803 "), "Should be empty diff")
+        self.assertFalse(0 < ret.find(" 1801 "), "Should be empty diff")
+
+        ret = self.CANEngine.call_module(1, "N 3")
+        self.assertFalse(0 < ret.find(" 1799 "), "Should be empty diff")
+        self.assertFalse(0 < ret.find(" 1800 "), "Should be empty diff")
+        self.assertFalse(0 < ret.find("03410d00"), "Should not be empty diff")
+        self.assertFalse(0 < ret.find("1014490201314731"), "Should not be empty diff")
+
+        ret = self.CANEngine.call_module(1, "N 1")
+        self.assertFalse(0 < ret.find(" 1799 "), "Should be empty diff")
+        self.assertFalse(0 < ret.find(" 1800 "), "Should be empty diff")
+        self.assertFalse(0 < ret.find("03410d00"), "Should not be empty diff")
+        self.assertFalse(0 < ret.find("1014490201314731"), "Should not be empty diff")
 
         self.CANEngine.call_module(1, "D")
         time.sleep(1)
@@ -66,7 +104,7 @@ class ModStatDiffTests(unittest.TestCase):
         self.assertFalse(0 < ret.find("2246313039313439"), "Should not be empty diff")
 
 
-class ModStatMetaChainTests(unittest.TestCase):
+class LibDefragTests(unittest.TestCase):
     def tearDown(self):
         self.CANEngine.stop_loop()
         self.CANEngine = None
@@ -92,11 +130,6 @@ class ModStatMetaChainTests(unittest.TestCase):
         self.assertTrue(0 < idx2, "Comment 'ID 31339' should be found ")
         self.assertTrue(0 < idx3, "Comment 'ID 31338' should  be found ")
         self.assertFalse(0 < idx, "Comment 'ID 31338' should NOT be found 3 times")
-        self.CANEngine.call_module(mod_stat, "x 31340,0-2-1")
-        ret = self.CANEngine.call_module(mod_stat, "a")
-        idx = ret.find("ID 31340 and length 6")
-        print(ret)
-        self.assertTrue(0 < idx, "'ID 31340' should be found")
 
 class ModStatMetaTests(unittest.TestCase):
     def tearDown(self):
@@ -112,7 +145,11 @@ class ModStatMetaTests(unittest.TestCase):
         self.CANEngine.call_module(0, "r 0-9")
         time.sleep(2)
         mod_stat = 1
-        self.CANEngine.call_module(mod_stat, "i 1800 , TEST UDS")
+        self.CANEngine.call_module(mod_stat, "i 1800 ,.*, TEST UDS")
+        self.CANEngine.call_module(mod_stat, "i 700 , 0f410d00 , TEST 700")
+        self.CANEngine.call_module(mod_stat, "i 1803 , 2f............44 , TEST 1803")
+        self.CANEngine.call_module(mod_stat, "i 1801 , 036f , TEST 1801")
+        self.CANEngine.call_module(mod_stat, "i 1800, .*13039313439, TEST_UDS2")
         self.CANEngine.call_module(mod_stat, "z tests/meta.txt")
         ret = self.CANEngine.call_module(mod_stat, "p")
         print(ret)
@@ -120,8 +157,11 @@ class ModStatMetaTests(unittest.TestCase):
         self.assertTrue(0 < idx, "Comment 'TEST UDS' should be found 1 times")
         idx2 = ret.find("TEST UDS", idx + 8)
         self.assertTrue(0 < idx2, "Comment 'TEST UDS' should be found 2 times")
-        idx3 = ret.find("TEST UDS", idx2 + 8)
-        self.assertTrue(0 < idx3, "Comment 'TEST UDS' should be found 3 times")
+        idx3 = ret.find("TEST_UDS2", idx2 + 8)
+        self.assertTrue(0 < ret.find("TEST 700"), "Comment 'TEST 700' should be found 1 times")
+        self.assertTrue(0 < ret.find("TEST 1803"), "Comment 'TEST 1803' should be found 1 times")
+        self.assertFalse(0 < ret.find("TEST 1801"), "Comment 'TEST 1801' should NOT be found 1 times")
+
 
     def test_meta_add2(self):
         self.CANEngine = CANSploit()
@@ -141,8 +181,11 @@ class ModStatMetaTests(unittest.TestCase):
         self.assertTrue(0 < idx, "Comment 'TEST UDS' should be found 1 times")
         idx2 = ret.find("TEST UDS", idx + 8)
         self.assertTrue(0 < idx2, "Comment 'TEST UDS' should be found 2 times")
-        idx3 = ret.find("TEST UDS", idx2 + 8)
+        idx3 = ret.find("TEST_UDS2", idx2 + 8)
         self.assertTrue(0 < idx3, "Comment 'TEST UDS' should be found 3 times")
+        self.assertTrue(0 < ret.find("TEST 700"), "Comment 'TEST 700' should be found 1 times")
+        self.assertTrue(0 < ret.find("TEST 1803"), "Comment 'TEST 1803' should be found 1 times")
+        self.assertFalse(0 < ret.find("TEST 1801"), "Comment 'TEST 1801' should NOT be found 1 times")
 
 class ModFuzzTests(unittest.TestCase):
     def tearDown(self):

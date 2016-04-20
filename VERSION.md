@@ -1,3 +1,9 @@
+## Version 1.5-5
+### CHANGES
+ - mod_stat feature: description now not only by ID but by ASCII HEX regex!
+ - mod_stat DIFF feature: now we can detect CAN frames by known amount of execution
+ - mod_stat feature REMOVED: index-byte meta ... really do not see it useful for now
+
 ## Version 1.5-1
 ### CHANGES
  - hw_USBtin fix: direct name/path to serial port now should work

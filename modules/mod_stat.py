@@ -1,7 +1,9 @@
 from libs.module import *
 from libs.uds import *
 from libs.frag import *
+import re
 import collections
+import ast
 
 
 class mod_stat(CANModule):
@@ -43,53 +45,47 @@ class mod_stat(CANModule):
         self._cmdList['p'] = ["Print current table", 0, "", self.do_print, True]
         self._cmdList['a'] = ["Analyses of captured traffic", 1, "<UDS|ISO|FRAG|ALL(defaut)>", self.do_anal, True]
         self._cmdList['D'] = ["Enable/Disable Diff mode", 0, "", self.enable_diff, True]
-        self._cmdList['I'] = ["Print Diff frames", 0, "", self.print_diff, False]
-        self._cmdList['N'] = ["Print Diff frames (new ID only)", 0, "", self.print_diff_id, False]
+        self._cmdList['I'] = ["Print Diff frames", 1, " [COUNT filter (default none, put number)] ", self.print_diff, False]
+        self._cmdList['N'] = ["Print Diff frames (new ID only)", 1, "[COUNT filter (default none, put number)]", self.print_diff_id, False]
         self._cmdList['Y'] = ["Dump Diff in replay format", 1, " <filename> ", self.print_dump_diff, False]
         self._cmdList['c'] = ["Clean table, remove alerts", 0, "", self.do_clean, True]
-        self._cmdList['i'] = ["Meta-data: add description for ID", 1, "<ID>, <description>", self.do_add_meta_descr, True]
-        self._cmdList['x'] = ["Meta-data: add index-byte for ID", 1, "<ID>, <index>-<range>-<start_value>", self.do_add_meta_index, True]
+        self._cmdList['i'] = ["Meta-data: add description for frames", 1, "<ID>, <data regex ASCII HEX>, <description>", self.do_add_meta_descr_data, True]
         self._cmdList['l'] = ["Load meta-data", 1, "<filename>", self.do_load_meta, True]
         self._cmdList['z'] = ["Save meta-data", 1, "<filename>", self.do_save_meta, True]
         self._cmdList['r'] = ["Dump ALL in replay format", 1, " <filename>", self.do_dump_replay, True]
         self._cmdList['d'] = ["Dump STAT in CSV format", 1, " <filename>", self.do_dump_csv, True]
 
-    def do_add_meta_descr(self, input_params):
+    def do_add_meta_descr_data(self, input_params):
         try:
-            fid, descr = input_params.split(',')
-            if int(fid) not in self.meta_data:
-                self.meta_data[int(fid)] = {}
-            self.meta_data[int(fid)]['id_descr'] = descr.strip()
-            return "Description added"
-        except Exception as e:
-            return "Description META error: " + str(e)
+            fid, body, descr = input_params.split(',')
 
-    def do_add_meta_index(self, input_params):
-        try:
-            fid, idx = input_params.split(',')
-            fid = int(fid)
-            if idx.find("-") > 0 and int(idx.split('-')[0]) >= 0 and int(idx.split('-')[1]) >= 0 and int(idx.split('-')[2]) >= 0:
-                if int(fid) not in self.meta_data:
-                    self.meta_data[fid] = {}
-                self.meta_data[fid]['id_index'] = idx.strip()
-                return "Index added"
-            else:
-                return "Wrong INDEX format (Should be: <from_index> -  <to_index> - <start_value_of_index>)"
+            if 'description' not in self.meta_data:
+                self.meta_data['description'] = {}
+
+            self.meta_data['description'][(int(fid), body.strip().upper())] = descr
+
+            return "Description data has been added"
         except Exception as e:
-            return "Description META error: " + str(e)
+            return "Description data META error: " + str(e)
+
+    def get_meta_descr(self, fid, msg):
+        descrs = self.meta_data.get('description', {})
+        for (key, body) in descrs.keys():
+            if fid == key:
+                if(re.match(body, msg.encode('hex'), re.IGNORECASE)):
+                    return descrs[(key, body)]
+        return "  "
+
 
     def do_load_meta(self, filename):
         try:
+            data = ""
             with open(filename.strip(), "r") as ins:
                 for line in ins:
-                    frame_id = int(line[:-1].split(":")[0].strip())
-                    type_data = line[:-1].split(":")[1].strip()
-                    data = line[:-1].split(":")[2].strip()
+                    data += line
 
-                    if frame_id not in self.meta_data:
-                        self.meta_data[frame_id] = {}
+            self.meta_data = ast.literal_eval(data)
 
-                    self.meta_data[frame_id][type_data] = data
         except Exception as e:
             return "Can't load META: " + str(e)
         return "Loaded META from " + filename
@@ -97,9 +93,7 @@ class mod_stat(CANModule):
     def do_save_meta(self, filename):
         try:
             _file = open(filename.strip(), 'w')
-            for (key, value) in self.meta_data.iteritems():
-                for (tp, data) in value.iteritems():
-                    _file.write(str(key) + ":" + tp + ":" + data + "\n")
+            _file.write(str(self.meta_data))
             _file.close()
         except Exception as e:
             return "Can't save META: " + str(e)
@@ -269,7 +263,7 @@ class mod_stat(CANModule):
                        ret_str += "\n\tID: " + str(fid) + " Service: " + str(hex(service)) + " Sub: " + (str(
                             hex(body['sub'])) if body['sub'] else "None") + text + "\n\t\tError: " + body['response']['error']
 
-        if format.strip() not in ["ISO","UDS"]:
+        if format.strip() not in ["ISO", "UDS"]:
             # Print detected loops
             ret_str += "\n\nDe-Fragmented frames (using loop-based detection):\n"
             local_temp = {}
@@ -282,20 +276,6 @@ class mod_stat(CANModule):
                         if self.is_ascii(message['message_data']):
                             ret_str += "\n\t\tASCII: " + self.ret_ascii(''.join(struct.pack("!B", b) for b in message['message_data'])) + "\n\n"
                         local_temp[(fid, ''.join(struct.pack("!B", b).encode('hex') for b in message['message_data']))] = None
-
-            # Print detected fragments
-            ret_str += "\n\nDe-Fragmented frames (using user's META data):\n"
-            local_temp = {}
-            for fid, data in frag_list.iteritems():
-                data.clean_build_meta()
-                for message in data.messages:
-                    if (fid, ''.join(struct.pack("!B", b).encode('hex') for b in message['message_data'])) not in local_temp:
-                        ret_str += "\n\tID " + str(fid) + " and length " + str(message['message_length']) + "\n"
-                        ret_str += "\t\tData: " + ''.join(struct.pack("!B", b).encode('hex') for b in message['message_data'])
-                        if self.is_ascii(message['message_data']):
-                            ret_str += "\n\t\tASCII: " + self.ret_ascii(''.join(struct.pack("!B", b) for b in message['message_data'])) + "\n\n"
-                        local_temp[(fid, ''.join(struct.pack("!B", b).encode('hex') for b in message['message_data']))] = None
-
 
         if format.strip() not in ["UDS","FRAG"]:
             # Print out ISOTP messages
@@ -359,20 +339,20 @@ class mod_stat(CANModule):
                         data_ascii = ""
                     _name.write(
                         str(bus) + "," + str(fid) + "," + str(len) + "," + msg.encode('hex') + ',' + data_ascii + ',' +\
-                        "\"" + self.meta_data.get(fid, {}).get('id_descr', "") + "\"" + ',' + str(cnt) + "\n"
+                        "\"" + self.get_meta_descr(fid, msg) + "\"" + ',' + str(cnt) + "\n"
                     )
         except Exception as e:
             self.dprint(2, "can't open log")
             return str(e)
         return "Saved into " + name.strip()
 
-    def print_diff(self):
-        return self.print_diff_orig(0)
+    def print_diff(self, count = 0):
+        return self.print_diff_orig(0, int(count))
 
-    def print_diff_id(self):
-        return self.print_diff_orig(1)
+    def print_diff_id(self, count = 0):
+        return self.print_diff_orig(1, int(count))
 
-    def print_diff_orig(self, mode = 0):
+    def print_diff_orig(self, mode = 0, count = 0):
         if not self._diff:
             return "Error: Diff mode disabled..."
         table1 = self.create_short_table(self.all_frames)
@@ -387,7 +367,8 @@ class mod_stat(CANModule):
                         data_ascii = self.ret_ascii(msg)
                     else:
                         data_ascii = "  "
-                    rows.append([str(bus),str(fid2), str(lenX), msg.encode('hex'), data_ascii, self.meta_data.get(fid2, {}).get('id_descr', "   "), str(cnt)])
+                    if count == 0 or count == cnt:
+                        rows.append([str(bus),str(fid2), str(lenX), msg.encode('hex'), data_ascii, self.get_meta_descr(fid2, msg), str(cnt)])
             elif mode == 0:
                 for (lenX, msg, bus, mod), cnt in lst2.iteritems():
 
@@ -396,7 +377,8 @@ class mod_stat(CANModule):
                             data_ascii = self.ret_ascii(msg)
                         else:
                             data_ascii = "  "
-                        rows.append([str(bus),str(fid2), str(lenX), msg.encode('hex'), data_ascii, self.meta_data.get(fid2, {}).get('id_descr', "   "), str(cnt)])
+                        if count == 0 or count == cnt:
+                            rows.append([str(bus),str(fid2), str(lenX), msg.encode('hex'), data_ascii, self.get_meta_descr(fid2, msg), str(cnt)])
 
         cols = zip(*rows)
         col_widths = [max(len(value) for value in col) for col in cols]
@@ -440,7 +422,7 @@ class mod_stat(CANModule):
                     data_ascii = self.ret_ascii(msg)
                 else:
                     data_ascii = "  "
-                rows.append([str(bus),str(fid), str(lenX), msg.encode('hex'), data_ascii, self.meta_data.get(fid, {}).get('id_descr', "   "), str(cnt)])
+                rows.append([str(bus),str(fid), str(lenX), msg.encode('hex'), data_ascii, self.get_meta_descr(fid, msg), str(cnt)])
 
         cols = zip(*rows)
         col_widths = [ max(len(value) for value in col) for col in cols ]
