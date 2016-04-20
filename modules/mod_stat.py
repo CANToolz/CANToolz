@@ -40,7 +40,7 @@ class mod_stat(CANModule):
         self.shift = params.get('uds_shift', 8)
 
         if 'meta_file' in params:
-            self.dprint(1, self.do_load_meta(params['meta']))
+            self.dprint(1, self.do_load_meta(params['meta_file']))
 
         self._cmdList['p'] = ["Print current table", 0, "", self.do_print, True]
         self._cmdList['a'] = ["Analyses of captured traffic", 1, "<UDS|ISO|FRAG|ALL(defaut)>", self.do_anal, True]
@@ -279,7 +279,7 @@ class mod_stat(CANModule):
 
         if format.strip() not in ["UDS","FRAG"]:
             # Print out ISOTP messages
-            ret_str += "ISO TP Messages:\n\n"
+            ret_str += "\nISO TP Messages:\n\n"
             for fid, lst in _iso_tbl.iteritems():
                 ret_str += "\tID: " + str(fid) + "\n"
                 for (lenX, msg), cnt in lst.iteritems():
