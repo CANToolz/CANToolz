@@ -73,7 +73,7 @@ class gen_fuzz(CANModule):
         if not self.queue_messages:
             self._active = False
             self.do_start(args)
-        else:
+        elif not can_msg.CANData:
             d_time = float(args.get('delay', 0))
             if d_time > 0:
                 if time.clock() - self.last >= d_time:
