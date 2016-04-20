@@ -1,3 +1,7 @@
+## Version 1.5-6
+### CHANGES
+ - gen_* modules: can work in serial mode - will inject frames in "free" holes in the main loop.
+ 
 ## Version 1.5-5
 ### CHANGES
  - mod_stat feature: description now not only by ID but by ASCII HEX regex!

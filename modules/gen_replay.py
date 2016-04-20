@@ -71,6 +71,10 @@ class gen_replay(CANModule):
 
     def clean_table(self):
         self.CANList = []
+        self._last = 0
+        self._full = 1
+        self._num1 = 0
+        self._num2 = 0
         return "Replay buffer is clean!"
 
     def save_dump(self, input_params):
@@ -137,7 +141,7 @@ class gen_replay(CANModule):
     def do_effect(self, can_msg, args):
         if self._sniff and can_msg.CANData:
             self.CANList.append(can_msg.CANFrame)
-        elif self._replay:
+        elif self._replay and not can_msg.CANData:
             d_time = float(args.get('delay', 0))
             if d_time > 0:
                 if time.clock() - self.last >= d_time:

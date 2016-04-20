@@ -105,11 +105,9 @@ class gen_ping(CANModule):
         else:
             can_msg.CANFrame = self.do_ping(args)
 
-        if can_msg.CANFrame:
+        if can_msg.CANFrame and not can_msg.CANData:
             can_msg.CANData = True
             self._last += 1
             self._status = self._last/(self._full/100.0)
-        else:
-            can_msg.CANData = False
 
         return can_msg
