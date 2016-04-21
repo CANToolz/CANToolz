@@ -185,7 +185,9 @@ function initControls(scenario) {
       var value = input.node().value;
 
       switch (type) {
-        case 'object': step.params[param] = JSON.parse(value); break;
+        case 'object': step.params[param] = JSON.parse((value.replace(/:\s*(0x[0-9a-f]+)/ig, function(match, code) {
+                return ": " + parseInt(code,16);
+        }))); break;
         case 'string': step.params[param] = value; break;
         case 'number': step.params[param] = Number(value); break;
       }
@@ -197,7 +199,9 @@ function initControls(scenario) {
       var newType = d3.select('.options select').node().value;
 
       switch (newType) {
-        case 'json': step.params[newParam] = JSON.parse(newValue); break;
+        case 'json': step.params[newParam] = JSON.parse((newValue.replace(/:\s*(0x[0-9a-f]+)/ig, function(match, code) {
+                return ": " + parseInt(code,16);
+        }))); break;
         case 'str': step.params[newParam] = newValue; break;
         case 'num': step.params[newParam] = Number(newValue); break;
       }
