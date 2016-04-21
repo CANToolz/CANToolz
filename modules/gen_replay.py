@@ -36,10 +36,14 @@ class gen_replay(CANModule):
         try:
             with open(name.strip(), "r") as ins:
                 for line in ins:
-                    fid = line[:-1].split(":")[0]
+                    fid = line[:-1].split(":")[0].strip()
+                    if fid.find('0x') == 0:
+                        num_fid = int(fid, 16)
+                    else:
+                        num_fid = int(fid)
                     length = line[:-1].split(":")[1]
                     data = line[:-1].split(":")[2]
-                    self.CANList.append(CANMessage.init_data(int(fid), int(length), [struct.unpack("B", x)[0] for x in
+                    self.CANList.append(CANMessage.init_data(num_fid, int(length), [struct.unpack("B", x)[0] for x in
                                                                                      data.decode('hex')[:8]]))
                 self.dprint(1, "Loaded " + str(len(self.CANList)) + " frames")
         except:
@@ -95,7 +99,7 @@ class gen_replay(CANModule):
             try:
                 _file = open(fname, 'w')
                 for i in range(_num1, _num2):
-                    _file.write(str(self.CANList[i].frame_id) + ":" + str(self.CANList[i].frame_length) + ":" + str(
+                    _file.write(hex(self.CANList[i].frame_id) + ":" + str(self.CANList[i].frame_length) + ":" + str(
                         self.CANList[i].frame_raw_data.encode('hex')) + "\n")
                 _file.close()
             except Exception as e:

@@ -1,3 +1,9 @@
+## Version 1.5-7
+### CHANGES
+ - mod_stat: support meta input ID as hex value
+ - mod_stat: print values in hex
+ - mod_replay: can read replay format where ID is hex
+ 
 ## Version 1.5-6
 ### CHANGES
  - gen_* modules: can work in serial mode - will inject frames in "free" holes in the main loop.
