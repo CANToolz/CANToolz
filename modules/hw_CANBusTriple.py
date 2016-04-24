@@ -222,7 +222,7 @@ class hw_CANBusTriple(CANModule):
         time.sleep(4)
         self.read_all()
 
-        self.dprint(1, "CANBus Triple device detected, version: " + self.read_json(self.get_info().decode('ISO-8859-1'))['version'])
+        self.dprint(1, "CANBus Triple device detected, version: " + self.read_json(self.get_info())['version'])
 
 
         self._cmdList['t'] = ["Send direct command to the device, like 02010011112233440000000008", 1, " <cmd> ",
@@ -270,11 +270,11 @@ class hw_CANBusTriple(CANModule):
 
                     elif data[0:1] == b'{' and data[-3:-2] == b'}':  # Debug info
                         can_msg.debugData = True
-                        can_msg.debugText = {'text': data}
+                        can_msg.debugText = {'text': data.decode("ISO-8859-1")}
                     else:
                         break
 
-                    self.dprint(2, "READ: " + data.encode('hex'))
+                    self.dprint(2, "READ: " + data.decode("ISO-8859-1"))
         return can_msg
 
     def do_write(self, can_msg, params):

@@ -135,15 +135,15 @@ class hw_USBtin(CANModule):
         try:
             self._serialPort = serial.Serial(self._COMPort, 57600, timeout=0.5, parity=serial.PARITY_EVEN, rtscts=1)
 
-            if (self.get_info().decode("ISO-8859-1").find("V0100")) != -1:
+            if (self.get_info().find("V0100")) != -1:
                 self.dprint(1, "Port found: " + self._COMPort)
                 return 1
             else:
                 self.dprint(1, "Device not found: " + self._COMPort)
                 self._serialPort.close()
                 return 0
-        except:
-            self.dprint(0, 'Error opening port: ' + self._COMPort)
+        except Exception as e:
+            self.dprint(0, 'Error opening port: ' + self._COMPort + str(e))
             return 0
 
     def do_init(self, params):  # Get device and open serial port
@@ -240,9 +240,9 @@ class hw_USBtin(CANModule):
                         break
                     else:
                         can_msg.debugData = True
-                        can_msg.debugText = {'text': data}
+                        can_msg.debugText = {'text': data.decode("ISO-8859-1")}
 
-                    self.dprint(2, "USBtin READ: " + data)
+                    self.dprint(2, "USBtin READ: " + data.decode("ISO-8859-1"))
 
         return can_msg
 
