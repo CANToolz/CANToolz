@@ -21,7 +21,7 @@ class FragmentedCAN:
         return in_idx
 
     def clean_build_loop(self):
-        for fid, body in self.temp_msg.iteritems():  # LOOP detection
+        for fid, body in self.temp_msg.items():  # LOOP detection
             if body['elements'] > 1:
                 p_x = -1
                 message = collections.OrderedDict()
@@ -55,7 +55,7 @@ class FragmentedCAN:
                 self.temp_msg[can_msg.frame_id]["elements"] += 1
                 self.temp_msg[can_msg.frame_id]["idx"][in_idx] = can_msg.frame_data[1:]
                 self.temp_msg[can_msg.frame_id]['length'] += len(can_msg.frame_data[1:])
-            elif in_idx in self.temp_msg[can_msg.frame_id]['idx'].keys() and not self.temp_msg[can_msg.frame_id]['elements'] < 0:
+            elif in_idx in list(self.temp_msg[can_msg.frame_id]['idx'].keys()) and not self.temp_msg[can_msg.frame_id]['elements'] < 0:
                 self.temp_msg[can_msg.frame_id]["elements"] = -1
             elif not self.temp_msg[can_msg.frame_id]['elements'] < 0:
                 self.temp_msg[can_msg.frame_id]["elements"] += 1

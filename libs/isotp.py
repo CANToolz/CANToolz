@@ -19,7 +19,7 @@ class ISOTPMessage:
     Wait = 11
     OverflowAbort = 12
 
-    def __init__(self, id=0, length=0, data=[], finished=False):  # Init EMPTY message
+    def __init__(self, id = 0, length = 0, data = [], finished = False):  # Init EMPTY message
         self.message_id = id
         self.message_data = data
         self.message_length = length

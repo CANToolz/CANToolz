@@ -13,10 +13,10 @@ class CANMessage:
     OverloadFrame = 4
 
     def __init__(self, fid, length, data, extended, type):  # Init EMPTY message
-        self.frame_id = fid  # Message ID
-        self.frame_length = length  # DATA length
-        self.frame_data = data  # DATA
-        self.frame_ext = extended  # 29 bit message ID - boolean flag
+        self.frame_id = int(fid)  # Message ID
+        self.frame_length = int(length)  # DATA length
+        self.frame_data = list(data)  # DATA
+        self.frame_ext = bool(extended)  # 29 bit message ID - boolean flag
 
         self.frame_type = type
 
@@ -34,7 +34,7 @@ class CANMessage:
 
     @property
     def frame_raw_data(self):
-        return ''.join(struct.pack("!B", b) for b in self.frame_data)
+        return bytes(self.frame_data)
 
 
     @classmethod

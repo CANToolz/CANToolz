@@ -24,7 +24,7 @@ class CANSploit:
 
     def dprint(self, level, msg):
         if level <= self.DEBUG:
-            print(self.__class__.__name__ + ": " + msg)
+            print((self.__class__.__name__ + ": " + msg))
 
     def __init__(self):
         self._version = "0.9b"  # version
@@ -97,7 +97,7 @@ class CANSploit:
 
     # Having defulat values for id and pipe params
     def check_params(self, params):
-        if 'pipe' not in params.keys():
+        if 'pipe' not in list(params.keys()):
             params['pipe'] = 1
         return params
 
@@ -143,9 +143,12 @@ class CANSploit:
         # Load and init new module form lib
 
     def init_module(self, mod, params):
+        namespace = {}
         self._modules.append(__import__(mod.split("~")[0]))
-        exec('cls=self._modules[-1].' + mod.split("~")[0] + '(params)')  # init module
-        self._type[mod] = cls
+        namespace['mod'] = self._modules[-1]
+        namespace['params'] = params
+        exec('cls = mod.' + mod.split("~")[0] + '(params)', namespace)  # init module
+        self._type[mod] = namespace['cls']
 
         # Load all modules and params form config file
 
@@ -161,9 +164,9 @@ class CANSploit:
 
         config = __import__(mod)
 
-        for module, init_params in config.load_modules.iteritems():
+        for module, init_params in config.load_modules.items():
             self.init_module(module, init_params)
 
         for action in config.actions:
-            self.push_module(action.keys()[0], action.values()[0])
+            self.push_module(list(action.keys())[0], list(action.values())[0])
         return 1

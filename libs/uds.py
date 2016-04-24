@@ -215,7 +215,7 @@ class UDSMessage:
                     self.sessions[response_id][response_byte]['status'] = 1
                     return True
                 elif _input_message.message_data[0] in self.error_responses:
-                    x = self.sessions[response_id].keys()[-1]
+                    x = list(self.sessions[response_id].keys())[-1]
                     self.sessions[response_id][x]['response']['id'] = _input_message.message_id
                     self.sessions[response_id][x]['response']['sub'] = None
                     self.sessions[response_id][x]['response']['data'] = None
