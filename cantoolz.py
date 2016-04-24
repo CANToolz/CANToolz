@@ -75,7 +75,7 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
             cmd = path_parts[2]
 
             content_size = int(self.headers['Content-Length'])
-            post_data = self.rfile.read(content_size)
+            post_data = self.rfile.read(content_size).decode("ISO-8859-1")
 
             if cmd == "edit" and path_parts[3]:
                 try:
@@ -105,7 +105,7 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
                 try:
                     paramz = json.loads(post_data).get("cmd")
                     text = self.can_engine.call_module(self.can_engine.find_module(str(path_parts[3])), str(paramz))
-                    body = json.dumps({"response": str(text, "ISO-8859-1")})
+                    body = json.dumps({"response": str(text)})
                     resp_code = 200
                 except Exception as e:
                     resp_code = 500
@@ -118,7 +118,7 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
         self.send_header('Connection', 'closed')
         self.send_header('Content-Length', len(body))
         self.end_headers()
-        self.wfile.write(body)
+        self.wfile.write(body.encode("ISO-8859-1"))
 
         return
 
@@ -196,7 +196,7 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
             try:
                 with open(content, "rb") as ins:
                     for line in ins:
-                        body += line
+                        body += line.decode("ISO-8859-1")
 
                 ext = self.path.split(".")[-1]
 
@@ -220,7 +220,7 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
         self.send_header('Connection', 'closed')
         self.send_header('Content-Length', len(body))
         self.end_headers()
-        self.wfile.write(body)
+        self.wfile.write(body.encode("ISO-8859-1"))
 
         return
 
@@ -291,20 +291,20 @@ class UserInterface:
     def console_loop(self):
         while True:
             try:
-                input = input(">> ")
+                input_ = input(">> ")
             except KeyboardInterrupt:
-                input = "stop"
+                input_ = "stop"
 
-            if input == 'q' or input == 'quit':
+            if input_ == 'q' or input_ == 'quit':
                 self.CANEngine.stop_loop()
                 self.loop_exit()
-            elif input == 'start' or input == 's':
+            elif input_ == 'start' or input_ == 's':
                 self.CANEngine.start_loop()
 
-            elif input == 'stop' or input == 's':
+            elif input_ == 'stop' or input_ == 's':
                 self.CANEngine.stop_loop()
 
-            elif input == 'view' or input == 'v':
+            elif input_ == 'view' or input_ == 'v':
                 print("Loaded queue of modules: ")
                 modz = self.CANEngine.get_modules_list()
                 total = len(modz)
@@ -313,7 +313,7 @@ class UserInterface:
                 for name, module, params in modz:
                     tab1 = "\t"
                     tab2 = "\t"
-                    tab1 += "\t" * (12 / len(str(name)))
+                    tab1 += "\t" * int(12 / len(str(name)))
                     tab2 += "\t"
                     print(("("+str(i)+")\t-\t" + name + tab1 + str(params) + tab2 + "Enabled: " + str(module.is_active)))
                     if i < total - 1:
@@ -323,8 +323,8 @@ class UserInterface:
                     i += 1
                 print()
 
-            elif input[0:5] == 'edit ' or input[0:2] == 'e ':  # edit params from the console
-                match = re.match(r"(edit|e)\s+(\d+)\s+(.+)", input, re.IGNORECASE)
+            elif input_[0:5] == 'edit ' or input_[0:2] == 'e ':  # edit params from the console
+                match = re.match(r"(edit|e)\s+(\d+)\s+(.+)", input_, re.IGNORECASE)
                 if match:
                     module = int(match.group(2).strip())
                     _paramz = match.group(3).strip()
@@ -346,8 +346,8 @@ class UserInterface:
                 else:
                     print("Wrong format for EDIT command")
 
-            elif input[0:4] == 'cmd ' or input[0:2] == 'c ':
-                match = re.match(r"(cmd|c)\s+(\d+)\s+(.*)", input, re.IGNORECASE)
+            elif input_[0:4] == 'cmd ' or input_[0:2] == 'c ':
+                match = re.match(r"(cmd|c)\s+(\d+)\s+(.*)", input_, re.IGNORECASE)
                 if match:
                     _mod = int(match.group(2).strip())
                     _paramz = match.group(3).strip()
@@ -356,11 +356,11 @@ class UserInterface:
                         text = self.CANEngine.call_module(_mod, str(_paramz))
                         print(text)
                         #                    except Exception as e:
-                        #                        print "CMD input error: "+str(e)
+                        #                        print "CMD input_ error: "+str(e)
 
-            elif input[0:4] == 'help' or input[0:2] == 'h ':
+            elif input_[0:4] == 'help' or input_[0:2] == 'h ':
 
-                match = re.match(r"(help|h)\s+(\d+)", input, re.IGNORECASE)
+                match = re.match(r"(help|h)\s+(\d+)", input_, re.IGNORECASE)
                 if match:
                     try:
                         module = int(match.group(2).strip())
