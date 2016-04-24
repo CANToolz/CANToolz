@@ -38,20 +38,20 @@ class hw_USBtin(CANModule):
     _bus = "USBTin"
 
     def get_info(self):  # Read info
-        self._serialPort.write("S0\r")
+        self._serialPort.write(b"S0\r")
         time.sleep(1)
-        self._serialPort.write("V\r")
+        self._serialPort.write(b"V\r")
         time.sleep(1)
         return self.read_all()
 
     def read_all(self):
         out = ""
         while self._serialPort.inWaiting() > 0:
-            out += self._serialPort.read(1)
+            out += self._serialPort.read(1).decode("ISO-8859-1")
         return out
 
     def do_stop(self, params):  # disable reading
-        self._serialPort.write("C\r")
+        self._serialPort.write(b"C\r")
         time.sleep(1)
         self.read_all()
 
@@ -124,7 +124,7 @@ class hw_USBtin(CANModule):
             return "Speed ERROR!"
         else:
             self.dprint(0, "CNF1 = " + final_cnf1.decode("ISO-8859-1") + " CNF2 = " + final_cnf2.decode("ISO-8859-1")+" CNF3 = " + final_cnf3.decode("ISO-8859-1"))
-            self._serialPort.write(b"s" + final_cnf1 + final_cnf2 + final_cnf3 + "\r")
+            self._serialPort.write(b"s" + final_cnf1 + final_cnf2 + final_cnf3 + b"\r")
             return "Speed: " + str(self._currentSpeed)
 
     def do_start(self, params):  # enable reading
@@ -193,16 +193,16 @@ class hw_USBtin(CANModule):
         return can_msg
 
     def do_read(self, can_msg):
-        data = ""
+        data = b""
         if self._serialPort.inWaiting() > 0:
             while not can_msg.CANData and not can_msg.debugData:
                 byte = self._serialPort.read(1)
                 # print byte
-                if byte == "":
+                if byte == b"":
                     break
 
                 data += byte
-                if data[-1:] == "\r":
+                if data[-1:] == b"\r":
                     can_msg.bus = self._bus  # Bus USBtin
                     if data[0:1] == b"t":
                         # "t10F81122334455667788"

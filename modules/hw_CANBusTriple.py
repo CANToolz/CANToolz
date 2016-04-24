@@ -46,7 +46,7 @@ class hw_CANBusTriple(CANModule):
     def read_all(self):
         out = ""
         while self._serialPort.inWaiting() > 0:
-            out += self._serialPort.read(1)
+            out += self._serialPort.read(1).decode("ISO-8859-1")
         return out
 
     def get_info(self):  # Read info
@@ -163,7 +163,6 @@ class hw_CANBusTriple(CANModule):
     def init_port(self):
         try:
             self._serialPort = serial.Serial(self._COMPort, 57600, timeout=0.5, parity=serial.PARITY_EVEN, rtscts=1)
-            self._serialPort.read(1)
             if (self.get_info().find("CANBus Triple")) != -1:
                 self.dprint(1, "Port found: " + self._COMPort)
                 return 1
@@ -244,7 +243,7 @@ class hw_CANBusTriple(CANModule):
         return can_msg
 
     def do_read(self, can_msg):
-        data = ""
+        data = b""
         counter = 0
         if self._serialPort.inWaiting() > 0:
             while not can_msg.CANData and not can_msg.debugData:
