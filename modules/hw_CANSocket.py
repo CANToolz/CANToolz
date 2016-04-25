@@ -30,7 +30,7 @@ class hw_CANSocket(CANModule):
 
     def do_init(self, init_params):  # Get device and open serial port
         self.device = init_params.get('iface', None)
-        self._cmdList['t'] = ["Send CAN frame directly, like 01A#11223344", 1, " <frame> ", self.dev_write]
+        self._cmdList['t'] = ["Send CAN frame directly, like 01A#11223344", 1, " <frame> ", self.dev_write, True]
         self._active = True
         self._run = False
 
@@ -97,5 +97,5 @@ class hw_CANSocket(CANModule):
             if can_msg.CANFrame.is_extended:
                 idf |= 0x80000000
             self.socket.write(struct.pack("I", idf) + can_msg.frame_raw_data[0:can_msg.frame_length])
-
+            self.dprint(2, "WRITE: " + self.get_hex(struct.pack("I", idf) + can_msg.frame_raw_data[0:can_msg.frame_length]))
         return can_msg
