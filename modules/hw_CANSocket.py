@@ -44,8 +44,9 @@ class hw_CANSocket(CANModule):
                 self.socket = socket.socket(socket.PF_CAN, socket.SOCK_RAW,  socket.CAN_RAW)
                 self.socket.bind((self.device,))
                 self._run = True
-            except:
+            except Exception as e:
                 self._run = False
+                self.dprint(0, "ERROR: " + str(e))
 
     def do_stop(self, params):
         if not self.device and self._run:
@@ -54,7 +55,7 @@ class hw_CANSocket(CANModule):
                 self._run = True
             except:
                 self._run = False
-                
+
     def do_effect(self, can_msg, args):  # read full packet from serial port
         if args.get('action') == 'read':
             can_msg = self.do_read(can_msg)
@@ -65,11 +66,12 @@ class hw_CANSocket(CANModule):
         return can_msg
 
     def do_read(self, can_msg):
-        can_frame = self.socket.recv(16)
-        self.dprint(2, "READ: " + can_frame.hex())
-        if len(can_frame) == 16:
-            can_msg.CANData = True
-            can_msg.CANFrame = CANMessage.init_raw_data(can_frame[0:4], can_frame[4], can_frame[5:])
+        if self._run and not can_msg.CANData:
+            can_frame = self.socket.recv(16)
+            self.dprint(2, "READ: " + can_frame.hex())
+            #if len(can_frame) >:
+            #    can_msg.CANData = True
+            #    can_msg.CANFrame = CANMessage.init_raw_data(can_frame[0:4], can_frame[4], can_frame[5:])
 
         return can_msg
 
