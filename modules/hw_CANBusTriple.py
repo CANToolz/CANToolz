@@ -43,6 +43,9 @@ class hw_CANBusTriple(CANModule):
 
     id = 1
 
+    def get_status(self):
+        return "Current status: " + str(self._active) + "\nPORT: " + self._COMPort
+
     def read_all(self):
         out = ""
         while self._serialPort.inWaiting() > 0:

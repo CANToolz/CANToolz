@@ -37,6 +37,9 @@ class hw_USBtin(CANModule):
 
     _bus = "USBTin"
 
+    def get_status(self):
+        return "Current status: " + str(self._active) + "\nCurrent SPEED: " + str(self._currentSpeed) + "\nPORT: " + self._COMPort
+
     def get_info(self):  # Read info
         self._serialPort.write(b"S0\r")
         time.sleep(1)
@@ -54,11 +57,19 @@ class hw_USBtin(CANModule):
         self._serialPort.write(b"C\r")
         time.sleep(1)
         self.read_all()
+        self._run = False
 
     def set_speed(self, speed):
         sjw_user = 3
         ## This code ported from here:
         # https://www.kvaser.com/wp-content/themes/kvaser/inc/vc/js/bittiming.js
+        again = False
+        if self._run:
+            self._active = False
+            self.do_stop({})
+            again = True
+
+
         if len(str(speed).split(",")) > 1:
             sjw_user = int(str(speed).split(",")[1])
             self._sjw = sjw_user
@@ -121,15 +132,22 @@ class hw_USBtin(CANModule):
             final_cnf2 = ch_btr1
             final_cnf3 = ch_btr2
         if final_cnf1 == 0 and final_cnf2 == 0 and final_cnf3 == 0:
+            if again:
+                self._run = True
+                self._active = True
             return "Speed ERROR!"
         else:
             self.dprint(0, "CNF1 = " + final_cnf1.decode("ISO-8859-1") + " CNF2 = " + final_cnf2.decode("ISO-8859-1")+" CNF3 = " + final_cnf3.decode("ISO-8859-1"))
             self._serialPort.write(b"s" + final_cnf1 + final_cnf2 + final_cnf3 + b"\r")
+            if again:
+                self._run = True
+                self._active = True
             return "Speed: " + str(self._currentSpeed)
 
     def do_start(self, params):  # enable reading
         self._serialPort.write(b"O\r")
         time.sleep(1)
+        self._run = True
 
     def init_port(self):
         try:

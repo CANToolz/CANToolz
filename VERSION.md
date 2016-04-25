@@ -1,3 +1,9 @@
+## Version 2.0-0
+### CHANGES
+ - Ported to Python 3.4 (Python 2.7 not supported)
+ - hw_CANSocket added: support of linux CAN Socket
+ - Anton's request: USBTin - change speed to local USBTin restart if USBtin was active
+ 
 ## Version 1.5-7
 ### CHANGES
  - mod_stat: support meta input ID as hex value
