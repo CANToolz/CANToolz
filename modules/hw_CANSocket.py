@@ -30,7 +30,7 @@ class hw_CANSocket(CANModule):
 
     def do_init(self, init_params):  # Get device and open serial port
         self.device = init_params.get('iface', None)
-        self._cmdList['t'] = ["Send CAN frame directly, like 01A:4:11223344", 1, " <frame> ", self.dev_write]
+        self._cmdList['t'] = ["Send CAN frame directly, like 01A#11223344", 1, " <frame> ", self.dev_write]
         self._active = True
         self._run = False
 
@@ -38,12 +38,13 @@ class hw_CANSocket(CANModule):
         self.dprint(1, "CMD: " + data)
         if self._run:
             idf, dataf = data.strip().split('#')
-            if idf[0:2]=="0x":
-                idf = int(idf, 16)
-            else:
-                idf = int(idf)
+            dataf = bytes.fromhex(dataf)
+            idf = int(idf, 16)
             lenf = min(8, len(dataf))
-            self.do_write(CANMessage.init_data(idf, lenf, dataf.encode("ISO-8859-1")[0:lenf]))
+            message = CANSploitMessage()
+            message.CANData = True
+            message.CANFrame = CANMessage.init_data(idf, lenf, dataf[0:lenf])
+            self.do_write(message)
         return ""
 
     def do_start(self, params):
@@ -82,13 +83,19 @@ class hw_CANSocket(CANModule):
                 self.dprint(2, "READ: " + self.get_hex(can_frame))
                 if len(can_frame) == 16:
                     can_msg.CANData = True
-                    can_msg.CANFrame = CANMessage.init_data(struct.unpack("I", can_frame[0:4])[0], can_frame[4], can_frame[8:8+can_frame[4]])
+                    idf = struct.unpack("I", can_frame[0:4])[0]
+                    if idf & 0x80000000:
+                        idf &= 0x7FFFFFFF
+                    can_msg.CANFrame = CANMessage.init_data(idf, can_frame[4], can_frame[8:8+can_frame[4]])
             except:
                 return can_msg
         return can_msg
 
     def do_write(self, can_msg):
         if can_msg.CANData:
-            self.socket.write(struct.pack("I", can_msg.frame_id) + can_msg.frame_raw_data[0:can_msg.frame_length])
+            idf = can_msg.frame_id
+            if can_msg.CANFrame.is_extended:
+                idf |= 0x80000000
+            self.socket.write(struct.pack("I", idf) + can_msg.frame_raw_data[0:can_msg.frame_length])
 
         return can_msg
