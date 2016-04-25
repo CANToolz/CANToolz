@@ -3,7 +3,7 @@
 CANToolz is a framework for analysing CAN networks and devices.
 This tool based on different modules which can be assembled in pipe together and
 can be used by security researchers and automotive/OEM security testers for black-box analysis and etc. 
-You can use this software for ECU discovery, MITM testing, fuzzing, bruteforcing, scanning and etc
+You can use this software for ECU discovery, MITM testing, fuzzing, bruteforcing, scanning or R&D testing and validation
 
 This platform is a try to unify all needed tricks/tools and other things that you can do with CAN bus in one place.
 I have found, that there are many tools available, from Charlie Miller and Chris Valasek tools to UDS/CAN tools by Craig Smith.
@@ -12,6 +12,8 @@ a lot of thing to get something you want (MITM, scanners with some logic). That'
 contribute into modules, than more useful this thing can be. It gives (almost) an easy way to add your modules and use "extended" version for your needs
 (like custom brutforcers for chosen ECU and etc). Just for fun... finally. No Forbs, Wires  or other big noise needed around this. 
 Just want to have a good tool and people around.
+
+Another thing: this is module based engine, so you can use it as part of your testing processes or include into more difficult scenarios/software where you need to work with CAN bus.
 
 "I don't get why everyone releases new "car hacking tools" all the time.  @nudehaberdasher and I released ours in 2013 and they work fine." (c) Charlie Miller (‏@0xcharlie)
 
@@ -54,6 +56,7 @@ Main idea that community can produce different modules that can be useful for al
     python 3.4
     pip install pyserial
 
+Last stable release for Python 2.7: [https://github.com/eik00d/CANToolz/tree/Python_2.7_last_release](https://github.com/eik00d/CANToolz/tree/Python_2.7_last_release)
 
 # Usage Examples
 See more use-cases inside examples folder:
