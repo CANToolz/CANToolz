@@ -42,7 +42,7 @@ class gen_ping(CANModule):
         self.last = time.clock()
         if 'body' in args:
             try:
-                _data = list(bytes.fromhex(args['body']))
+                _data = [struct.unpack("B", x)[0] for x in (args['body'].decode('hex'))]
             except:
                 _data = [0, 0, 0, 0, 0, 0, 0, 0]
         else:
@@ -71,7 +71,7 @@ class gen_ping(CANModule):
                                     subs = UDSMessage.services_base[service['service']]
                                     sub = 0
                                     for s in subs:
-                                        sub = list(s.keys())[0]
+                                        sub = s.keys()[0]
                                         if not sub:
                                             sub = 0
                                             continue

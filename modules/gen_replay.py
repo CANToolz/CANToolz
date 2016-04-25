@@ -1,6 +1,7 @@
 from libs.module import *
 from libs.can import *
 import time
+import codecs
 
 class gen_replay(CANModule):
     name = "Replay module"
@@ -43,8 +44,7 @@ class gen_replay(CANModule):
                         num_fid = int(fid)
                     length = line[:-1].split(":")[1]
                     data = line[:-1].split(":")[2]
-                    self.CANList.append(CANMessage.init_data(num_fid, int(length), [struct.unpack("B", x)[0] for x in
-                                                                                     data.decode('hex')[:8]]))
+                    self.CANList.append(CANMessage.init_data(num_fid, int(length), bytes.fromhex(data)[:8]))
                 self.dprint(1, "Loaded " + str(len(self.CANList)) + " frames")
         except:
             self.dprint(2, "can't open files with CAN messages!")
@@ -99,8 +99,8 @@ class gen_replay(CANModule):
             try:
                 _file = open(fname, 'w')
                 for i in range(_num1, _num2):
-                    _file.write(hex(self.CANList[i].frame_id) + ":" + str(self.CANList[i].frame_length) + ":" + str(
-                        self.CANList[i].frame_raw_data.encode('hex')) + "\n")
+                    _file.write((hex(self.CANList[i].frame_id) + ":" + str(self.CANList[i].frame_length) + ":" +
+                        self.get_hex(self.CANList[i].frame_raw_data) + "\n"))
                 _file.close()
             except Exception as e:
                 ret = "Not saved. Error: " + str(e)

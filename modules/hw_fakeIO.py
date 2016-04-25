@@ -40,8 +40,7 @@ class hw_fakeIO(CANModule):
         fid = line.split(":")[0]
         length = line.split(":")[1]
         data = line.split(":")[2]
-        self.CANList = CANMessage.init_data(int(fid), int(length),
-                                            [struct.unpack("B", x)[0] for x in data.decode('hex')[:8]])
+        self.CANList = CANMessage.init_data(int(fid), int(length), bytes.fromhex(data)[:8])
         return ""
 
     def do_effect(self, can_msg, args):  # read full packet from serial port

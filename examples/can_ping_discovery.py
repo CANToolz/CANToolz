@@ -1,12 +1,12 @@
 # Load needed modules
 load_modules = {
-    'hw_USBtin':    {'port':'auto', 'debug':1, 'speed':500}, # IO hardware module
+    'hw_CANBusTriple':    {'port':'auto', 'debug':1, 'speed':500}, # IO hardware module
     'mod_stat' :    {},                                      # Mod stat
     'gen_ping' :    {'debug': 1}                            # Generator/Ping
 }
 # Now let's describe the logic of this test
 actions = [
-    {'hw_USBtin':   {'action': 'read','pipe': 2}}, # Read to PIPE 2
+    {'hw_CANBusTriple':   {'action': 'read','pipe': 2}}, # Read to PIPE 2
     {'mod_stat':    {'pipe': 2}},                  # Statistic for PIPE 2
     {'gen_ping':    {                              # Generate pings to PIPE 1
         'pipe': 1,
@@ -14,7 +14,7 @@ actions = [
         'range': [502999, 543002],    # ID range (from 502999 to 543002)
         'mode': 'isotp'} # Send packets in ISO-TP format
     },
-    {'hw_USBtin':   {'action': 'write', 'pipe': 1}} # Write generated packets (pings)
+    {'hw_CANBusTriple':   {'action': 'write', 'pipe': 1}} # Write generated packets (pings)
     ]
 
 ####### let's see how it looks like from the console...

@@ -44,7 +44,7 @@ class gen_fuzz(CANModule):
         if 'id' in args:
             for z in args['id']:
                 if isinstance(z,list) and len(z)==2:
-                    x = range(z[0], z[1])
+                    x = list(range(z[0], z[1]))
                 elif isinstance(z, int):
                     x = [z]
                 else:
@@ -53,7 +53,7 @@ class gen_fuzz(CANModule):
                     _body = list(args.get('data', []))
                     _i = 0
                     while _i < len(_body):
-                        if _i in args.get('index', range(0, len(_body))):
+                        if _i in args.get('index', list(range(0, len(_body)))):
                             for byte in range(0, 256):
                                 _body2 = list(args.get('data', []))
                                 _body2[_i] = byte

@@ -2,9 +2,9 @@ from optparse import OptionParser
 from libs.engine import *
 import collections
 import re
-import SimpleHTTPServer
-import SocketServer
-import BaseHTTPServer
+import http.server
+import socketserver
+import http.server
 import json
 import ast
 import traceback
@@ -26,6 +26,7 @@ import traceback
 # - Boris Ryutin ( @dukebarman )                     #
 #      Fist supporter and awesome guy                #
 #                                                    #
+#                                                    #
 # - Sergey Kononenko ( @kononencheg )                #
 #        Best developer, front-end ninja             #
 ######################################################
@@ -44,15 +45,15 @@ import traceback
 
 
 
-class ThreadingSimpleServer(SocketServer.ThreadingMixIn,
-                   BaseHTTPServer.HTTPServer):
+class ThreadingSimpleServer(socketserver.ThreadingMixIn,
+                   http.server.HTTPServer):
     daemon_threads = True
     # much faster rebinding
     allow_reuse_address = True
     pass
 
 # WEB class
-class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
+class WebConsole(http.server.SimpleHTTPRequestHandler):
     root = "web"
     can_engine = None
 
@@ -60,8 +61,8 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
         self.server = server
         self.protocol_version = 'HTTP/1.1'
-        print("[*] HTTPD: Received connection from %s" % (client_address[0]))
-        SimpleHTTPServer.SimpleHTTPRequestHandler.__init__(self, request, client_address, server)
+        print(("[*] HTTPD: Received connection from %s" % (client_address[0])))
+        http.server.SimpleHTTPRequestHandler.__init__(self, request, client_address, server)
 
     def do_POST(self):
         resp_code = 500
@@ -75,7 +76,7 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
             cmd = path_parts[2]
 
             content_size = int(self.headers['Content-Length'])
-            post_data = self.rfile.read(content_size)
+            post_data = self.rfile.read(content_size).decode("ISO-8859-1")
 
             if cmd == "edit" and path_parts[3]:
                 try:
@@ -105,7 +106,7 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 try:
                     paramz = json.loads(post_data).get("cmd")
                     text = self.can_engine.call_module(self.can_engine.find_module(str(path_parts[3])), str(paramz))
-                    body = json.dumps({"response": unicode(text, "ISO-8859-1")})
+                    body = json.dumps({"response": str(text)})
                     resp_code = 200
                 except Exception as e:
                     resp_code = 500
@@ -118,7 +119,7 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
         self.send_header('Connection', 'closed')
         self.send_header('Content-Length', len(body))
         self.end_headers()
-        self.wfile.write(body)
+        self.wfile.write(body.encode("ISO-8859-1"))
 
         return
 
@@ -148,7 +149,7 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 try:
                     help_list = self.can_engine.get_modules_list()[self.can_engine.find_module(str(path_parts[3]))][1]._cmdList
                     response_help = collections.OrderedDict()
-                    for cmd, body in help_list.iteritems():
+                    for cmd, body in help_list.items():
                         response_help[cmd] = {'descr': body[0], 'descr_param': body[2], 'param_count': body[1]}
                     body = json.dumps(response_help, ensure_ascii=False)
                     resp_code = 200
@@ -179,7 +180,7 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     modz3 = {}
                     for name, module, params in modz2:
                         btns = {}
-                        for btn, bdy in module._cmdList.iteritems():
+                        for btn, bdy in module._cmdList.items():
                             btns[btn] = bdy[4]
                         modz3[name] = {"bar": module.get_status_bar(), "status": module.is_active, "buttons":btns}
                     body = json.dumps({"status": modz, "progress": modz3})
@@ -196,7 +197,7 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
             try:
                 with open(content, "rb") as ins:
                     for line in ins:
-                        body += line
+                        body += line.decode("ISO-8859-1")
 
                 ext = self.path.split(".")[-1]
 
@@ -220,7 +221,7 @@ class WebConsole(SimpleHTTPServer.SimpleHTTPRequestHandler):
         self.send_header('Connection', 'closed')
         self.send_header('Content-Length', len(body))
         self.end_headers()
-        self.wfile.write(body)
+        self.wfile.write(body.encode("ISO-8859-1"))
 
         return
 
@@ -235,7 +236,7 @@ class UserInterface:
         parser.add_option("--config", "-c", action="store", dest="CONFIG", type="string",
                           help="load config from file")
         parser.add_option("--gui", "-g", action="store", dest="GUI", type="string",
-                          help="GUI mode, c - console or w - web (not implemented yet)")
+                          help="GUI mode, c - console or w - web")
 
         [options, args] = parser.parse_args()  # TODO need args?
 
@@ -260,7 +261,7 @@ class UserInterface:
             self.CANEngine.load_config(self.CONFIG)
 
         if self.GUI[0] == "c":
-            print(self.CANEngine.ascii_logo_c)
+            print((self.CANEngine.ascii_logo_c))
             self.console_loop()
         elif self.GUI[0] == "w":
             self.web_loop()
@@ -272,10 +273,10 @@ class UserInterface:
 
     def web_loop(self):
         port = 4444
-        print(self.CANEngine.ascii_logo_c)
+        print((self.CANEngine.ascii_logo_c))
         WebConsole.can_engine = self.CANEngine
         server = ThreadingSimpleServer(('', port), WebConsole)
-        print("CANtoolz WEB started at port: ", port)
+        print(("CANtoolz WEB started at port: ", port))
         print("\tTo exit CTRL-C...")
         try:
             sys.stdout.flush()
@@ -291,48 +292,48 @@ class UserInterface:
     def console_loop(self):
         while True:
             try:
-                input = raw_input(">> ")
+                input_ = input(">> ")
             except KeyboardInterrupt:
-                input = "stop"
+                input_ = "stop"
 
-            if input == 'q' or input == 'quit':
+            if input_ == 'q' or input_ == 'quit':
                 self.CANEngine.stop_loop()
                 self.loop_exit()
-            elif input == 'start' or input == 's':
+            elif input_ == 'start' or input_ == 's':
                 self.CANEngine.start_loop()
 
-            elif input == 'stop' or input == 's':
+            elif input_ == 'stop' or input_ == 's':
                 self.CANEngine.stop_loop()
 
-            elif input == 'view' or input == 'v':
+            elif input_ == 'view' or input_ == 'v':
                 print("Loaded queue of modules: ")
                 modz = self.CANEngine.get_modules_list()
                 total = len(modz)
                 i = 0
-                print
+                print()
                 for name, module, params in modz:
                     tab1 = "\t"
                     tab2 = "\t"
-                    tab1 += "\t" * (12 / len(str(name)))
+                    tab1 += "\t" * int(12 / len(str(name)))
                     tab2 += "\t"
-                    print("("+str(i)+")\t-\t" + name + tab1 + str(params) + tab2 + "Enabled: " + str(module.is_active))
+                    print(("("+str(i)+")\t-\t" + name + tab1 + str(params) + tab2 + "Enabled: " + str(module.is_active)))
                     if i < total - 1:
                         print("\t\t||\t")
                         print("\t\t||\t")
                         print("\t\t\/\t")
                     i += 1
-                print
+                print()
 
-            elif input[0:5] == 'edit ' or input[0:2] == 'e ':  # edit params from the console
-                match = re.match(r"(edit|e)\s+(\d+)\s+(.+)", input, re.IGNORECASE)
+            elif input_[0:5] == 'edit ' or input_[0:2] == 'e ':  # edit params from the console
+                match = re.match(r"(edit|e)\s+(\d+)\s+(.+)", input_, re.IGNORECASE)
                 if match:
                     module = int(match.group(2).strip())
                     _paramz = match.group(3).strip()
                     try:
                         paramz = ast.literal_eval(_paramz)
                         self.CANEngine.edit_module(module, paramz)
-                        print("Edited module: " + str(self.CANEngine.get_modules_list()[module][0]))
-                        print("Added  params: " + str(self.CANEngine.get_module_params(module)))
+                        print(("Edited module: " + str(self.CANEngine.get_modules_list()[module][0])))
+                        print(("Added  params: " + str(self.CANEngine.get_module_params(module))))
 
                         mode = 1 if self.CANEngine.get_modules_list()[module][1].is_active else 0
                         if mode == 1:
@@ -342,12 +343,12 @@ class UserInterface:
                         if mode == 1:
                             self.CANEngine.get_modules_list()[module][1].do_activate(1)
                     except Exception as e:
-                        print("Edit error: " + str(e))
+                        print(("Edit error: " + str(e)))
                 else:
                     print("Wrong format for EDIT command")
 
-            elif input[0:4] == 'cmd ' or input[0:2] == 'c ':
-                match = re.match(r"(cmd|c)\s+(\d+)\s+(.*)", input, re.IGNORECASE)
+            elif input_[0:4] == 'cmd ' or input_[0:2] == 'c ':
+                match = re.match(r"(cmd|c)\s+(\d+)\s+(.*)", input_, re.IGNORECASE)
                 if match:
                     _mod = int(match.group(2).strip())
                     _paramz = match.group(3).strip()
@@ -356,23 +357,23 @@ class UserInterface:
                         text = self.CANEngine.call_module(_mod, str(_paramz))
                         print(text)
                         #                    except Exception as e:
-                        #                        print "CMD input error: "+str(e)
+                        #                        print "CMD input_ error: "+str(e)
 
-            elif input[0:4] == 'help' or input[0:2] == 'h ':
+            elif input_[0:4] == 'help' or input_[0:2] == 'h ':
 
-                match = re.match(r"(help|h)\s+(\d+)", input, re.IGNORECASE)
+                match = re.match(r"(help|h)\s+(\d+)", input_, re.IGNORECASE)
                 if match:
                     try:
                         module = int(match.group(2).strip())
                         mod  = self.CANEngine.get_modules_list()[module][1]
-                        print("\nModule " + mod.__class__.__name__ + ": " + mod.name + "\n" + mod.help + \
-                            "\n\nConsole commands:\n")
-                        for cmd, dat in mod._cmdList.iteritems():
-                            print("\t" + cmd + " " + dat[2] + "\t\t - " + dat[0] + "\n")
+                        print(("\nModule " + mod.__class__.__name__ + ": " + mod.name + "\n" + mod.help + \
+                            "\n\nConsole commands:\n"))
+                        for cmd, dat in mod._cmdList.items():
+                            print(("\t" + cmd + " " + dat[2] + "\t\t - " + dat[0] + "\n"))
                     except Exception as e:
-                        print("Help error: " + str(e))
+                        print(("Help error: " + str(e)))
                 else:
-                    print
+                    print()
                     print('start\t\t\tStart sniff/mitm/fuzz on CAN buses')
                     print('stop or ctrl+c\t\tStop sniff/mitm/fuzz')
                     print('view\t\t\tList of loaded MiTM modules')
@@ -381,7 +382,7 @@ class UserInterface:
                     print('help\t\t\tThis menu')
                     print('help <index>\t\tHelp for module with chosen index')
                     print('quit\t\t\tClose port and exit')
-                    print
+                    print()
 
 
 def main():

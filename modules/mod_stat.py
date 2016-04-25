@@ -1,6 +1,7 @@
 from libs.module import *
 from libs.uds import *
 from libs.frag import *
+import json
 import re
 import collections
 import ast
@@ -73,10 +74,10 @@ class mod_stat(CANModule):
 
     def get_meta_descr(self, fid, msg):
         descrs = self.meta_data.get('description', {})
-        for (key, body) in descrs.keys():
+        for (key, body) in list(descrs.keys()):
             if fid == key:
-                if(re.match(body, msg.encode('hex'), re.IGNORECASE)):
-                    return descrs[(key, body)]
+                if(re.match(body, self.get_hex(msg), re.IGNORECASE)):
+                    return str(descrs[(key, body)])
         return "  "
 
 
@@ -86,7 +87,6 @@ class mod_stat(CANModule):
             with open(filename.strip(), "r") as ins:
                 for line in ins:
                     data += line
-
             self.meta_data = ast.literal_eval(data)
 
         except Exception as e:
@@ -107,8 +107,8 @@ class mod_stat(CANModule):
     def ret_ascii(text_array):
         return_str = ""
         for byte in text_array:
-            if 31 < ord(byte) < 127:
-                return_str += byte
+            if 31 < byte < 127:
+                return_str += chr(byte)
             else:
                 return_str += '.'
         return return_str
@@ -212,10 +212,10 @@ class mod_stat(CANModule):
 
     def find_loops(self):
         frg_list = collections.OrderedDict()
-        for fid, lst in self._bodyList.iteritems():
+        for fid, lst in self._bodyList.items():
             frg_list[fid] = FragmentedCAN()
-            for (lenX, msg, bus, mod), cnt in lst.iteritems():
-                frg_list[fid].add_can_loop(CANMessage.init_data(fid, lenX, [struct.unpack("!B", x)[0] for x in msg]))
+            for (lenX, msg, bus, mod), cnt in lst.items():
+                frg_list[fid].add_can_loop(CANMessage.init_data(fid, lenX, msg))
 
         return frg_list
 
@@ -236,32 +236,32 @@ class mod_stat(CANModule):
         for msg in iso_tp_list:
             if msg.message_id not in _iso_tbl:
                 _iso_tbl[msg.message_id] = collections.OrderedDict()
-                _iso_tbl[msg.message_id][(msg.message_length, ''.join([struct.pack("!B", b) for b in msg.message_data]))] = 1
+                _iso_tbl[msg.message_id][(msg.message_length,  bytes(msg.message_data))] = 1
             else:
-                if (msg.message_length, ''.join([struct.pack("!B", b) for b in msg.message_data])) in _iso_tbl[msg.message_id]:
-                    _iso_tbl[msg.message_id][(msg.message_length, ''.join([struct.pack("!B", b) for b in msg.message_data]))] += 1
+                if (msg.message_length, bytes(msg.message_data)) in _iso_tbl[msg.message_id]:
+                    _iso_tbl[msg.message_id][(msg.message_length,  bytes(msg.message_data))] += 1
                 else:
-                    _iso_tbl[msg.message_id][(msg.message_length, ''.join([struct.pack("!B", b) for b in msg.message_data]))] = 1
+                    _iso_tbl[msg.message_id][(msg.message_length, bytes(msg.message_data))] = 1
 
         if format.strip() not in ["ISO","FRAG"]:
             # Print out UDS
             ret_str += "UDS Detected:\n\n"
-            for fid, services in uds_list.sessions.iteritems():
-                for service, body in services.iteritems():
+            for fid, services in uds_list.sessions.items():
+                for service, body in services.items():
                     text = " (N/A) "
                     if service in UDSMessage.services_base:
                         for sub in UDSMessage.services_base[service]:
-                            if sub.keys()[0] == body['sub'] or None:
-                                text = " (" + sub.values()[0] + ") "
+                            if list(sub.keys())[0] == body['sub'] or None:
+                                text = " (" + list(sub.values())[0] + ") "
                         if text == " (N/A) ":
-                            text = " (" + UDSMessage.services_base[service][0].values()[0] + ") "
+                            text = " (" + list(UDSMessage.services_base[service][0].values())[0] + ") "
                     if body['status'] == 1:
-                        data = ''.join(struct.pack("!B", b) for b in body['response']['data'])
+                        data =  body['response']['data']
                         data_ascii = "\n"
                         if self.is_ascii(body['response']['data']):
                             data_ascii = "\n\t\tASCII: " + self.ret_ascii(data)+"\n"
                         ret_str += "\n\tID: " + hex(fid) + " Service: " + str(hex(service)) + " Sub: " + (str(
-                            hex(body['sub'])) if body['sub'] else "None") + text + "\n\t\tResponse: " + data.encode('hex') + data_ascii
+                            hex(body['sub'])) if body['sub'] else "None") + text + "\n\t\tResponse: " + self.get_hex(bytes(data)) + data_ascii
                     elif body['status'] == 2:
                        ret_str += "\n\tID: " + hex(fid) + " Service: " + str(hex(service)) + " Sub: " + (str(
                             hex(body['sub'])) if body['sub'] else "None") + text + "\n\t\tError: " + body['response']['error']
@@ -270,44 +270,43 @@ class mod_stat(CANModule):
             # Print detected loops
             ret_str += "\n\nDe-Fragmented frames (using loop-based detection):\n"
             local_temp = {}
-            for fid, data in loops_list.iteritems():
+            for fid, data in loops_list.items():
                 data.clean_build_loop()
                 for message in data.messages:
-                    if (fid, ''.join(struct.pack("!B", b).encode('hex') for b in message['message_data'])) not in local_temp:
+                    if (fid, bytes(message['message_data'])) not in local_temp:
                         ret_str += "\n\tID " + hex(fid) + " and length " + str(message['message_length']) + "\n"
-                        ret_str += "\t\tData: " + ''.join(struct.pack("!B", b).encode('hex') for b in message['message_data'])
+                        ret_str += "\t\tData: " + self.get_hex(bytes(message['message_data']))
                         if self.is_ascii(message['message_data']):
-                            ret_str += "\n\t\tASCII: " + self.ret_ascii(''.join(struct.pack("!B", b) for b in message['message_data'])) + "\n\n"
-                        local_temp[(fid, ''.join(struct.pack("!B", b).encode('hex') for b in message['message_data']))] = None
+                            ret_str += "\n\t\tASCII: " + self.ret_ascii(bytes(message['message_data'])) + "\n\n"
+                        local_temp[(fid, bytes(message['message_data']))] = None
 
         if format.strip() not in ["UDS","FRAG"]:
             # Print out ISOTP messages
             ret_str += "\nISO TP Messages:\n\n"
-            for fid, lst in _iso_tbl.iteritems():
+            for fid, lst in _iso_tbl.items():
                 ret_str += "\tID: " + hex(fid) + "\n"
-                for (lenX, msg), cnt in lst.iteritems():
-                    ret_str += "\t\tDATA: " + msg.encode('hex')
-                    if self.is_ascii([struct.unpack("!B", x)[0] for x in msg]):
+                for (lenX, msg), cnt in lst.items():
+                    ret_str += "\t\tDATA: " + self.get_hex(msg)
+                    if self.is_ascii(msg):
                         ret_str += "\n\t\tASCII: " + self.ret_ascii(msg)
                     ret_str += "\n"
 
         return ret_str
 
     def print_dump_diff(self, name):
-        _name = None
         table1 = self.create_short_table(self.all_frames)
         try:
             _name = open(name.strip(), 'w')
             for can_msg in self.all_diff_frames:
-                if can_msg.CANFrame.frame_id not in table1.keys():
-                    _name.write(str(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + can_msg.CANFrame.frame_raw_data.encode('hex') + "\n")
+                if can_msg.CANFrame.frame_id not in list(table1.keys()):
+                    _name.write(str(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + self.get_hex(can_msg.CANFrame.frame_raw_data) + "\n")
                 else:
                     neq = True
-                    for (len2, msg, bus, mod), cnt in table1[can_msg.CANFrame.frame_id].iteritems():
+                    for (len2, msg, bus, mod), cnt in table1[can_msg.CANFrame.frame_id].items():
                         if msg == can_msg.CANFrame.frame_raw_data:
                             neq = False
                     if neq:
-                        _name.write(hex(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + can_msg.CANFrame.frame_raw_data.encode('hex') + "\n")
+                        _name.write(hex(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + self.get_hex(can_msg.CANFrame.frame_raw_data) + "\n")
             _name.close()
         except Exception as e:
             self.dprint(2, "can't open log")
@@ -315,12 +314,11 @@ class mod_stat(CANModule):
         return "Saved into " + name.strip()
 
     def do_dump_replay(self, name):
-        _name = None
 
         try:
             _name = open(name.strip(), 'w')
             for can_msg in self.all_frames:
-                _name.write(hex(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + can_msg.CANFrame.frame_raw_data.encode('hex') + "\n")
+                _name.write(hex(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + self.get_hex(can_msg.CANFrame.frame_raw_data) + "\n")
             _name.close()
         except Exception as e:
             self.dprint(2, "can't open log")
@@ -330,18 +328,17 @@ class mod_stat(CANModule):
 
     def do_dump_csv(self, name):
         self._bodyList = self.create_short_table(self.all_frames)
-        _name = None
         try:
             _name = open(name.strip(), 'w')
             _name.write("BUS,ID,LENGTH,MESSAGE,ASCII,COMMENT,COUNT\n")
-            for fid, lst in self._bodyList.iteritems():
-                for (len, msg, bus, mod), cnt in lst.iteritems():
-                    if self.is_ascii([struct.unpack("B", x)[0] for x in msg]):
+            for fid, lst in self._bodyList.items():
+                for (len, msg, bus, mod), cnt in lst.items():
+                    if self.is_ascii(msg):
                         data_ascii = '"' + self.ret_ascii(msg) + '"'
                     else:
                         data_ascii = ""
                     _name.write(
-                        str(bus) + "," + hex(fid) + "," + str(len) + "," + msg.encode('hex') + ',' + data_ascii + ',' +\
+                        str(bus) + "," + hex(fid) + "," + str(len) + "," + self.get_hex(msg) + ',' + data_ascii + ',' +\
                         "\"" + self.get_meta_descr(fid, msg) + "\"" + ',' + str(cnt) + "\n"
                     )
         except Exception as e:
@@ -362,28 +359,28 @@ class mod_stat(CANModule):
         table2 = self.create_short_table(self.all_diff_frames)
         table = ""
         rows = [['BUS', 'ID', 'LENGTH', 'MESSAGE', 'ASCII', 'DESCR', 'COUNT']]
-        for fid2, lst2 in table2.iteritems():
-            if fid2 not in table1.keys():
+        for fid2, lst2 in table2.items():
+            if fid2 not in list(table1.keys()):
 
-                for (lenX, msg, bus, mod), cnt in lst2.iteritems():
-                    if self.is_ascii([struct.unpack("B", x)[0] for x in msg]):
+                for (lenX, msg, bus, mod), cnt in lst2.items():
+                    if self.is_ascii(msg):
                         data_ascii = self.ret_ascii(msg)
                     else:
                         data_ascii = "  "
                     if count == 0 or count == cnt:
-                        rows.append([str(bus),hex(fid2), str(lenX), msg.encode('hex'), data_ascii, self.get_meta_descr(fid2, msg), str(cnt)])
+                        rows.append([str(bus),hex(fid2), str(lenX), self.get_hex(msg), data_ascii, self.get_meta_descr(fid2, msg), str(cnt)])
             elif mode == 0:
-                for (lenX, msg, bus, mod), cnt in lst2.iteritems():
+                for (lenX, msg, bus, mod), cnt in lst2.items():
 
                     if (lenX, msg, bus, mod) not in  table1[fid2]:
-                        if self.is_ascii([struct.unpack("B", x)[0] for x in msg]):
+                        if self.is_ascii(msg):
                             data_ascii = self.ret_ascii(msg)
                         else:
                             data_ascii = "  "
                         if count == 0 or count == cnt:
-                            rows.append([str(bus),hex(fid2), str(lenX), msg.encode('hex'), data_ascii, self.get_meta_descr(fid2, msg), str(cnt)])
+                            rows.append([str(bus),hex(fid2), str(lenX), self.get_hex(msg), data_ascii, self.get_meta_descr(fid2, msg), str(cnt)])
 
-        cols = zip(*rows)
+        cols = list(zip(*rows))
         col_widths = [max(len(value) for value in col) for col in cols]
         format_table = '    '.join(['%%-%ds' % width for width in col_widths ])
         for row in rows:
@@ -419,15 +416,15 @@ class mod_stat(CANModule):
         table = "\n"
         rows = [['BUS', 'ID', 'LENGTH', 'MESSAGE', 'ASCII', 'DESCR', 'COUNT']]
         # http://stackoverflow.com/questions/3685195/line-up-columns-of-numbers-print-output-in-table-format
-        for fid, lst in self._bodyList.iteritems():
-            for (lenX, msg, bus, mod), cnt in lst.iteritems():
-                if self.is_ascii([struct.unpack("B", x)[0] for x in msg]):
+        for fid, lst in self._bodyList.items():
+            for (lenX, msg, bus, mod), cnt in lst.items():
+                if self.is_ascii(msg):
                     data_ascii = self.ret_ascii(msg)
                 else:
                     data_ascii = "  "
-                rows.append([str(bus),hex(fid), str(lenX), msg.encode('hex'), data_ascii, self.get_meta_descr(fid, msg), str(cnt)])
+                rows.append([str(bus),hex(fid), str(lenX), self.get_hex(msg), data_ascii, self.get_meta_descr(fid, msg), str(cnt)])
 
-        cols = zip(*rows)
+        cols = list(zip(*rows))
         col_widths = [ max(len(value) for value in col) for col in cols ]
         format_table = '    '.join(['%%-%ds' % width for width in col_widths ])
         for row in rows:

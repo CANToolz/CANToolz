@@ -37,28 +37,39 @@ class hw_USBtin(CANModule):
 
     _bus = "USBTin"
 
+    def get_status(self):
+        return "Current status: " + str(self._active) + "\nCurrent SPEED: " + str(self._currentSpeed) + "\nPORT: " + self._COMPort
+
     def get_info(self):  # Read info
-        self._serialPort.write("S0\r")
+        self._serialPort.write(b"S0\r")
         time.sleep(1)
-        self._serialPort.write("V\r")
+        self._serialPort.write(b"V\r")
         time.sleep(1)
         return self.read_all()
 
     def read_all(self):
         out = ""
         while self._serialPort.inWaiting() > 0:
-            out += self._serialPort.read(1)
+            out += self._serialPort.read(1).decode("ISO-8859-1")
         return out
 
     def do_stop(self, params):  # disable reading
-        self._serialPort.write("C\r")
+        self._serialPort.write(b"C\r")
         time.sleep(1)
         self.read_all()
+        self._run = False
 
     def set_speed(self, speed):
         sjw_user = 3
         ## This code ported from here:
         # https://www.kvaser.com/wp-content/themes/kvaser/inc/vc/js/bittiming.js
+        again = False
+        if self._run:
+            self._active = False
+            self.do_stop({})
+            again = True
+
+
         if len(str(speed).split(",")) > 1:
             sjw_user = int(str(speed).split(",")[1])
             self._sjw = sjw_user
@@ -105,9 +116,9 @@ class hw_USBtin(CANModule):
 
                         matches += 1
                         if err == 0:
-                            ch_btr0 = struct.pack("B", btr0).encode("hex")
-                            ch_btr1 = struct.pack("B", btr1).encode("hex")
-                            ch_btr2 = struct.pack("B", btr2).encode("hex")
+                            ch_btr0 = self.get_hex(struct.pack("B", btr0)).encode("ISO-8859-1")
+                            ch_btr1 = self.get_hex(struct.pack("B", btr1)).encode("ISO-8859-1")
+                            ch_btr2 = self.get_hex(struct.pack("B", btr2)).encode("ISO-8859-1")
 
                             if sjw == sjw_user:
                                 final_cnf1 = ch_btr0
@@ -121,15 +132,25 @@ class hw_USBtin(CANModule):
             final_cnf2 = ch_btr1
             final_cnf3 = ch_btr2
         if final_cnf1 == 0 and final_cnf2 == 0 and final_cnf3 == 0:
+            if again:
+                self._run = True
+                self.do_start({})
+                self._active = True
+
             return "Speed ERROR!"
         else:
-            self.dprint(0, "CNF1 = " + final_cnf1 + " CNF2 = " + final_cnf2+" CNF3 = " + final_cnf3)
-            self._serialPort.write("s" + final_cnf1 + final_cnf2 + final_cnf3 + "\r")
+            self.dprint(0, "CNF1 = " + final_cnf1.decode("ISO-8859-1") + " CNF2 = " + final_cnf2.decode("ISO-8859-1")+" CNF3 = " + final_cnf3.decode("ISO-8859-1"))
+            self._serialPort.write(b"s" + final_cnf1 + final_cnf2 + final_cnf3 + b"\r")
+            if again:
+                self._run = True
+                self.do_start({})
+                self._active = True
             return "Speed: " + str(self._currentSpeed)
 
     def do_start(self, params):  # enable reading
-        self._serialPort.write("O\r")
+        self._serialPort.write(b"O\r")
         time.sleep(1)
+        self._run = True
 
     def init_port(self):
         try:
@@ -142,8 +163,8 @@ class hw_USBtin(CANModule):
                 self.dprint(1, "Device not found: " + self._COMPort)
                 self._serialPort.close()
                 return 0
-        except:
-            self.dprint(0, 'Error opening port: ' + self._COMPort)
+        except Exception as e:
+            self.dprint(0, 'Error opening port: ' + self._COMPort + str(e))
             return 0
 
     def do_init(self, params):  # Get device and open serial port
@@ -180,7 +201,7 @@ class hw_USBtin(CANModule):
 
     def dev_write(self, data):
         self.dprint(1, "CMD: " + data)
-        self._serialPort.write(data + "\r")
+        self._serialPort.write(data.encode("ISO-8859-1") + b"\r")
         return ""
 
     def do_effect(self, can_msg, args):  # read full packet from serial port
@@ -193,56 +214,56 @@ class hw_USBtin(CANModule):
         return can_msg
 
     def do_read(self, can_msg):
-        data = ""
+        data = b""
         if self._serialPort.inWaiting() > 0:
             while not can_msg.CANData and not can_msg.debugData:
                 byte = self._serialPort.read(1)
                 # print byte
-                if byte == "":
+                if byte == b"":
                     break
 
                 data += byte
-                if data[-1:] == "\r":
+                if data[-1:] == b"\r":
                     can_msg.bus = self._bus  # Bus USBtin
-                    if data[0] == "t":
+                    if data[0:1] == b"t":
                         # "t10F81122334455667788"
-                        _length = int(data[4])
-                        _id = struct.unpack("!H", ("0" + data[1:4]).decode('hex'))[0]
-                        _data = [struct.unpack("B", x)[0] for x in data[5:-1].decode('hex')]
+                        _length = int(data[4:5])
+                        _id = struct.unpack("!H", bytes.fromhex("0" + data[1:4].decode('ISO-8859-1')))[0]
+                        _data = list(bytes.fromhex(data[5:-1].decode('ISO-8859-1')))
 
                         can_msg.CANFrame = CANMessage(_id, _length, _data, False, CANMessage.DataFrame)
 
                         can_msg.CANData = True
 
-                    elif data[0] == "T":  # Extended
+                    elif data[0:1] == b"T":  # Extended
                         # "T0011111181122334455667788"
-                        _length = int(data[9])
-                        _id = struct.unpack("!I", (data[1:9]).decode('hex'))[0]
-                        _data = [struct.unpack("B", x)[0] for x in data[10:-1].decode('hex')]
+                        _length = int(data[9:10])
+                        _id = struct.unpack("!I", bytes.fromhex(data[1:9].decode('ISO-8859-1')))[0]
+                        _data = list(bytes.fromhex(data[10:-1].decode('ISO-8859-1')))
 
                         can_msg.CANFrame = CANMessage(_id, _length, _data, True, CANMessage.DataFrame)
                         can_msg.CANData = True
 
-                    elif data[0] == "r":  # RTR
-                        _length = int(data[4])
-                        _id = struct.unpack("!H", ("0" + data[1:4]).decode('hex'))[0]
+                    elif data[0:1] == b"r":  # RTR
+                        _length = int(data[4:5])
+                        _id = struct.unpack("!H", bytes.fromhex("0" + data[1:4].decode('ISO-8859-1')))[0]
 
                         can_msg.CANFrame = CANMessage(_id, _length, [], False, CANMessage.RemoteFrame)
                         can_msg.CANData = True
 
-                    elif data[0] == "R":  # Extended RTR
-                        _length = int(data[9])
-                        _id = struct.unpack("!I", (data[1:9]).decode('hex'))[0]
+                    elif data[0:1] == b"R":  # Extended RTR
+                        _length = int(data[9:10])
+                        _id = struct.unpack("!I", bytes.fromhex(data[1:9].decode('ISO-8859-1')))[0]
 
                         can_msg.CANFrame = CANMessage(_id, _length, [], True, CANMessage.RemoteFrame)
                         can_msg.CANData = True
-                    elif data[0] == 'z' or data[0] == 'Z' or data[0] == "\r" or data[0] == "\x07":
+                    elif data[0:1] == b'z' or data[0:1] == b'Z' or data[0:1] == b"\r" or data[0:1] == b"\x07":
                         break
                     else:
                         can_msg.debugData = True
-                        can_msg.debugText = {'text': data}
+                        can_msg.debugText = {'text': data.decode("ISO-8859-1")}
 
-                    self.dprint(2, "USBtin READ: " + data)
+                    self.dprint(2, "USBtin READ: " + data.decode("ISO-8859-1"))
 
         return can_msg
 
@@ -251,20 +272,19 @@ class hw_USBtin(CANModule):
             cmd_byte = None
             id_f = None
             if not can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.DataFrame:  # 11 bit format
-                cmd_byte = "t"
-                id_f = can_msg.CANFrame.frame_raw_id.encode('hex').zfill(4)[1:4]
+                cmd_byte = b"t"
+                id_f = self.get_hex(can_msg.CANFrame.frame_raw_id).zfill(4)[1:4].encode('ISO-8859-1')
             elif can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.DataFrame:
-                cmd_byte = "T"
-                id_f = can_msg.CANFrame.frame_raw_id.encode('hex').zfill(8)[0:8]
+                cmd_byte = b"T"
+                id_f = self.get_hex(can_msg.CANFrame.frame_raw_id).zfill(8)[0:8].encode('ISO-8859-1')
             elif not can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.RemoteFrame:
-                cmd_byte = "r"
-                id_f = can_msg.CANFrame.frame_raw_id.encode('hex').zfill(4)[1:4]
+                cmd_byte = b"r"
+                id_f = self.get_hex(can_msg.CANFrame.frame_raw_id).zfill(4)[1:4].encode('ISO-8859-1')
             elif can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.RemoteFrame:
-                cmd_byte = "R"
-                id_f = can_msg.CANFrame.frame_raw_id.encode('hex').zfill(8)[0:8]
+                cmd_byte = b"R"
+                id_f = self.get_hex(can_msg.CANFrame.frame_raw_id).zfill(8)[0:8].encode('ISO-8859-1')
             if cmd_byte:
-                write_buf = cmd_byte + id_f + \
-                    str(can_msg.CANFrame.frame_length) + can_msg.CANFrame.frame_raw_data.encode('hex') + "\r"
+                write_buf = cmd_byte + id_f + str(can_msg.CANFrame.frame_length).encode('ISO-8859-1') + self.get_hex(can_msg.CANFrame.frame_raw_data).encode('ISO-8859-1') + b"\r"
                 self._serialPort.write(write_buf)
-                self.dprint(2, "WRITE: " + write_buf)
+                self.dprint(2, "WRITE: " + write_buf.decode('ISO-8859-1'))
         return can_msg
