@@ -134,13 +134,16 @@ class hw_USBtin(CANModule):
         if final_cnf1 == 0 and final_cnf2 == 0 and final_cnf3 == 0:
             if again:
                 self._run = True
+                self.do_start({})
                 self._active = True
+
             return "Speed ERROR!"
         else:
             self.dprint(0, "CNF1 = " + final_cnf1.decode("ISO-8859-1") + " CNF2 = " + final_cnf2.decode("ISO-8859-1")+" CNF3 = " + final_cnf3.decode("ISO-8859-1"))
             self._serialPort.write(b"s" + final_cnf1 + final_cnf2 + final_cnf3 + b"\r")
             if again:
                 self._run = True
+                self.do_start({})
                 self._active = True
             return "Speed: " + str(self._currentSpeed)
 

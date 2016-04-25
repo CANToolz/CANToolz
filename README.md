@@ -17,7 +17,8 @@ Just want to have a good tool and people around.
 
 "Looking for our car hacking tools / data / scripts? http://illmatics.com/content.zip " (c) Chris Valasek ‏@nudehaberdasher
 
-More details and use-case will be published in the [blog](http://asintsov.blogspot.de/)
+More details and use-case published in the [blog](http://asintsov.blogspot.de/)
+See wiki (currently in dev.): [WIKI](https://github.com/eik00d/CANToolz/wiki)
 
 ## Using a Hardware
 
@@ -46,8 +47,11 @@ Then use browser and connect to http://localhost:4444
 P.S. of course we are working on supporting other types of I/O hardware and modules. Please join us!
 Main idea that community can produce different modules that can be useful for all of us 8)
 
-## Dependencies
 
+![](https://4.bp.blogspot.com/-yFfoB__yfhQ/VxZMaaSfY6I/AAAAAAAAAQA/G8p056Vz36AYoZj9RGUKwCrjbkrUWnBeQCLcB/s1600/h1.png)
+
+## Dependencies
+    python 3.4
     pip install pyserial
 
 
@@ -64,9 +68,7 @@ See more use-cases inside examples folder:
     UDS detection and etc
 
 And many other options possible. Just use modules as "needed".
-
-## Example 1. Binary search. 
-
+[Example](asintsov.blogspot.de/2016/04/cantoolz-modstat-diff-mode.html) with DIFF mode, to find door unlock commands.
 
 P.S.
  Current version is uber-beta. Not tested enough, code is not clean and ugly and there are bugs that not found yet... working on that, sorry.
