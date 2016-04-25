@@ -1,6 +1,7 @@
 from libs.module import *
 from libs.can import *
 import time
+import codecs
 
 class gen_replay(CANModule):
     name = "Replay module"
@@ -99,7 +100,7 @@ class gen_replay(CANModule):
                 _file = open(fname, 'w')
                 for i in range(_num1, _num2):
                     _file.write((hex(self.CANList[i].frame_id) + ":" + str(self.CANList[i].frame_length) + ":" +
-                        self.CANList[i].frame_raw_data.hex() + "\n"))
+                        self.get_hex(self.CANList[i].frame_raw_data) + "\n"))
                 _file.close()
             except Exception as e:
                 ret = "Not saved. Error: " + str(e)

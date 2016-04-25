@@ -294,5 +294,5 @@ class hw_CANBusTriple(CANModule):
                 (8 - can_msg.CANFrame.frame_length) + can_msg.CANFrame.frame_raw_length
 
             self._serialPort.write(write_buf)
-            self.dprint(2, "WRITE: " + write_buf.encode('ISO-8859-1').hex())
+            self.dprint(2, "WRITE: " + self.get_hex(write_buf))
 

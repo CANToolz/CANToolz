@@ -76,7 +76,7 @@ class mod_stat(CANModule):
         descrs = self.meta_data.get('description', {})
         for (key, body) in list(descrs.keys()):
             if fid == key:
-                if(re.match(body, msg.hex(), re.IGNORECASE)):
+                if(re.match(body, self.get_hex(msg), re.IGNORECASE)):
                     return str(descrs[(key, body)])
         return "  "
 
@@ -261,7 +261,7 @@ class mod_stat(CANModule):
                         if self.is_ascii(body['response']['data']):
                             data_ascii = "\n\t\tASCII: " + self.ret_ascii(data)+"\n"
                         ret_str += "\n\tID: " + hex(fid) + " Service: " + str(hex(service)) + " Sub: " + (str(
-                            hex(body['sub'])) if body['sub'] else "None") + text + "\n\t\tResponse: " + bytes(data).hex() + data_ascii
+                            hex(body['sub'])) if body['sub'] else "None") + text + "\n\t\tResponse: " + self.get_hex(bytes(data)) + data_ascii
                     elif body['status'] == 2:
                        ret_str += "\n\tID: " + hex(fid) + " Service: " + str(hex(service)) + " Sub: " + (str(
                             hex(body['sub'])) if body['sub'] else "None") + text + "\n\t\tError: " + body['response']['error']
@@ -275,7 +275,7 @@ class mod_stat(CANModule):
                 for message in data.messages:
                     if (fid, bytes(message['message_data'])) not in local_temp:
                         ret_str += "\n\tID " + hex(fid) + " and length " + str(message['message_length']) + "\n"
-                        ret_str += "\t\tData: " + bytes(message['message_data']).hex()
+                        ret_str += "\t\tData: " + self.get_hex(bytes(message['message_data']))
                         if self.is_ascii(message['message_data']):
                             ret_str += "\n\t\tASCII: " + self.ret_ascii(bytes(message['message_data'])) + "\n\n"
                         local_temp[(fid, bytes(message['message_data']))] = None
@@ -286,7 +286,7 @@ class mod_stat(CANModule):
             for fid, lst in _iso_tbl.items():
                 ret_str += "\tID: " + hex(fid) + "\n"
                 for (lenX, msg), cnt in lst.items():
-                    ret_str += "\t\tDATA: " + msg.hex()
+                    ret_str += "\t\tDATA: " + self.get_hex(msg)
                     if self.is_ascii(msg):
                         ret_str += "\n\t\tASCII: " + self.ret_ascii(msg)
                     ret_str += "\n"
@@ -299,14 +299,14 @@ class mod_stat(CANModule):
             _name = open(name.strip(), 'w')
             for can_msg in self.all_diff_frames:
                 if can_msg.CANFrame.frame_id not in list(table1.keys()):
-                    _name.write(str(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + can_msg.CANFrame.frame_raw_data.hex() + "\n")
+                    _name.write(str(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + self.get_hex(can_msg.CANFrame.frame_raw_data) + "\n")
                 else:
                     neq = True
                     for (len2, msg, bus, mod), cnt in table1[can_msg.CANFrame.frame_id].items():
                         if msg == can_msg.CANFrame.frame_raw_data:
                             neq = False
                     if neq:
-                        _name.write(hex(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + can_msg.CANFrame.frame_raw_data.hex() + "\n")
+                        _name.write(hex(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + self.get_hex(can_msg.CANFrame.frame_raw_data) + "\n")
             _name.close()
         except Exception as e:
             self.dprint(2, "can't open log")
@@ -318,7 +318,7 @@ class mod_stat(CANModule):
         try:
             _name = open(name.strip(), 'w')
             for can_msg in self.all_frames:
-                _name.write(hex(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + can_msg.CANFrame.frame_raw_data.hex() + "\n")
+                _name.write(hex(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + self.get_hex(can_msg.CANFrame.frame_raw_data) + "\n")
             _name.close()
         except Exception as e:
             self.dprint(2, "can't open log")
@@ -338,7 +338,7 @@ class mod_stat(CANModule):
                     else:
                         data_ascii = ""
                     _name.write(
-                        str(bus) + "," + hex(fid) + "," + str(len) + "," + msg.hex() + ',' + data_ascii + ',' +\
+                        str(bus) + "," + hex(fid) + "," + str(len) + "," + self.get_hex(msg) + ',' + data_ascii + ',' +\
                         "\"" + self.get_meta_descr(fid, msg) + "\"" + ',' + str(cnt) + "\n"
                     )
         except Exception as e:
@@ -368,7 +368,7 @@ class mod_stat(CANModule):
                     else:
                         data_ascii = "  "
                     if count == 0 or count == cnt:
-                        rows.append([str(bus),hex(fid2), str(lenX), msg.hex(), data_ascii, self.get_meta_descr(fid2, msg), str(cnt)])
+                        rows.append([str(bus),hex(fid2), str(lenX), self.get_hex(msg), data_ascii, self.get_meta_descr(fid2, msg), str(cnt)])
             elif mode == 0:
                 for (lenX, msg, bus, mod), cnt in lst2.items():
 
@@ -378,7 +378,7 @@ class mod_stat(CANModule):
                         else:
                             data_ascii = "  "
                         if count == 0 or count == cnt:
-                            rows.append([str(bus),hex(fid2), str(lenX), msg.hex(), data_ascii, self.get_meta_descr(fid2, msg), str(cnt)])
+                            rows.append([str(bus),hex(fid2), str(lenX), self.get_hex(msg), data_ascii, self.get_meta_descr(fid2, msg), str(cnt)])
 
         cols = list(zip(*rows))
         col_widths = [max(len(value) for value in col) for col in cols]
@@ -422,7 +422,7 @@ class mod_stat(CANModule):
                     data_ascii = self.ret_ascii(msg)
                 else:
                     data_ascii = "  "
-                rows.append([str(bus),hex(fid), str(lenX), msg.hex(), data_ascii, self.get_meta_descr(fid, msg), str(cnt)])
+                rows.append([str(bus),hex(fid), str(lenX), self.get_hex(msg), data_ascii, self.get_meta_descr(fid, msg), str(cnt)])
 
         cols = list(zip(*rows))
         col_widths = [ max(len(value) for value in col) for col in cols ]

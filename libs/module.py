@@ -1,6 +1,6 @@
 import threading
 import collections
-
+import codecs
 '''
 Generic class for modules
 '''
@@ -15,6 +15,10 @@ class CANModule:
 
     _active = True  # Enabled/Disabled
     thr_block = threading.Event()  # Blocking mode (using events)
+
+    @staticmethod
+    def get_hex(bytes_in):
+        return (codecs.encode(bytes_in, 'hex_codec')).decode("ISO-8859-1")
 
     @property
     def is_active(self):

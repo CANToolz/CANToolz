@@ -68,7 +68,7 @@ class hw_CANSocket(CANModule):
     def do_read(self, can_msg):
         if self._run and not can_msg.CANData:
             can_frame = self.socket.recv(16)
-            self.dprint(2, "READ: " + can_frame.hex())
+            self.dprint(2, "READ: " + self.get_hex(can_frame))
             #if len(can_frame) >:
             #    can_msg.CANData = True
             #    can_msg.CANFrame = CANMessage.init_raw_data(can_frame[0:4], can_frame[4], can_frame[5:])

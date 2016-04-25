@@ -1,6 +1,7 @@
 import sys
 import unittest
 import time
+import codecs
 
 class ModStatDiffTests(unittest.TestCase):
     def tearDown(self):
@@ -420,11 +421,11 @@ class ModPingTests(unittest.TestCase):
         self.assertFalse(543002 in _bodyList, "We should not be able to find ID 543002")
         self.assertTrue([1, 1, 1, 1, 1, 1] == list(_bodyList[543001].values()), "We should not be able to find ID")
         self.assertTrue(
-            "25112233" == list(_bodyList[543001].keys())[5][1].hex(),
+            "25112233" == (codecs.encode((list(_bodyList[543001].keys())[5][1]), 'hex_codec')).decode("ISO-8859-1"),
             "Last packet of sec should be like that"
         )
         self.assertTrue(
-            "24a1a2a3a4a5a6a7" == list(_bodyList[543001].keys())[4][1].hex(),
+            "24a1a2a3a4a5a6a7" == (codecs.encode((list(_bodyList[543001].keys())[4][1]), 'hex_codec')).decode("ISO-8859-1") ,
             "Last packet of sec should be like that"
         )
 

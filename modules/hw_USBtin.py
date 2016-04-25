@@ -105,9 +105,9 @@ class hw_USBtin(CANModule):
 
                         matches += 1
                         if err == 0:
-                            ch_btr0 = struct.pack("B", btr0).hex().encode("ISO-8859-1")
-                            ch_btr1 = struct.pack("B", btr1).hex().encode("ISO-8859-1")
-                            ch_btr2 = struct.pack("B", btr2).hex().encode("ISO-8859-1")
+                            ch_btr0 = self.get_hex(struct.pack("B", btr0)).encode("ISO-8859-1")
+                            ch_btr1 = self.get_hex(struct.pack("B", btr1)).encode("ISO-8859-1")
+                            ch_btr2 = self.get_hex(struct.pack("B", btr2)).encode("ISO-8859-1")
 
                             if sjw == sjw_user:
                                 final_cnf1 = ch_btr0
@@ -252,18 +252,18 @@ class hw_USBtin(CANModule):
             id_f = None
             if not can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.DataFrame:  # 11 bit format
                 cmd_byte = b"t"
-                id_f = can_msg.CANFrame.frame_raw_id.hex().zfill(4)[1:4].encode('ISO-8859-1')
+                id_f = self.get_hex(can_msg.CANFrame.frame_raw_id).zfill(4)[1:4].encode('ISO-8859-1')
             elif can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.DataFrame:
                 cmd_byte = b"T"
-                id_f = can_msg.CANFrame.frame_raw_id.hex().zfill(8)[0:8].encode('ISO-8859-1')
+                id_f = self.get_hex(can_msg.CANFrame.frame_raw_id).zfill(8)[0:8].encode('ISO-8859-1')
             elif not can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.RemoteFrame:
                 cmd_byte = b"r"
-                id_f = can_msg.CANFrame.frame_raw_id.hex().zfill(4)[1:4].encode('ISO-8859-1')
+                id_f = self.get_hex(can_msg.CANFrame.frame_raw_id).zfill(4)[1:4].encode('ISO-8859-1')
             elif can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.RemoteFrame:
                 cmd_byte = b"R"
-                id_f = can_msg.CANFrame.frame_raw_id.hex().zfill(8)[0:8].encode('ISO-8859-1')
+                id_f = self.get_hex(can_msg.CANFrame.frame_raw_id).zfill(8)[0:8].encode('ISO-8859-1')
             if cmd_byte:
-                write_buf = cmd_byte + id_f + str(can_msg.CANFrame.frame_length).encode('ISO-8859-1') + can_msg.CANFrame.frame_raw_data.hex().encode('ISO-8859-1') + b"\r"
+                write_buf = cmd_byte + id_f + str(can_msg.CANFrame.frame_length).encode('ISO-8859-1') + self.get_hex(can_msg.CANFrame.frame_raw_data).encode('ISO-8859-1') + b"\r"
                 self._serialPort.write(write_buf)
                 self.dprint(2, "WRITE: " + write_buf.decode('ISO-8859-1'))
         return can_msg
