@@ -26,6 +26,7 @@ import traceback
 # - Boris Ryutin ( @dukebarman )                     #
 #      Fist supporter and awesome guy                #
 #                                                    #
+#                                                    #
 # - Sergey Kononenko ( @kononencheg )                #
 #        Best developer, front-end ninja             #
 ######################################################
@@ -235,7 +236,7 @@ class UserInterface:
         parser.add_option("--config", "-c", action="store", dest="CONFIG", type="string",
                           help="load config from file")
         parser.add_option("--gui", "-g", action="store", dest="GUI", type="string",
-                          help="GUI mode, c - console or w - web (not implemented yet)")
+                          help="GUI mode, c - console or w - web")
 
         [options, args] = parser.parse_args()  # TODO need args?
 

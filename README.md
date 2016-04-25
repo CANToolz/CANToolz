@@ -68,7 +68,7 @@ See more use-cases inside examples folder:
     UDS detection and etc
 
 And many other options possible. Just use modules as "needed".
-[Example](asintsov.blogspot.de/2016/04/cantoolz-modstat-diff-mode.html) with DIFF mode, to find door unlock commands.
+[Example](https://asintsov.blogspot.de/2016/04/cantoolz-modstat-diff-mode.html) with DIFF mode, to find door unlock commands.
 
 P.S.
  Current version is uber-beta. Not tested enough, code is not clean and ugly and there are bugs that not found yet... working on that, sorry.
@@ -80,11 +80,7 @@ With best regards:
 Alexey Sintsov   (@asintsov)
 alex.sintsov@gmail.com
 
-DC#7812
-
-DEFCON-RUSSIA
-
-http://defcon-russia.ru
+[DC#7812: DEFCON-RUSSIA](http://defcon-russia.ru)
 
 
 

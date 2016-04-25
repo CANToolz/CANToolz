@@ -205,9 +205,9 @@ class hw_CANBusTriple(CANModule):
         self.do_stop(params)
         self.read_all()
 
-        self._readBus = str(params.get('bus_1', 1))
+        self._readBus = str(params.get('bus_1', 1)).strip()
         self._bus = self._readBus
-        self._writeBus = str(params.get('bus_2', self._readBus))
+        self._writeBus = str(params.get('bus_2', self._readBus)).strip()
 
         self.dprint(1, "Port : " + self._COMPort)
         self.dprint(1, "Bus 1: " + str(self._readBus))
@@ -264,7 +264,7 @@ class hw_CANBusTriple(CANModule):
 
                         _id = struct.unpack("!H", tmp_data[0:2])[0]  # TODO: ADD SUPPORT EXTENDED and RTR
                         _data = tmp_data[2:-1]
-                        _length = struct.unpack("B", tmp_data[-2:-1])[0]
+                        _length = tmp_data[-1]
 
                         can_msg.CANFrame = CANMessage(_id, _length, _data, False, CANMessage.DataFrame)
 
@@ -283,18 +283,18 @@ class hw_CANBusTriple(CANModule):
     def do_write(self, can_msg, params):
         if can_msg.CANData and not can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.DataFrame:  # Only 11 bit support now..., only DataFrame
             bs = int(params.get('bus','0'))
-            if bs != 0:
+            if 0 < bs < 4:
                 bus = bs
-            elif can_msg.bus == self._readBus:
-                bus = self._writeBus
-            elif can_msg.bus == self._writeBus:
-                bus = self._readBus
+            elif can_msg.bus.strip() == self._readBus:
+                bus = int(self._writeBus)
+            elif can_msg.bus.strip() == self._writeBus:
+                bus = int(self._readBus)
             else:
-                bus = self._writeBus
-
+                bus = int(self._writeBus)
             write_buf = b"\x02" + struct.pack("B", bus) + can_msg.CANFrame.frame_raw_id + \
-                can_msg.CANFrame.frame_raw_data + b"\x00" * \
-                (8 - can_msg.CANFrame.frame_length) + can_msg.CANFrame.frame_raw_length
+                can_msg.CANFrame.frame_raw_data + \
+                        (b"\x00" * (8 - can_msg.CANFrame.frame_length)) + \
+                        can_msg.CANFrame.frame_raw_length
 
             self._serialPort.write(write_buf)
             self.dprint(2, "WRITE: " + self.get_hex(write_buf))
