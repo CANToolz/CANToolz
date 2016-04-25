@@ -96,6 +96,7 @@ class hw_CANSocket(CANModule):
             idf = can_msg.CANFrame.frame_id
             if can_msg.CANFrame.frame_ext:
                 idf |= 0x80000000
-            self.socket.send(struct.pack("I", idf) + can_msg.CANFrame.frame_raw_data[0:can_msg.CANFrame.frame_length] + b"0"*(8-can_msg.CANFrame.frame_length))
-            self.dprint(2, "WRITE: " + self.get_hex(struct.pack("I", idf) + can_msg.CANFrame.frame_raw_data[0:can_msg.CANFrame.frame_length]))
+            data = struct.pack("I", idf) + struct.pack("B", can_msg.CANFrame.frame_length)+ b"\xff\xff\xff" + can_msg.CANFrame.frame_raw_data[0:can_msg.CANFrame.frame_length] + b"0"*(8-can_msg.CANFrame.frame_length)
+            self.socket.send(data)
+            self.dprint(2, "WRITE: " + self.get_hex(data))
         return can_msg
