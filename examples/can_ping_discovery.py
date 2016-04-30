@@ -10,6 +10,7 @@ actions = [
     {'mod_stat':    {'pipe': 2}},                  # Statistic for PIPE 2
     {'gen_ping':    {                              # Generate pings to PIPE 1
         'pipe': 1,
+        'delay':0.06,
         'body': '000000000000010203040506070102030405060711121314151617a1a2a3a4a5a6a7112233', # ISO TP data
         'range': [502999, 543002],    # ID range (from 502999 to 543002)
         'mode': 'isotp'} # Send packets in ISO-TP format
