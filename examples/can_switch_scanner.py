@@ -16,7 +16,7 @@ actions = [
 
     {'mod_stat': {'pipe': 1}}, {'mod_stat': {'pipe': 2}}, # read from both pipes after filtration
 
-    {'gen_ping': {'range': [1,2000],'mode':'CAN','body':'0102030405060708','pipe':3}},
+    {'gen_ping': {'range': [1,2000],'mode':'CAN','body':'0102030405060708','pipe':3, 'delay':0.06}},
                                                          # Generate CAN frames to PIPE 3
     {'hw_USBtin': {'pipe': 3, 'action': 'write'}},         # Write generated packets to both buses
     {'hw_USBtin~2': {'pipe': 3, 'action': 'write'}}
