@@ -52,10 +52,13 @@ class gen_ping(CANModule):
         iso_mode = 1 if args.get('mode') in ['ISO', 'iso', 'ISOTP', 'isotp'] else\
             2 if args.get('mode') in ['uds', 'UDS'] else 0
 
+        padding = args.get('padding', None)
+        shift = int(args.get('shift', 0x8))
+
         if 'range' in args and int(args['range'][0]) < int(args['range'][1]):
             for i in range(int(args['range'][0]), int(args['range'][1])):
                 if iso_mode == 1:
-                    iso_list = ISOTPMessage.generate_can(i, _data)
+                    iso_list = ISOTPMessage.generate_can(i, _data, padding)
                     iso_list.reverse()
                     self.queue_messages.extend(iso_list)
                 elif iso_mode == 0:
@@ -64,7 +67,7 @@ class gen_ping(CANModule):
                     if 'services' in args:
                         for service in args['services']:
                             if 'service' in service:
-                                uds_m = UDSMessage()
+                                uds_m = UDSMessage(shift, padding)
                                 if 'sub' in service:
                                     sub = service['sub']
                                 elif service['service'] in UDSMessage.services_base:

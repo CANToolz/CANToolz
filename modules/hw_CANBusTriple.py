@@ -225,6 +225,7 @@ class hw_CANBusTriple(CANModule):
         time.sleep(4)
         self.read_all()
 
+
         self.dprint(1, "CANBus Triple device detected, version: " + self.read_json(self.get_info())['version'])
 
 

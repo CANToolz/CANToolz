@@ -27,6 +27,20 @@ class ISOTPMessage:
         self._counterSize = 0
         self._seq = 0
         self._flow = -1
+        self.padded = False
+
+    def get_pad(self, array):
+        array2 = array + []
+        array2.reverse()
+        cnt = 1
+        std = array2[0]
+        for x in array2[1:len(array2)]:
+            if std == x:
+                cnt += 1
+            else:
+                break
+
+        return cnt
 
     def add_can(self, can_msg):  # Init
         # The initial field is four bits indicating the frame type,
@@ -35,11 +49,21 @@ class ISOTPMessage:
 
         if pciType == self.SingleFrame:  # Single frame
             if 0 < sz < 8:
-                if sz + 1 == can_msg.frame_length:
-                    self.message_data = can_msg.frame_data[1:sz + 1]
-                    self.message_length = sz
-                    self.message_finished = True
-                    return 1
+                if can_msg.frame_length != 8:
+                    if sz + 1 == can_msg.frame_length:
+                        self.message_data = can_msg.frame_data[1:sz + 1]
+                        self.message_length = sz
+                        self.message_finished = True
+                        return 1
+                else:
+                    padded = self.get_pad(can_msg.frame_data)
+                    if padded > 0:
+                        if sz + 1 == 8 - padded:
+                            self.message_data = can_msg.frame_data[1:sz + 1]
+                            self.message_length = sz
+                            self.message_finished = True
+                            self.padded = True
+                            return 1
                 return -7
             else:
                 return -1
@@ -84,12 +108,17 @@ class ISOTPMessage:
             return -5
 
     @classmethod
-    def generate_can(self, fid, data):  # generate CAN messages seq
+    def generate_can(self, fid, data, padding = None):  # generate CAN messages seq
         _length = len(data)
         can_msg_list = []
 
         if _length < 8:
-            can_msg_list.append(CANMessage.init_data(fid, _length + 1, [_length] + data[:_length]))  # Single
+            padding_data = []
+            padding_length = 0
+            if padding:
+                padding_data = [int(padding)] * (7 - _length)
+                padding_length = 8 - _length - 1
+            can_msg_list.append(CANMessage.init_data(fid, _length + 1 + padding_length, [_length] + data[:_length] + padding_data))  # Single
         elif _length > 4095:
             return []
         else:
@@ -99,7 +128,12 @@ class ISOTPMessage:
 
             while bytes != _length:  # Rest
                 sent = min(_length - bytes, 7)
-                can_msg_list.append(CANMessage.init_data(fid, 1 + sent, [seq + 0x20] + data[bytes:bytes + sent]))
+                padding_data = []
+                padding_length = 0
+                if padding and sent < 7:
+                    padding_data = [int(padding)] * (7 - sent)
+                    padding_length = 8 - sent - 1
+                can_msg_list.append(CANMessage.init_data(fid, 1 + sent + padding_length, [seq + 0x20] + data[bytes:bytes + sent] + padding_data))
                 bytes += sent
                 seq += 1
                 if seq > 0xF:

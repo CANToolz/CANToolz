@@ -1,3 +1,10 @@
+## Version 2.5-0
+### CHANGES
+ - USBtin can be emulated/used via loop:// 
+ - mod_stat UDS analyzer now supports PADDING in CAN Frames
+ - UDS lib now support padding
+ - EXPERIMENTAL: mod_stat can calculate needed delay for gen_ping/gen_replay/gen_fuzz modules
+
 ## Version 2.0-0
 ### CHANGES
  - Ported to Python 3.4 (Python 2.7 not supported)
