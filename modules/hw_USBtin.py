@@ -181,6 +181,8 @@ class hw_USBtin(CANModule):
                 if not self._serialPort:
                     self.dprint(0, 'Can\'t init device!')
                     exit()
+            elif params['port'] == 'loop':
+                self._serialPort = serial.serial_for_url('loop://', timeout=0.5)
             else:
                 if self.init_port() != 1:
                     self.dprint(0, 'Can\'t init device!')

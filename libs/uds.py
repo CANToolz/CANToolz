@@ -124,9 +124,10 @@ class UDSMessage:
         0x7F: 'Service not supported in active session'
     }
 
-    def __init__(self, _shift=0x08):  # Init Session
+    def __init__(self, _shift = 0x08, _padding = None):  # Init Session
         self.sessions = {}
         self.shift = _shift
+        self.padding = _padding
 
     def start_session(self, _id):
         if _id in self.sessions:
@@ -186,7 +187,7 @@ class UDSMessage:
             else:
                 _subcommand = [_subcommand]
             byte_data = [_service] + _subcommand + _data
-            return ISOTPMessage.generate_can(_id, byte_data)
+            return ISOTPMessage.generate_can(_id, byte_data, self.padding)
 
     def add_raw_request(self, _input_message):
         if len(_input_message.message_data) >= 2:

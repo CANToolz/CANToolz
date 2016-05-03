@@ -5,6 +5,7 @@ import json
 import re
 import collections
 import ast
+import time
 
 
 class mod_stat(CANModule):
@@ -37,14 +38,15 @@ class mod_stat(CANModule):
         self.meta_data = {}
         self._bodyList = collections.OrderedDict()
         self._diff = False
-
         self.shift = params.get('uds_shift', 8)
 
         if 'meta_file' in params:
             self.dprint(1, self.do_load_meta(params['meta_file']))
 
         self._cmdList['p'] = ["Print current table", 0, "", self.do_print, True]
+        self._cmdList['g'] = ["Get DELAY value for gen_ping/gen_fuzz (EXPERIMENTAL)",1,"<Bus SPEED in Kb/s>", self.get_delay, True]
         self._cmdList['a'] = ["Analyses of captured traffic", 1, "<UDS|ISO|FRAG|ALL(defaut)>", self.do_anal, True]
+        self._cmdList['u'] = ["    - UDS shift value",1,"<0x08>", self.change_shift, True]
         self._cmdList['D'] = ["Enable/Disable Diff mode", 0, "", self.enable_diff, True]
         self._cmdList['I'] = ["Print Diff frames", 1, " [COUNT filter (default none, put number)] ", self.print_diff, False]
         self._cmdList['N'] = ["Print Diff frames (new ID only)", 1, "[COUNT filter (default none, put number)]", self.print_diff_id, False]
@@ -55,6 +57,24 @@ class mod_stat(CANModule):
         self._cmdList['z'] = ["Save meta-data", 1, "<filename>", self.do_save_meta, True]
         self._cmdList['r'] = ["Dump ALL in replay format", 1, " <filename>", self.do_dump_replay, True]
         self._cmdList['d'] = ["Dump STAT in CSV format", 1, " <filename>", self.do_dump_csv, True]
+
+    def get_delay(self, speed):
+        _speed = float(speed)*1024
+        curr_1 = len(self.all_frames)
+        time.sleep(3)
+        curr_2 = len(self.all_frames)
+        diff = curr_2 - curr_1
+        speed = int((diff * 80)/3)
+        delay = 1/int((_speed - speed)/80)
+        return "Avrg. delay: " + str(delay)
+
+    def change_shift(self, val):
+        if val.strip()[0:2] == '0x':
+            value = int(val,16)
+        else:
+            value = int(val)
+        self.shift = value
+        return "UDS shift: " + hex(self.shift)
 
     def do_add_meta_descr_data(self, input_params):
         try:

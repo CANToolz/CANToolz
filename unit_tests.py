@@ -3,6 +3,83 @@ import unittest
 import time
 import codecs
 
+
+class PaddingUds(unittest.TestCase):
+    def tearDown(self):
+        self.CANEngine.stop_loop()
+        self.CANEngine = None
+        print("stopped")
+
+    def test_replay_padding(self):
+        self.CANEngine = CANSploit()
+        self.CANEngine.load_config("tests/test_8.py")
+        self.CANEngine.start_loop()
+        time.sleep(1)
+        self.CANEngine.call_module(1, "s")
+        time.sleep(2)
+        index = 3
+        ret = self.CANEngine.call_module(index, "p")
+        print(ret)
+        _bodyList = self.CANEngine._enabledList[index][1]._bodyList
+        self.assertTrue(len(_bodyList) == 20, "Should be 20 groups of packets")
+        self.assertTrue(1790 in _bodyList, "1790 should be there")
+        self.assertTrue(1791 in _bodyList, "1791 should be there")
+        self.assertTrue(1792 in _bodyList, "1792 should be there")
+        self.assertTrue((8, bytes.fromhex("02010d4141414141"), "USBTin", False) in _bodyList[1792], "020902 as packet should be there")
+        self.assertTrue((8, bytes.fromhex("062f030703000041"), "USBTin", False) in _bodyList[1792],
+                        "062f0307030000 as packet should be there")
+        self.assertTrue((8, bytes.fromhex("0209024141414141"), "USBTin", False) in _bodyList[1792], "020901 as packet should be there")
+        self.assertTrue((8, bytes.fromhex("02010d4141414141"), "USBTin", False) in _bodyList[1790], "02010d as packet should be there")
+        self.assertFalse((8, bytes.fromhex("0209044141414141"), "USBTin", False) in _bodyList[1791],
+                         "020904 as packet should not be there")
+
+        self.CANEngine.call_module(2, "r")
+        time.sleep(2)
+        ret = self.CANEngine.call_module(3, "p")
+        print(ret)
+        _bodyList = self.CANEngine._enabledList[index][1]._bodyList
+        ret = self.CANEngine.call_module(3, "a")
+        print(ret)
+        self.assertTrue(1 == _bodyList[1800][(
+            8,
+            bytes.fromhex("1014490201314731"),
+            "USBTin",
+            False
+        )], "Should be 1 packed replayed")
+
+        self.assertTrue(0 < ret.find("ASCII: .1G1ZT53826F109149"), "TEXT should be found in response")
+        self.assertTrue(0 < ret.find("Response: 00"), "TEXT should be found in response")
+        self.assertTrue(0 < ret.find("ASCII: I..1G1ZT53826F109149"), "TEXT should be found in response")
+        self.assertTrue(0 < ret.find("DATA: 4902013147315a54353338323646313039313439"), "TEXT should be found in response")
+        self.assertTrue(0 < ret.find("ID: 0x701 Service: 0x2f Sub: 0x3 (Input Output Control By Identifier)"), "Text should be found in response")
+        self.assertTrue(0 < ret.find("ID: 0x6ff Service: 0x1 Sub: 0xd (Req Current Powertrain)"), "Text should be found in response")
+
+
+class ModUsbTin(unittest.TestCase):
+    def tearDown(self):
+        self.CANEngine.stop_loop()
+        self.CANEngine = None
+        print("stopped")
+
+    def test_usbtin(self):
+        self.CANEngine = CANSploit()
+        self.CANEngine.load_config("tests/test_7.py")
+        self.CANEngine.start_loop()
+        time.sleep(1)
+        self.CANEngine.call_module(1, "r")
+        self.CANEngine.call_module(3, "t T112233446112233445566")
+        time.sleep(1)
+        ret = self.CANEngine.call_module(2, "p")
+        _bodyList = self.CANEngine._enabledList[2][1]._bodyList
+        self.assertTrue( 6 == len(_bodyList),"6 uiniq ID, should be sent")
+        self.assertTrue(0 < ret.find(" 0x2bc "), "Message should be in the list")
+        self.assertTrue(0 < ret.find(" 2f410d0011223344 "), "Message should be in the list")
+        self.assertTrue(0 < ret.find(" 112233445566"), "Message should be in the list")
+        self.assertTrue(0 < ret.find(" 0x11223344 "), "Message should be in the list")
+
+
+
+
 class ModStatDiffTests(unittest.TestCase):
     def tearDown(self):
         self.CANEngine.stop_loop()
@@ -558,6 +635,7 @@ class ModFirewallTests(unittest.TestCase):
         mod = self.CANEngine._enabledList[index][1].CANList
         self.assertTrue(mod.frame_id == 4, "We should be able to find ID 4")
         self.CANEngine._enabledList[index][1].CANList = None
+
 
 if __name__ == '__main__':
     sys.path.append('./modules')
