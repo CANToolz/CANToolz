@@ -15,6 +15,7 @@ actions = [
     {'mod_stat':    {}},                 # Mod stat (with CAN traffic analyzer)
     {'gen_ping':    {                    # Generate UDS requests
         'pipe': 2,
+        'delay': 0.06,
         'range': [1, 2047],           # ID range (from 1790 to 1794)
         'services':[{'service': 0x10, 'sub': 0x01},
                     {'service': 0x3E, 'sub': None},
