@@ -54,7 +54,7 @@ class mod_stat(CANModule):
 
         self._cmdList['Y'] = ["Dump Diff in replay format", 1, "<filename>,[buffer index ,buffer index]", self.print_dump_diff, True]
         self._cmdList['y'] = ["Dump Diff in replay format (new ID)", 1, "<filename>,[buffer index ,buffer index]", self.print_dump_diff_id, True]
-
+        self._cmdList['F'] = ["Search ID in all buffers", 1, "<ID>", self.search_id, True]
         self._cmdList['c'] = ["Clean table, remove buffers", 0, "", self.do_clean, True]
 
         self._cmdList['i'] = ["Meta-data: add description for frames", 1, "<ID>, <data regex ASCII HEX>, <description>", self.do_add_meta_descr_data, True]
@@ -324,6 +324,29 @@ class mod_stat(CANModule):
 
         return ret_str
 
+    def search_id(self, idf):
+        idf = int(idf) if not idf.strip()[0:2] == '0x' else int(idf,16)
+        table = "Search for " + hex(idf) + "\n"
+        rows = []
+        for buf in self.all_frames:
+            rows.append(['Dump:', buf['name'], ' ',  ' ', ' ', ' ', ' '])
+            rows.append(['BUS', 'ID', 'LENGTH', 'MESSAGE', 'ASCII', 'DESCR', 'COUNT'])
+            short = self.create_short_table(buf['buf'])
+            if idf in short:
+                 for (lenX, msg, bus, mod), cnt in short[idf].items():
+                    if self.is_ascii(msg):
+                        data_ascii = self.ret_ascii(msg)
+                    else:
+                        data_ascii = "  "
+                    rows.append([str(bus),hex(idf), str(lenX), self.get_hex(msg), data_ascii, self.get_meta_descr(idf, msg), str(cnt)])
+        cols = list(zip(*rows))
+        col_widths = [max(len(value) for value in col) for col in cols]
+        format_table = '    '.join(['%%-%ds' % width for width in col_widths ])
+        for row in rows:
+            table += format_table % tuple(row) + "\n"
+        table += "\n"
+        return table
+
     def print_dump_diff(self,name):
         return self.print_dump_diff_(name, 0)
 
@@ -431,7 +454,7 @@ class mod_stat(CANModule):
         table1 = self.create_short_table(self.all_frames[idx1]['buf'])
         table2 = self.create_short_table(self.all_frames[idx2]['buf'])
 
-        table = ""
+        table = " DIFF sets between " + self.all_frames[idx1]['name'] + " and " + self.all_frames[idx2]['name']
         rows = [['BUS', 'ID', 'LENGTH', 'MESSAGE', 'ASCII', 'DESCR', 'COUNT']]
         for fid2, lst2 in table2.items():
             if fid2 not in list(table1.keys()):

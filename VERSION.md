@@ -1,3 +1,7 @@
+## Version 2.7-0
+### CHANGES
+ - mod_stat feature: search by ID 
+ 
 ## Version 2.6-0
 ### CHANGES
  - mod_stat refactoring: now we can support multi-biffers for sniffing and diff
