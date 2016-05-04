@@ -29,40 +29,46 @@ class mod_stat(CANModule):
     version = 1.0
 
     def get_status(self):
-        return "Current status: " + str(self._active) + "\nSniffed frames: " + str(len(self.all_frames))+"\nDiff mode: " + str(self._diff) +\
-            "\nSniffed in Diff mode: " + str(len(self.all_diff_frames))
+        return "Current status: " + str(self._active) + "\nSniffed frames (overall): " + str(self.get_num(-1))+"\nCurrent BUFF: index - " + str(self._index) + " name - " + self.all_frames[self._index]['name'] + \
+               "\nAll buffers: \n\t" + \
+            '\n\t'.join([buf['name'] + "\n\t\tindex: " + str(cnt) + ' sniffed: ' + str(len(buf['buf'])) for buf,cnt in zip(self.all_frames,range(0,len(self.all_frames)))])
 
     def do_init(self, params):
-        self.all_frames = []
-        self.all_diff_frames = []
+        self.all_frames = [{'name':'start_buffer','buf':[]}]
+        self._index = 0
         self.meta_data = {}
         self._bodyList = collections.OrderedDict()
-        self._diff = False
         self.shift = params.get('uds_shift', 8)
 
         if 'meta_file' in params:
             self.dprint(1, self.do_load_meta(params['meta_file']))
 
         self._cmdList['p'] = ["Print current table", 0, "", self.do_print, True]
-        self._cmdList['g'] = ["Get DELAY value for gen_ping/gen_fuzz (EXPERIMENTAL)",1,"<Bus SPEED in Kb/s>", self.get_delay, True]
-        self._cmdList['a'] = ["Analyses of captured traffic", 1, "<UDS|ISO|FRAG|ALL(defaut)>", self.do_anal, True]
-        self._cmdList['u'] = ["    - UDS shift value",1,"<0x08>", self.change_shift, True]
-        self._cmdList['D'] = ["Enable/Disable Diff mode", 0, "", self.enable_diff, True]
-        self._cmdList['I'] = ["Print Diff frames", 1, " [COUNT filter (default none, put number)] ", self.print_diff, False]
-        self._cmdList['N'] = ["Print Diff frames (new ID only)", 1, "[COUNT filter (default none, put number)]", self.print_diff_id, False]
-        self._cmdList['Y'] = ["Dump Diff in replay format", 1, " <filename> ", self.print_dump_diff, False]
-        self._cmdList['c'] = ["Clean table, remove alerts", 0, "", self.do_clean, True]
+
+        self._cmdList['a'] = ["Analyses of captured traffic", 1, "<UDS|ISO|FRAG|ALL(defaut)>,[buffer index]", self.do_anal, True]
+        self._cmdList['u'] = ["    - UDS shift value",1,"[shift value]", self.change_shift, True]
+
+        self._cmdList['D'] = ["Switch sniffing to a new buffer", 1, "[name]", self.new_diff, True]
+        self._cmdList['I'] = ["Print Diff between two buffers", 1, "[buffer index, buffer index]", self.print_diff, True]
+        self._cmdList['N'] = ["Print Diff between two buffers (new ID only)", 1, "[buffer index, buffer index]", self.print_diff_id, True]
+
+        self._cmdList['Y'] = ["Dump Diff in replay format", 1, "<filename>,[buffer index ,buffer index]", self.print_dump_diff, True]
+        self._cmdList['y'] = ["Dump Diff in replay format (new ID)", 1, "<filename>,[buffer index ,buffer index]", self.print_dump_diff_id, True]
+
+        self._cmdList['c'] = ["Clean table, remove buffers", 0, "", self.do_clean, True]
+
         self._cmdList['i'] = ["Meta-data: add description for frames", 1, "<ID>, <data regex ASCII HEX>, <description>", self.do_add_meta_descr_data, True]
         self._cmdList['l'] = ["Load meta-data", 1, "<filename>", self.do_load_meta, True]
         self._cmdList['z'] = ["Save meta-data", 1, "<filename>", self.do_save_meta, True]
-        self._cmdList['r'] = ["Dump ALL in replay format", 1, " <filename>", self.do_dump_replay, True]
-        self._cmdList['d'] = ["Dump STAT in CSV format", 1, " <filename>", self.do_dump_csv, True]
+        self._cmdList['r'] = ["Dump all buffers in replay format", 1, " <filename>, [index]", self.do_dump_replay, True]
+        self._cmdList['d'] = ["Dump STAT (all buffers) in CSV format", 1, " <filename>, [index]", self.do_dump_csv, True]
+        self._cmdList['g'] = ["Get DELAY value for gen_ping/gen_fuzz (EXPERIMENTAL)",1,"<Bus SPEED in Kb/s>", self.get_delay, True]
 
     def get_delay(self, speed):
         _speed = float(speed)*1024
-        curr_1 = len(self.all_frames)
+        curr_1 = len(self.all_frames[self._index]['buf'])
         time.sleep(3)
-        curr_2 = len(self.all_frames)
+        curr_2 = len(self.all_frames[self._index]['buf'])
         diff = curr_2 - curr_1
         speed = int((diff * 80)/3)
         delay = 1/int((_speed - speed)/80)
@@ -158,6 +164,16 @@ class mod_stat(CANModule):
 
         return bool_ascii
 
+    def get_num(self,_index = -1):
+        count = 0
+        if _index == -1:
+            for buf in self.all_frames:
+                count += len(buf['buf'])
+        else:
+            count = len(self.all_frames[_index]['buf'])
+
+        return count
+
     @staticmethod
     def create_short_table(input_frames):
         _bodyList = collections.OrderedDict()
@@ -190,10 +206,10 @@ class mod_stat(CANModule):
                     ] += 1
         return _bodyList
 
-    def find_iso_tp(self):
+    def find_iso_tp(self, in_list):
         message_iso = {}
         iso_list = []
-        for can_msg in self.all_frames:
+        for can_msg in in_list:
             if can_msg.CANFrame.frame_id not in message_iso:
                 message_iso[can_msg.CANFrame.frame_id] = ISOTPMessage(can_msg.CANFrame.frame_id)
 
@@ -214,22 +230,6 @@ class mod_stat(CANModule):
             uds_list.handle_message(message_iso)
         return uds_list
 
-    def find_frags(self):
-        frg_list = collections.OrderedDict()
-        for can_msg in self.all_frames:
-            index_bytes = self.meta_data.get(can_msg.CANFrame.frame_id, {}).get('id_index', None)
-            if can_msg.CANFrame.frame_id not in frg_list:
-                frg_list[can_msg.CANFrame.frame_id] = FragmentedCAN()
-
-            if index_bytes: # We have META data
-                idx1, idx2, strt = index_bytes.strip().split('-')
-                idx1 = int(idx1)
-                idx2 = int(idx2)
-                strt = int(strt)
-                frg_list[can_msg.CANFrame.frame_id].add_can_meta(can_msg.CANFrame, idx1, idx2, strt)
-
-        return frg_list
-
     def find_loops(self):
         frg_list = collections.OrderedDict()
         for fid, lst in self._bodyList.items():
@@ -240,17 +240,28 @@ class mod_stat(CANModule):
         return frg_list
 
     def do_anal(self, format = "ALL"):
-        if self._diff:
-            self.enable_diff()
-
-        self._bodyList = self.create_short_table(self.all_frames)
-        iso_tp_list = self.find_iso_tp()
-        uds_list = self.find_uds(iso_tp_list)
-        frag_list = self.find_frags()
-        loops_list = self.find_loops()
-        ret_str = ""
 
         format.upper()
+
+        params = format.split(",")
+        if len(params) == 1:
+            _format = params[0].strip()
+            _index  = -1
+        else:
+           _format = params[0].strip()
+           _index  = int(params[1])
+        temp_buf = []
+        if _index == -1:
+            for buf in self.all_frames:
+                temp_buf = temp_buf + buf['buf']
+        else:
+            temp_buf = self.all_frames[_index]['buf']
+
+        self._bodyList = self.create_short_table(temp_buf)
+        iso_tp_list = self.find_iso_tp(temp_buf)
+        uds_list = self.find_uds(iso_tp_list)
+        loops_list = self.find_loops()
+        ret_str = ""
 
         _iso_tbl = collections.OrderedDict()
         for msg in iso_tp_list:
@@ -263,7 +274,7 @@ class mod_stat(CANModule):
                 else:
                     _iso_tbl[msg.message_id][(msg.message_length, bytes(msg.message_data))] = 1
 
-        if format.strip() not in ["ISO","FRAG"]:
+        if _format.strip() not in ["ISO","FRAG"]:
             # Print out UDS
             ret_str += "UDS Detected:\n\n"
             for fid, services in uds_list.sessions.items():
@@ -286,7 +297,7 @@ class mod_stat(CANModule):
                        ret_str += "\n\tID: " + hex(fid) + " Service: " + str(hex(service)) + " Sub: " + (str(
                             hex(body['sub'])) if body['sub'] else "None") + text + "\n\t\tError: " + body['response']['error']
 
-        if format.strip() not in ["ISO", "UDS"]:
+        if _format.strip() not in ["ISO", "UDS"]:
             # Print detected loops
             ret_str += "\n\nDe-Fragmented frames (using loop-based detection):\n"
             local_temp = {}
@@ -300,7 +311,7 @@ class mod_stat(CANModule):
                             ret_str += "\n\t\tASCII: " + self.ret_ascii(bytes(message['message_data'])) + "\n\n"
                         local_temp[(fid, bytes(message['message_data']))] = None
 
-        if format.strip() not in ["UDS","FRAG"]:
+        if _format.strip() not in ["UDS","FRAG"]:
             # Print out ISOTP messages
             ret_str += "\nISO TP Messages:\n\n"
             for fid, lst in _iso_tbl.items():
@@ -313,14 +324,30 @@ class mod_stat(CANModule):
 
         return ret_str
 
-    def print_dump_diff(self, name):
-        table1 = self.create_short_table(self.all_frames)
+    def print_dump_diff(self,name):
+        return self.print_dump_diff_(name, 0)
+
+    def print_dump_diff_id(self,name):
+        return self.print_dump_diff_(name, 1)
+
+    def print_dump_diff_(self, name, mode = 0):
+        inp = name.split(",")
+        if len(inp) == 3:
+            name = inp[0].strip()
+            idx1 = int(inp[1])
+            idx2 = int(inp[2])
+        else:
+            name = inp[0].strip()
+            idx2 = self._index
+            idx1 = self._index - 1 if self._index - 1 >=0 else 0
+
+        table1 = self.create_short_table(self.all_frames[idx1]['buf'])
         try:
-            _name = open(name.strip(), 'w')
-            for can_msg in self.all_diff_frames:
+            _name = open(name, 'w')
+            for can_msg in self.all_frames[idx2]['buf']:
                 if can_msg.CANFrame.frame_id not in list(table1.keys()):
                     _name.write(str(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + self.get_hex(can_msg.CANFrame.frame_raw_data) + "\n")
-                else:
+                elif mode == 0:
                     neq = True
                     for (len2, msg, bus, mod), cnt in table1[can_msg.CANFrame.frame_id].items():
                         if msg == can_msg.CANFrame.frame_raw_data:
@@ -334,10 +361,16 @@ class mod_stat(CANModule):
         return "Saved into " + name.strip()
 
     def do_dump_replay(self, name):
-
+        inp = name.split(",")
+        if len(inp) == 2:
+            name = inp[0].strip()
+            idx1 = int(inp[1])
+        else:
+            name = inp[0].strip()
+            idx1 = self._index
         try:
-            _name = open(name.strip(), 'w')
-            for can_msg in self.all_frames:
+            _name = open(name, 'w')
+            for can_msg in self.all_frames[idx1]['buf']:
                 _name.write(hex(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + self.get_hex(can_msg.CANFrame.frame_raw_data) + "\n")
             _name.close()
         except Exception as e:
@@ -347,7 +380,14 @@ class mod_stat(CANModule):
 
 
     def do_dump_csv(self, name):
-        self._bodyList = self.create_short_table(self.all_frames)
+        inp = name.split(",")
+        if len(inp) == 2:
+            name = inp[0].strip()
+            idx1 = int(inp[1])
+        else:
+            name = inp[0].strip()
+            idx1 = self._index
+        self._bodyList = self.create_short_table(self.all_frames[idx1]['buf'])
         try:
             _name = open(name.strip(), 'w')
             _name.write("BUS,ID,LENGTH,MESSAGE,ASCII,COMMENT,COUNT\n")
@@ -366,17 +406,31 @@ class mod_stat(CANModule):
             return str(e)
         return "Saved into " + name.strip()
 
-    def print_diff(self, count = 0):
-        return self.print_diff_orig(0, int(count))
+    def print_diff(self, inp = ""):
+        inp = inp.split(",")
+        if len(inp) != 2:
+            idx2 =  self._index
+            idx1 =  self._index - 1 if self._index - 1 >= 0 else 0
+        else:
+            idx2 = int(inp[1])
+            idx1 = int(inp[0])
+        return self.print_diff_orig(0, idx1, idx2)
 
-    def print_diff_id(self, count = 0):
-        return self.print_diff_orig(1, int(count))
+    def print_diff_id(self, inp = ""):
+        inp = inp.split(",")
+        if len(inp) != 2:
+            idx2 =  self._index
+            idx1 =  self._index - 1 if self._index - 1 >= 0 else 0
+        else:
+            idx2 = int(inp[1])
+            idx1 = int(inp[0])
+        return self.print_diff_orig(1, idx1, idx2)
 
-    def print_diff_orig(self, mode = 0, count = 0):
-        if not self._diff:
-            return "Error: Diff mode disabled..."
-        table1 = self.create_short_table(self.all_frames)
-        table2 = self.create_short_table(self.all_diff_frames)
+    def print_diff_orig(self, mode, idx1, idx2):
+
+        table1 = self.create_short_table(self.all_frames[idx1]['buf'])
+        table2 = self.create_short_table(self.all_frames[idx2]['buf'])
+
         table = ""
         rows = [['BUS', 'ID', 'LENGTH', 'MESSAGE', 'ASCII', 'DESCR', 'COUNT']]
         for fid2, lst2 in table2.items():
@@ -387,8 +441,7 @@ class mod_stat(CANModule):
                         data_ascii = self.ret_ascii(msg)
                     else:
                         data_ascii = "  "
-                    if count == 0 or count == cnt:
-                        rows.append([str(bus),hex(fid2), str(lenX), self.get_hex(msg), data_ascii, self.get_meta_descr(fid2, msg), str(cnt)])
+                    rows.append([str(bus),hex(fid2), str(lenX), self.get_hex(msg), data_ascii, self.get_meta_descr(fid2, msg), str(cnt)])
             elif mode == 0:
                 for (lenX, msg, bus, mod), cnt in lst2.items():
 
@@ -397,8 +450,7 @@ class mod_stat(CANModule):
                             data_ascii = self.ret_ascii(msg)
                         else:
                             data_ascii = "  "
-                        if count == 0 or count == cnt:
-                            rows.append([str(bus),hex(fid2), str(lenX), self.get_hex(msg), data_ascii, self.get_meta_descr(fid2, msg), str(cnt)])
+                        rows.append([str(bus),hex(fid2), str(lenX), self.get_hex(msg), data_ascii, self.get_meta_descr(fid2, msg), str(cnt)])
 
         cols = list(zip(*rows))
         col_widths = [max(len(value) for value in col) for col in cols]
@@ -408,31 +460,22 @@ class mod_stat(CANModule):
         table += "\n"
         return table
 
-    def enable_diff(self):
-        if self._diff:
-            self.all_frames += self.all_diff_frames
-            self.all_diff_frames = []
-            #self._cmdList['p'][4] = True
-            self._cmdList['a'][4] = True
-            self._cmdList['r'][4] = True
-            self._cmdList['d'][4] = True
-            self._cmdList['I'][4] = False
-            self._cmdList['N'][4] = False
-            self._cmdList['Y'][4] = False
+    def new_diff(self, name = ""):
+        _name = name.strip()
+        _name = _name if _name != "" else "buffer_" + str(len(self.all_frames)-1)
+        self._index += 1
+        self.all_frames.append({'name':_name,'buf':[]})
+        return "New buffer  " + _name + ", index: " + str(self._index) + " enabled and active"
+
+    def do_print(self, index = "-1"):
+        _index = int(index)
+        temp_buf = []
+        if _index == -1:
+            for buf in self.all_frames:
+                temp_buf = temp_buf + buf['buf']
         else:
-            #self._cmdList['p'][4] = False
-            self._cmdList['a'][4] = False
-            self._cmdList['r'][4] = False
-            self._cmdList['d'][4] = False
-            self._cmdList['I'][4] = True
-            self._cmdList['N'][4] = True
-            self._cmdList['Y'][4] = True
-        self._diff = not self._diff
-        return "Diff mode: "+str(self._diff)
-
-
-    def do_print(self):
-        self._bodyList = self.create_short_table(self.all_frames)
+            temp_buf = self.all_frames[_index]['buf']
+        self._bodyList = self.create_short_table(temp_buf)
         table = "\n"
         rows = [['BUS', 'ID', 'LENGTH', 'MESSAGE', 'ASCII', 'DESCR', 'COUNT']]
         # http://stackoverflow.com/questions/3685195/line-up-columns-of-numbers-print-output-in-table-format
@@ -453,23 +496,12 @@ class mod_stat(CANModule):
         return table
 
     def do_clean(self):
-        self.all_frames = []
-        self.all_diff_frames = []
-        self._diff = False
-        self._cmdList['a'][4] = True
-        self._cmdList['r'][4] = True
-        self._cmdList['d'][4] = True
-        self._cmdList['I'][4] = False
-        self._cmdList['N'][4] = False
-        self._cmdList['Y'][4] = False
+        self.all_frames = [{'name':'start_buffer','buf':[]}]
+        self._index = 0
         return "Buffers cleaned!"
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
     def do_effect(self, can_msg, args):
         if can_msg.CANData:
-            if not self._diff:
-                self.all_frames.append(can_msg)
-            else:
-                self.all_diff_frames.append(can_msg)
-
+            self.all_frames[self._index]['buf'].append(can_msg)
         return can_msg
