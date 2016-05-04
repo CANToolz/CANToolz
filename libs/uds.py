@@ -47,6 +47,9 @@ class UDSMessage:
             {0x02: 'Report DTC by status'},
             {0x03: 'Report DTC Snapshot ID'}
         ],
+        0x20 : [
+            {None: 'Restart communication'}
+        ],
         0x27: [
             {None: 'Security Access'},
             {0x01: 'Seed request'},

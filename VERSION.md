@@ -1,3 +1,7 @@
+## Version 2.6-0
+### CHANGES
+ - mod_stat refactoring: now we can support multi-biffers for sniffing and diff
+ 
 ## Version 2.5-0
 ### CHANGES
  - USBtin can be emulated/used via loop:// 

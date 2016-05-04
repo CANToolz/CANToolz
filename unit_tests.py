@@ -105,7 +105,7 @@ class ModStatDiffTests(unittest.TestCase):
         self.CANEngine.call_module(0, "r 0-6")
         time.sleep(1)
 
-        ret = self.CANEngine.call_module(1, "I 1")
+        ret = self.CANEngine.call_module(1, "I")
         print(ret)
         self.assertTrue(0 < ret.find(" 0x707 "), "Should be empty diff")
         self.assertTrue(0 < ret.find(" 0x708 "), "Should be empty diff")
@@ -118,27 +118,6 @@ class ModStatDiffTests(unittest.TestCase):
         self.CANEngine.call_module(0, "r 0-6")
         time.sleep(1)
 
-        ret = self.CANEngine.call_module(1, "I 1")
-
-        print(ret)
-        self.assertFalse(0 < ret.find(" 0x707 "), "Should be empty diff")
-        self.assertFalse(0 < ret.find(" 0x708 "), "Should be empty diff")
-
-        ret = self.CANEngine.call_module(1, "I 2")
-
-        print(ret)
-        self.assertTrue(0 < ret.find(" 0x707 "), "Should be empty diff")
-        self.assertTrue(0 < ret.find(" 0x708 "), "Should be empty diff")
-
-        ret = self.CANEngine.call_module(1, "N 2")
-        self.assertTrue(0 < ret.find(" 0x707 "), "Should be empty diff")
-        self.assertTrue(0 < ret.find(" 0x708 "), "Should be empty diff")
-        self.assertTrue(0 < ret.find("03410d00"), "Should not be empty diff")
-        self.assertTrue(0 < ret.find("1014490201314731"), "Should not be empty diff")
-        self.assertFalse(0 < ret.find(" 0x2bc "), "Should be empty diff")
-        self.assertFalse(0 < ret.find(" 0x70b "), "Should be empty diff")
-        self.assertFalse(0 < ret.find(" 0x709 "), "Should be empty diff")
-
         ret = self.CANEngine.call_module(1, "N ")
         self.assertTrue(0 < ret.find(" 0x707 "), "Should be empty diff")
         self.assertTrue(0 < ret.find(" 0x708 "), "Should be empty diff")
@@ -148,25 +127,13 @@ class ModStatDiffTests(unittest.TestCase):
         self.assertFalse(0 < ret.find(" 0x70b "), "Should be empty diff")
         self.assertFalse(0 < ret.find(" 0x709 "), "Should be empty diff")
 
-        ret = self.CANEngine.call_module(1, "N 3")
-        self.assertFalse(0 < ret.find(" 0x707 "), "Should be empty diff")
-        self.assertFalse(0 < ret.find(" 0x708 "), "Should be empty diff")
-        self.assertFalse(0 < ret.find("03410d00"), "Should not be empty diff")
-        self.assertFalse(0 < ret.find("1014490201314731"), "Should not be empty diff")
-
-        ret = self.CANEngine.call_module(1, "N 1")
-        self.assertFalse(0 < ret.find(" 0x707 "), "Should be empty diff")
-        self.assertFalse(0 < ret.find(" 0x708 "), "Should be empty diff")
-        self.assertFalse(0 < ret.find("03410d00"), "Should not be empty diff")
-        self.assertFalse(0 < ret.find("1014490201314731"), "Should not be empty diff")
-
-        self.CANEngine.call_module(1, "D")
+        self.CANEngine.call_module(1, "D, TEST BUFF")
+        self.CANEngine.call_module(0, "r 0-6")
         time.sleep(1)
-        self.CANEngine.call_module(1, "D")
-        time.sleep(1)
+        self.CANEngine.call_module(1, "D, TEST BUFF2")
         self.CANEngine.call_module(0, "r")
         time.sleep(1)
-        ret = self.CANEngine.call_module(1, "I")
+        ret = self.CANEngine.call_module(1, "I 2,3")
         self.assertFalse(0 < ret.find(" 0x707 "), "Should be empty diff")
         self.assertTrue(0 < ret.find(" 0x708 "), "Should be empty diff")
         self.assertFalse(0 < ret.find("03410d00"), "Should not be empty diff")
