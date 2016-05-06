@@ -454,7 +454,7 @@ class mod_stat(CANModule):
         table1 = self.create_short_table(self.all_frames[idx1]['buf'])
         table2 = self.create_short_table(self.all_frames[idx2]['buf'])
 
-        table = " DIFF sets between " + self.all_frames[idx1]['name'] + " and " + self.all_frames[idx2]['name']
+        table = " DIFF sets between " + self.all_frames[idx1]['name'] + " and " + self.all_frames[idx2]['name'] + "\n"
         rows = [['BUS', 'ID', 'LENGTH', 'MESSAGE', 'ASCII', 'DESCR', 'COUNT']]
         for fid2, lst2 in table2.items():
             if fid2 not in list(table1.keys()):
