@@ -1,3 +1,7 @@
+## Version 2.8-0
+### CHANGES
+ - mod_stat feature: Print/Dump diff now have additional parameter - limit on uniq values. This will help a lot! Now you can do diff and exclude all 'noisy' frames
+ 
 ## Version 2.7-0
 ### CHANGES
  - mod_stat feature: search by ID 
