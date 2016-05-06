@@ -49,11 +49,11 @@ class mod_stat(CANModule):
         self._cmdList['u'] = ["    - UDS shift value",1,"[shift value]", self.change_shift, True]
 
         self._cmdList['D'] = ["Switch sniffing to a new buffer", 1, "[name]", self.new_diff, True]
-        self._cmdList['I'] = ["Print Diff between two buffers", 1, "[buffer index, buffer index]", self.print_diff, True]
-        self._cmdList['N'] = ["Print Diff between two buffers (new ID only)", 1, "[buffer index, buffer index]", self.print_diff_id, True]
+        self._cmdList['I'] = ["Print Diff between two buffers", 1, "[buffer index 1], [buffer index 2], [uniq values max]", self.print_diff, True]
+        self._cmdList['N'] = ["Print Diff between two buffers (new ID only)", 1, "[buffer index 1], [buffer index 2]", self.print_diff_id, True]
 
-        self._cmdList['Y'] = ["Dump Diff in replay format", 1, "<filename>,[buffer index ,buffer index]", self.print_dump_diff, True]
-        self._cmdList['y'] = ["Dump Diff in replay format (new ID)", 1, "<filename>,[buffer index ,buffer index]", self.print_dump_diff_id, True]
+        self._cmdList['Y'] = ["Dump Diff in replay format", 1, "<filename>,[buffer index ,buffer index], [uniq values max]", self.print_dump_diff, True]
+        self._cmdList['y'] = ["Dump Diff in replay format (new ID)", 1, "<filename>,[buffer index 1] , [buffer index 2]", self.print_dump_diff_id, True]
         self._cmdList['F'] = ["Search ID in all buffers", 1, "<ID>", self.search_id, True]
         self._cmdList['c'] = ["Clean table, remove buffers", 0, "", self.do_clean, True]
 
@@ -355,22 +355,30 @@ class mod_stat(CANModule):
 
     def print_dump_diff_(self, name, mode = 0):
         inp = name.split(",")
-        if len(inp) == 3:
+        if len(inp) == 4:
             name = inp[0].strip()
             idx1 = int(inp[1])
             idx2 = int(inp[2])
+            rang = int(inp[3])
+        elif len(inp) == 3:
+            name = inp[0].strip()
+            idx1 = int(inp[1])
+            idx2 = int(inp[2])
+            rang = 8 * 256
         else:
             name = inp[0].strip()
             idx2 = self._index
             idx1 = self._index - 1 if self._index - 1 >=0 else 0
+            rang = 8 * 256
 
         table1 = self.create_short_table(self.all_frames[idx1]['buf'])
+        table2 = self.create_short_table(self.all_frames[idx2]['buf'] + self.all_frames[idx1]['buf'])
         try:
             _name = open(name, 'w')
             for can_msg in self.all_frames[idx2]['buf']:
                 if can_msg.CANFrame.frame_id not in list(table1.keys()):
                     _name.write(str(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + self.get_hex(can_msg.CANFrame.frame_raw_data) + "\n")
-                elif mode == 0:
+                elif mode == 0 and len(table2[can_msg.CANFrame.frame_id]) <= rang:
                     neq = True
                     for (len2, msg, bus, mod), cnt in table1[can_msg.CANFrame.frame_id].items():
                         if msg == can_msg.CANFrame.frame_raw_data:
@@ -431,13 +439,19 @@ class mod_stat(CANModule):
 
     def print_diff(self, inp = ""):
         inp = inp.split(",")
-        if len(inp) != 2:
-            idx2 =  self._index
-            idx1 =  self._index - 1 if self._index - 1 >= 0 else 0
-        else:
-            idx2 = int(inp[1])
+        if len(inp) == 3:
             idx1 = int(inp[0])
-        return self.print_diff_orig(0, idx1, idx2)
+            idx2 = int(inp[1])
+            rang = int(inp[2])
+        elif len(inp) == 2:
+            idx1 = int(inp[0])
+            idx2 = int(inp[1])
+            rang = 8 * 256
+        else:
+            idx2 = self._index
+            idx1 = self._index - 1 if self._index - 1 >=0 else 0
+            rang = 8 * 256
+        return self.print_diff_orig(0, idx1, idx2, rang)
 
     def print_diff_id(self, inp = ""):
         inp = inp.split(",")
@@ -447,13 +461,13 @@ class mod_stat(CANModule):
         else:
             idx2 = int(inp[1])
             idx1 = int(inp[0])
-        return self.print_diff_orig(1, idx1, idx2)
+        return self.print_diff_orig(1, idx1, idx2, 8 * 256)
 
-    def print_diff_orig(self, mode, idx1, idx2):
+    def print_diff_orig(self, mode, idx1, idx2, rang):
 
         table1 = self.create_short_table(self.all_frames[idx1]['buf'])
         table2 = self.create_short_table(self.all_frames[idx2]['buf'])
-
+        table3 = self.create_short_table(self.all_frames[idx1]['buf'] + self.all_frames[idx2]['buf'])
         table = " DIFF sets between " + self.all_frames[idx1]['name'] + " and " + self.all_frames[idx2]['name'] + "\n"
         rows = [['BUS', 'ID', 'LENGTH', 'MESSAGE', 'ASCII', 'DESCR', 'COUNT']]
         for fid2, lst2 in table2.items():
@@ -465,7 +479,7 @@ class mod_stat(CANModule):
                     else:
                         data_ascii = "  "
                     rows.append([str(bus),hex(fid2), str(lenX), self.get_hex(msg), data_ascii, self.get_meta_descr(fid2, msg), str(cnt)])
-            elif mode == 0:
+            elif mode == 0 and len(table3[fid2]) <= rang:
                 for (lenX, msg, bus, mod), cnt in lst2.items():
 
                     if (lenX, msg, bus, mod) not in  table1[fid2]:
