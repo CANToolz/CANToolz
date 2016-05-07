@@ -54,10 +54,12 @@ class hw_USBtin(CANModule):
         return out
 
     def do_stop(self, params):  # disable reading
-        self._serialPort.write(b"C\r")
+        if self._run:
+            self._serialPort.write(b"C\r")
+            self._run = False
         time.sleep(1)
         self.read_all()
-        self._run = False
+
 
     def set_speed(self, speed):
         sjw_user = 3
@@ -148,9 +150,12 @@ class hw_USBtin(CANModule):
             return "Speed: " + str(self._currentSpeed)
 
     def do_start(self, params):  # enable reading
-        self._serialPort.write(b"O\r")
+        if not self._run:
+            self._serialPort.write(b"O\r")
+            self._run = True
+            self.wait_for = False
         time.sleep(1)
-        self._run = True
+
 
     def init_port(self):
         try:
@@ -191,6 +196,11 @@ class hw_USBtin(CANModule):
             self.dprint(0, 'No port in config!')
             return 0
 
+        self._restart = bool(params.get('auto_activate', True))
+        self.act_time = float(params.get('auto_activate', 5.0))
+        self.last = time.clock()
+        self.wait_for = False
+        self._run = False
         self.do_stop({})
         self.set_speed(str(params.get('speed', '500')) + ", " + str(params.get('sjw', '3')))
         # print str(self._serialPort)
@@ -213,6 +223,23 @@ class hw_USBtin(CANModule):
             self.do_write(can_msg)
         else:
             self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
+
+        if self._restart:
+                if self.wait_for and can_msg.debugData and can_msg.debugText['text'][0] == "F" and len(can_msg.debugText['text']) == 3:
+                    error = int(can_msg.debugText['text'][1:3],16)
+                    if error & 8: # Fix for BMW CAN where it could be overloaded
+                       self.dev_write("O")
+                       can_msg.debugText['do_not_send'] = True
+                    else:
+                       can_msg.debugText['please_send'] = True
+                    self.wait_for = False
+
+                elif time.clock() - self.last >= self.act_time and not self.wait_for:
+                    self.dev_write("F")
+                    self.wait_for = True
+                    self.last = time.clock()
+
+
         return can_msg
 
     def do_read(self, can_msg):
@@ -263,7 +290,7 @@ class hw_USBtin(CANModule):
                         break
                     else:
                         can_msg.debugData = True
-                        can_msg.debugText = {'text': data.decode("ISO-8859-1")}
+                        can_msg.debugText = {'text': data[:-1].decode("ISO-8859-1")}
 
                     self.dprint(2, "USBtin READ: " + data.decode("ISO-8859-1"))
 

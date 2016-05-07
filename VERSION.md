@@ -1,3 +1,7 @@
+## Version 2.8-1
+### CHANGES
+ - hw_USBtin/engine lib mini feature: auto restart USBtin device if detected  overrun error. In this case all other modules will be stopped untill error will be fixed.
+
 ## Version 2.8-0
 ### CHANGES
  - mod_stat feature: Print/Dump diff now have additional parameter - limit on uniq values. This will help a lot! Now you can do diff and exclude all 'noisy' frames
