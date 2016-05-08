@@ -34,7 +34,7 @@ class hw_CANSocket(CANModule):
         self._active = True
         self._run = False
 
-    def dev_write(self, data):
+    def dev_write(self, def_in, data):
         self.dprint(1, "CMD: " + data)
         if self._run:
             idf, dataf = data.strip().split('#')

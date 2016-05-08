@@ -37,7 +37,7 @@ class hw_USBtin(CANModule):
 
     _bus = "USBTin"
 
-    def get_status(self):
+    def get_status(self, def_in):
         return "Current status: " + str(self._active) + "\nCurrent SPEED: " + str(self._currentSpeed) + "\nPORT: " + self._COMPort
 
     def get_info(self):  # Read info
@@ -61,7 +61,7 @@ class hw_USBtin(CANModule):
         self.read_all()
 
 
-    def set_speed(self, speed):
+    def set_speed(self, def_in, speed):
         sjw_user = 3
         ## This code ported from here:
         # https://www.kvaser.com/wp-content/themes/kvaser/inc/vc/js/bittiming.js
@@ -202,7 +202,7 @@ class hw_USBtin(CANModule):
         self.wait_for = False
         self._run = False
         self.do_stop({})
-        self.set_speed(str(params.get('speed', '500')) + ", " + str(params.get('sjw', '3')))
+        self.set_speed(0, str(params.get('speed', '500')) + ", " + str(params.get('sjw', '3')))
         # print str(self._serialPort)
         self.dprint(1, "PORT: " + self._COMPort)
         self.dprint(1, "Speed: " + str(self._currentSpeed))
@@ -211,7 +211,7 @@ class hw_USBtin(CANModule):
         self._cmdList['S'] = ["Set device speed (kBaud) and SJW level(optional)", 1, " <speed>,<SJW> ", self.set_speed, True]
         self._cmdList['t'] = ["Send direct command to the device, like t0010411223344", 1, " <cmd> ", self.dev_write, True]
 
-    def dev_write(self, data):
+    def dev_write(self, def_in, data):
         self.dprint(1, "CMD: " + data)
         self._serialPort.write(data.encode("ISO-8859-1") + b"\r")
         return ""
@@ -228,14 +228,14 @@ class hw_USBtin(CANModule):
                 if self.wait_for and can_msg.debugData and can_msg.debugText['text'][0] == "F" and len(can_msg.debugText['text']) == 3:
                     error = int(can_msg.debugText['text'][1:3],16)
                     if error & 8: # Fix for BMW CAN where it could be overloaded
-                       self.dev_write("O")
+                       self.dev_write(0, "O")
                        can_msg.debugText['do_not_send'] = True
                     else:
                        can_msg.debugText['please_send'] = True
                     self.wait_for = False
 
                 elif time.clock() - self.last >= self.act_time and not self.wait_for:
-                    self.dev_write("F")
+                    self.dev_write(0, "F")
                     self.wait_for = True
                     self.last = time.clock()
 
