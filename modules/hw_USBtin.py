@@ -229,6 +229,8 @@ class hw_USBtin(CANModule):
                     error = int(can_msg.debugText['text'][1:3],16)
                     self.dprint(1,"BUS ERROR:" + hex(error))
                     if error & 8: # Fix for BMW CAN where it could be overloaded
+                       self.dev_write(0, "C")
+                       time.sleep(0.4)
                        self.dev_write(0, "O")
                        can_msg.debugText['do_not_send'] = True
                     else:
