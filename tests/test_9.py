@@ -5,14 +5,14 @@ load_modules = {
         {'bus':'ECU_TEST',
 
         'commands':[
-        {'Unlock':'0x122:2:fff0'},
+        {'cmd':'a','Unlock':'0x122:2:fff0'},
         {'Lock'  :'0x122:2:ffff'},
         {'Open Trunk':'290:2:ffa0'}
         ],
 
         'statuses':[
 
-            {'Door  - Rear passenger':{
+            {'cmd':'b','Door  - Rear passenger':{
                 'Open':'0x133#ff.*',
                 'Closed':'0x133#00.*'
             }},
