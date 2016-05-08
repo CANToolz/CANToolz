@@ -225,7 +225,7 @@ class hw_USBtin(CANModule):
             self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
 
         if self._restart:
-                if self.wait_for and can_msg.debugData and can_msg.debugText['text'][0] == "F" and len(can_msg.debugText['text']) == 3:
+                if self.wait_for and can_msg.debugData and can_msg.debugText['text'][0] == "F" and len(can_msg.debugText['text']) > 2:
                     error = int(can_msg.debugText['text'][1:3],16)
                     self.dprint(1,"BUS ERROR:" + hex(error))
                     if error & 8: # Fix for BMW CAN where it could be overloaded
@@ -293,7 +293,7 @@ class hw_USBtin(CANModule):
                         break
                     else:
                         can_msg.debugData = True
-                        can_msg.debugText = {'text': data[:-1].decode("ISO-8859-1")}
+                        can_msg.debugText = {'text': data.decode("ISO-8859-1")}
                         self.dprint(1, "USBtin DREAD: " + data.decode("ISO-8859-1"))
 
                     self.dprint(2, "USBtin READ: " + data.decode("ISO-8859-1"))
