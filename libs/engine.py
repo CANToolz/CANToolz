@@ -44,8 +44,8 @@ class CANSploit:
     # Main loop with two pipes
     def main_loop(self):
         # Run until STOP
-        error_on_bus = {}
-        error = False
+        #error_on_bus = {}
+        #error = False
         while not self._stop.is_set():
             self._pipes = {}
             i = 0
@@ -58,6 +58,9 @@ class CANSploit:
                     if params['pipe'] not in self._pipes:
                         self._pipes[params['pipe']] = CANSploitMessage()
 
+                    self._pipes[params['pipe']] = module.do_effect(self._pipes[params['pipe']], params)
+
+                    """
                     if error and error_on_bus.get(i, False):
                         self._pipes[params['pipe']] = module.do_effect(self._pipes[params['pipe']], params) # If error, try to fix
                     elif not error:
@@ -74,6 +77,7 @@ class CANSploit:
                         self._pipes[params['pipe']].debugData = False
                         module.dprint(0,"BUS ERROR fixed")
                     i += 1
+                    """
                     module.thr_block.set()
 
 

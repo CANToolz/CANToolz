@@ -223,7 +223,7 @@ class hw_USBtin(CANModule):
             self.do_write(can_msg)
         else:
             self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
-
+        """
         if self._restart:
                 if self.wait_for and can_msg.debugData and can_msg.debugText['text'][0] == "F" and len(can_msg.debugText['text']) > 2:
                     error = int(can_msg.debugText['text'][1:3],16)
@@ -241,7 +241,7 @@ class hw_USBtin(CANModule):
                     self.dev_write(0, "F")
                     self.wait_for = True
                     self.last = time.clock()
-
+        """
 
         return can_msg
 

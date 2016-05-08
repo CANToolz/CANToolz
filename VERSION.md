@@ -1,6 +1,5 @@
 ## Version 3.0-0
 ### CHANGES
- - hw_USBtin/engine lib mini feature: auto restart USBtin device if detected  overrun error. In this case all other modules will be stopped untill error will be fixed.
  - ecu_controls module added, noew you can configure ECU control and monitoring (regex now). Very useful as API 8)
  - cmd parametrisation changed a bit
  - mod_firewall can filter on BUS values!
