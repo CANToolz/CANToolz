@@ -2,8 +2,9 @@ load_modules = {
     'hw_USBtin':    {'port':'loop', 'debug':2, 'speed':500},  # IO hardware module
 
     'ecu_controls':
+        {'bus':'ECU_TEST',
 
-        {'commands':[
+        'commands':[
         {'Unlock':'0x122:2:fff0'},
         {'Lock'  :'0x122:2:ffff'},
         {'Open Trunk':'290:2:ffa0'}
@@ -23,8 +24,9 @@ load_modules = {
 
         ]
     },
-
-    'mod_stat':    {}
+    'mod_firewall': {},
+    'mod_stat':    {},
+    'mod_stat~2':    {}
 }
 
 # Now let's describe the logic of this test
@@ -32,5 +34,7 @@ actions = [
     {'hw_USBtin':   {'action': 'read','pipe': 1}},
     {'ecu_controls'     : {}},
     {'mod_stat':{}},
+    {'mod_firewall': {'white_bus': ['ECU_TEST']}},
+    {'mod_stat~2':{}},
     {'hw_USBtin':    {'action':'write','pipe': 2}}
     ]

@@ -71,7 +71,7 @@ class CANModule:
     def __init__(self, params):
 
         self.DEBUG = int(params.get('debug', 0))
-        self._bus = params.get('bus', "module")
+        self._bus = params.get('bus', self.__class__.__name__)
         self._active = False if params.get('active') in ["False", "false", "0", "-1"] else True
         self._cmdList = collections.OrderedDict()  # Command list (doInit section)
         self._cmdList['S'] = ["Current status", 0, "", self.get_status, True]

@@ -44,10 +44,11 @@ class CANSploit:
     # Main loop with two pipes
     def main_loop(self):
         # Run until STOP
-        error_on_bus = False
+        error_on_bus = {}
+        error = False
         while not self._stop.is_set():
             self._pipes = {}
-
+            i = 0
             for name, module, params in self._enabledList:  # Each module
                 #  Handle CAN message
 
@@ -57,21 +58,22 @@ class CANSploit:
                     if params['pipe'] not in self._pipes:
                         self._pipes[params['pipe']] = CANSploitMessage()
 
-                    if error_on_bus and params.get('error_on_bus', False):
-                        self._pipes[params['pipe']] = module.do_effect(self._pipes[params['pipe']], params)  # doEffect on CANMessage
-                    elif not error_on_bus:
-                        self._pipes[params['pipe']] = module.do_effect(self._pipes[params['pipe']], params)
+                    if error and error_on_bus.get(i, False):
+                        self._pipes[params['pipe']] = module.do_effect(self._pipes[params['pipe']], params) # If error, try to fix
+                    elif not error:
+                        self._pipes[params['pipe']] = module.do_effect(self._pipes[params['pipe']], params) # doEffect on CANMessage
 
                     if self._pipes[params['pipe']].debugData and self._pipes[params['pipe']].debugText.get('do_not_send', False):
-                        params['error_on_bus'] = True
-                        error_on_bus = True
+                        error_on_bus[i] = True
+                        error = True
                         self._pipes[params['pipe']].debugData = False
                     elif self._pipes[params['pipe']].debugData and self._pipes[params['pipe']].debugText.get('please_send', False):
-                        params['error_on_bus'] = False
-                        error_on_bus = False
+                        error_on_bus[i] = False
+                        error = False
                         self._pipes[params['pipe']].debugData = False
-
+                    i += 1
                     module.thr_block.set()
+
 
                     # Here when STOP
         for name, module, params in self._enabledList:
@@ -93,7 +95,7 @@ class CANSploit:
 
         for name, module, params in self._enabledList:
             module.do_start(params)
-            params['error_on_bus'] = False
+            params['!error_on_bus'] = False
             module.thr_block.set()
 
         self._thread = threading.Thread(target=self.main_loop)

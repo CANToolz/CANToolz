@@ -40,12 +40,16 @@ class EcuControl(unittest.TestCase):
         self.CANEngine.call_module(1, "y")
         time.sleep(1)
         ret = self.CANEngine.call_module(2, "p")
+        ret2 = self.CANEngine.call_module(4, "p")
 
         self.assertTrue(ret.find("0x122") > 0, "0x122 should be there")
         self.assertTrue(ret.find("fff0") > 0, "fff0 as body should be there")
         self.assertTrue(ret.find("ffff") > 0, "ffff as body should be there")
         self.assertTrue(ret.find("ff22") > 0, "ffff as body should be there")
-        self.assertTrue(ret.find("133") > 0, "0x133 should be there")
+        self.assertTrue(ret.find("0x133") > 0, "0x133 should be there")
+        self.assertFalse(ret2.find("0x133") > 0, "0x133 should NOT be there")
+        self.assertFalse(ret2.find("ff22") > 0, "0x133 should NOT be there")
+        self.assertTrue(ret2.find("0x122") > 0, "0x122 should be there")
 
 class PaddingUds(unittest.TestCase):
     def tearDown(self):
@@ -342,6 +346,7 @@ class ModUdsTests(unittest.TestCase):
         time.sleep(2)
         index = 1
         ret = self.CANEngine.call_module(1, "p")
+        print(ret)
         _bodyList = self.CANEngine._enabledList[index][1]._bodyList
         self.assertTrue(len(_bodyList) == 20, "Should be 20 groups of packets")
         self.assertTrue(1790 in _bodyList, "1790 should be there")
@@ -377,7 +382,6 @@ class ModUdsTests(unittest.TestCase):
         self.assertTrue(0 < ret.find("DATA: 4902013147315a54353338323646313039313439"), "TEXT should be found in response")
         self.assertTrue(0 < ret.find("ID: 0x701 Service: 0x2f Sub: 0x3 (Input Output Control By Identifier)"), "Text should be found in response")
         self.assertTrue(0 < ret.find("ID: 0x6ff Service: 0x1 Sub: 0xd (Req Current Powertrain)"), "Text should be found in response")
-
 
 class ModReplayTests(unittest.TestCase):
     def tearDown(self):

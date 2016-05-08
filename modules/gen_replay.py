@@ -153,12 +153,14 @@ class gen_replay(CANModule):
                     can_msg.CANFrame = self.CANList[self._num1]
                     self._num1 += 1
                     can_msg.CANData = True
+                    can_msg.bus = self._bus
                     self._last += 1
                     self._status = self._last/(self._full/100.0)
             else:
                 can_msg.CANFrame = self.CANList[self._num1]
                 self._num1 += 1
                 can_msg.CANData = True
+                can_msg.bus = self._bus
                 self._last += 1
                 self._status = self._last/(self._full/100.0)
 

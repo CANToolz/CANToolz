@@ -107,4 +107,5 @@ class ecu_controls(CANModule):
             if len(self._frames) > 0:
                 can_msg.CANFrame = self._frames.pop()
                 can_msg.CANData = True
+                can_msg.bus = self._bus
         return can_msg
