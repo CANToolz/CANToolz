@@ -292,6 +292,7 @@ class hw_USBtin(CANModule):
                     else:
                         can_msg.debugData = True
                         can_msg.debugText = {'text': data[:-1].decode("ISO-8859-1")}
+                        self.dprint(1, "USBtin DREAD: " + data.decode("ISO-8859-1"))
 
                     self.dprint(2, "USBtin READ: " + data.decode("ISO-8859-1"))
 
