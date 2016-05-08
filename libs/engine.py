@@ -66,11 +66,13 @@ class CANSploit:
                     if self._pipes[params['pipe']].debugData and self._pipes[params['pipe']].debugText.get('do_not_send', False):
                         error_on_bus[i] = True
                         error = True
+                        module.dprint(0,"BUS ERROR detected")
                         self._pipes[params['pipe']].debugData = False
                     elif self._pipes[params['pipe']].debugData and self._pipes[params['pipe']].debugText.get('please_send', False):
                         error_on_bus[i] = False
                         error = False
                         self._pipes[params['pipe']].debugData = False
+                        module.dprint(0,"BUS ERROR fixed")
                     i += 1
                     module.thr_block.set()
 
