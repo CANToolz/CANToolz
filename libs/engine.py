@@ -101,7 +101,7 @@ class CANSploit:
 
         for name, module, params in self._enabledList:
             module.do_start(params)
-            params['!error_on_bus'] = False
+            #params['!error_on_bus'] = False
             module.thr_block.set()
 
         self._thread = threading.Thread(target=self.main_loop)
