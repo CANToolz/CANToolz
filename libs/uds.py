@@ -38,7 +38,7 @@ class UDSMessage:
             0x03: 'Extended Diag Session'
         },
         0x11: {
-            None: 'Reset unknwn',
+            None: 'Reset',
             0x01: 'ECU HARD Reset',
             0x03: 'Soft reset',
             0x02: 'ECU Reset'},
@@ -57,7 +57,7 @@ class UDSMessage:
             0x02: 'Resposne'
         },
         0x28: {None: 'Communication Control'},
-        0x3E: {None: 'Tester Present', 0x01: "Tester present"},
+        0x3E: {None: 'Tester', 0x01: "Tester present"},
         0x83: {None: 'Access Timing Parameters'},
         0x84: {None: 'Secured Data Transmission'},
         0x85: {None: 'Control DTC Settings'},
@@ -148,71 +148,89 @@ class UDSMessage:
             return 1
 
     def check_status(self, _input_message):
-        if len(_input_message.message_data) < 2:
-            return -2
-        if _input_message.message_id in self.sessions and _input_message.message_data[0] in self.sessions[_input_message.message_id] \
+        if len(_input_message.message_data) >= 2 and _input_message.message_id in self.sessions and _input_message.message_data[0] in self.sessions[_input_message.message_id] \
                 and _input_message.message_data[1] in self.sessions[_input_message.message_id][_input_message.message_data[0]]:
             return -1
-        elif (_input_message.message_id - self.shift) in self.sessions and (_input_message.message_data[0] - 0x40) in self.sessions[_input_message.message_id - self.shift] and\
+        elif len(_input_message.message_data) >= 2 and (_input_message.message_id - self.shift) in self.sessions and (_input_message.message_data[0] - 0x40) in self.sessions[_input_message.message_id - self.shift] and\
                 _input_message.message_data[1] in self.sessions[_input_message.message_id - self.shift][_input_message.message_data[0] - 0x40]:
             return 2
+        elif (_input_message.message_id - self.shift) in self.sessions and (_input_message.message_data[0] - 0x40) in self.sessions[_input_message.message_id - self.shift]:
+            return 4
         elif len(_input_message.message_data) > 2 and (_input_message.message_id - self.shift) in self.sessions and _input_message.message_data[0] == 0x7f and \
                         _input_message.message_data[1] in self.sessions[_input_message.message_id - self.shift]:
             return 3
         elif _input_message.message_id not in self.sessions or _input_message.message_data[0] not in self.sessions[_input_message.message_id] or \
-               _input_message.message_data[1] not in self.sessions[_input_message.message_id][_input_message.message_data[0]]:
+                        len(_input_message.message_data) == 1 or (len(_input_message.message_data) > 1 and _input_message.message_data[1] not in self.sessions[_input_message.message_id][_input_message.message_data[0]]):
             return 0
         else:
             return -3
 
     # Method to handle messages ISO TP messages
     def handle_message(self, _input_message):
-        if self.check_status(_input_message) == 2:  # Possible response came
+        uds_type = self.check_status(_input_message)
+        #print(_input_message.message_data)
+        #print(uds_type)
+        #print()
+        if uds_type == 2:  # Possible response came
             sts = self.sessions[_input_message.message_id - self.shift][_input_message.message_data[0]-0x40][_input_message.message_data[1]]['status']
             if sts == 0:  # Ok, now we have Response... looks like
                 return self.add_raw_response(_input_message)
             return False
-        elif self.check_status(_input_message) == 3:  # Maybe error
+        elif uds_type == 3:  # Maybe error
             return self.add_raw_response(_input_message)
-        elif self.check_status(_input_message) == 0:  # New service request                                       # New Service request and new ID
+        elif uds_type == 4:  # Response without sub-function
+            sts = self.sessions[_input_message.message_id - self.shift][_input_message.message_data[0]-0x40][_input_message.message_data[1] + 0x1ff]['status']
+            if sts == 0:  # Ok, now we have Response... looks like
+                return self.add_raw_response(_input_message)
+        elif uds_type == 0:  # New service request                                       # New Service request and new ID
             self.add_raw_request(_input_message)
             return True
 
         return False
 
     def add_request(self, _id, _service, _subcommand, _data):
-        if _id not in self.sessions:
-            self.start_session(_id)
-            self.sessions[_id][_service] = {
-                'data': _data,
-                'response': {
-                    'id': None, 'data': None, 'error': None
-                },
-                'status': 0
-            }
-            if not _subcommand:
-                _subcommand = [0]
-            else:
-                _subcommand = [_subcommand]
-            byte_data = [_service] + _subcommand + _data
-            return ISOTPMessage.generate_can(_id, byte_data, self.padding)
+        if not _data:
+            _data = []
+
+        if not _subcommand:
+            _subcommand = []
+        else:
+            _subcommand = [_subcommand]
+        byte_data = [_service] + _subcommand + _data
+        return ISOTPMessage.generate_can(_id, byte_data, self.padding)
 
     def add_raw_request(self, _input_message):
-        if len(_input_message.message_data) >= 2:
+        if len(_input_message.message_data) >= 1:
             if _input_message.message_id not in self.sessions:
                 self.start_session(_input_message.message_id)
 
             if _input_message.message_data[0] not in self.sessions[_input_message.message_id]:
                 self.sessions[_input_message.message_id][_input_message.message_data[0]] = collections.OrderedDict()
+            non_sub = 0x1ff
+            if len(_input_message.message_data) > 1:
+                non_sub = _input_message.message_data[1]
 
-            self.sessions[_input_message.message_id][_input_message.message_data[0]][_input_message.message_data[1] if len(_input_message.message_data) > 1 else 0] = {
-                    #'sub': _input_message.message_data[1] if len(_input_message.message_data) > 1 else None,
-                    'data': _input_message.message_data[2:],
-                    'response': {
-                        'id': None, 'data': None, 'error': None
-                    },
-                    'status': 0
-                }
+            self.sessions[_input_message.message_id][_input_message.message_data[0]][non_sub] = {
+                            #'sub': _input_message.message_data[1] if len(_input_message.message_data) > 1 else None,
+                            'data': _input_message.message_data[2:],
+                            'response': {
+                                'id': None, 'data': None, 'error': None
+                            },
+                            'status': 0
+                        }
+
+            if non_sub < 0x1ff:
+
+                self.sessions[_input_message.message_id][_input_message.message_data[0]][non_sub + 0x1ff] = {
+                            #'sub': _input_message.message_data[1] if len(_input_message.message_data) > 1 else None,
+                            'data': _input_message.message_data[1:],
+                            'response': {
+                                'id': None, 'data': None, 'error': None
+                            },
+                            'status': 0
+                        }
+
+
         return True
 
     def add_raw_response(self, _input_message):
@@ -230,12 +248,20 @@ class UDSMessage:
                     for sub, bd in lst:
                         if bd['status'] == 0:
                             y = sub
+                            break
+                        if sub > 0xff:
+                            break
                     if y != None:
                         self.sessions[response_id][x][y]['response']['id'] = _input_message.message_id
-                        #self.sessions[response_id][x][y]['response']['sub'] = None
                         self.sessions[response_id][x][y]['response']['data'] = None
                         self.sessions[response_id][x][y]['status'] = 2
                         self.sessions[response_id][x][y]['response']['error'] = self.error_responses.get(_input_message.message_data[2], "UNK ERROR")
+
+                        if y < 0x1ff:
+                            self.sessions[response_id][x][y + 0x1ff]['response']['id'] = _input_message.message_id
+                            self.sessions[response_id][x][y + 0x1ff]['response']['data'] = None
+                            self.sessions[response_id][x][y + 0x1ff]['status'] = 2
+                            self.sessions[response_id][x][y + 0x1ff]['response']['error'] = self.error_responses.get(_input_message.message_data[2], "UNK ERROR")
                         return True
                 # Response
                 elif response_byte in self.sessions[response_id] and sub_command in self.sessions[response_id][response_byte]:
@@ -243,6 +269,16 @@ class UDSMessage:
                     #self.sessions[response_id][response_byte]['response']['sub'] =
                     self.sessions[response_id][response_byte][sub_command]['response']['data'] = _input_message.message_data[2:]
                     self.sessions[response_id][response_byte][sub_command]['status'] = 1
+                    self.sessions[response_id][response_byte][sub_command + 0x1ff]['status'] = 3
+                    return True
+                elif  response_byte in self.sessions[response_id] and sub_command not in self.sessions[response_id][response_byte]:
+                    for sub, req in self.sessions[response_id][response_byte].items():
+                        if sub >= 0x1ff and req['status'] == 0:
+                            req['response']['id'] = _input_message.message_id
+                            #self.sessions[response_id][response_byte]['response']['sub'] =
+                            req['response']['data'] = _input_message.message_data[1:]
+                            req['status'] = 1
+                            break
                     return True
         return False
 

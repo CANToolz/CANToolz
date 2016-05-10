@@ -294,16 +294,16 @@ class mod_stat(CANModule):
                                 data_ascii2 = "\n\t\tASCII: " + self.ret_ascii(data2)+"\n"
                             if self.is_ascii(body['response']['data']):
                                 data_ascii = "\n\t\tASCII: " + self.ret_ascii(data)+"\n"
-                            ret_str += "\n\tID: " + hex(fid) + " Service: " + str(hex(service)) + " Sub: " + (str(
-                                hex(sub_id))) + text + "\n\t\tRequest: " + self.get_hex(bytes(data2)) + data_ascii2 +\
+                            ret_str += "\n\tID: " + hex(fid) + " Service: " + str(hex(service)) + " Sub: " + ((str(
+                                hex(sub_id))) if sub_id < 0x100 else " NO SUB ") + text + "\n\t\tRequest: " + self.get_hex(bytes(data2)) + data_ascii2 +\
                                        "\n\t\tResponse: " + self.get_hex(bytes(data)) + data_ascii + "\n"
                         elif body['status'] == 2:
                             data2 = body['data']
                             data_ascii2 = ""
                             if self.is_ascii(data2):
                                 data_ascii2 = "\n\t\tASCII: " + self.ret_ascii(data2)+"\n"
-                            ret_str += "\n\tID: " + hex(fid) + " Service: " + str(hex(service)) + " Sub: " + (str(
-                                hex(sub_id))) + text + "\n\t\tRequest: " + self.get_hex(bytes(data2)) + data_ascii2 +\
+                            ret_str += "\n\tID: " + hex(fid) + " Service: " + str(hex(service)) + " Sub: " + ((str(
+                                hex(sub_id))) if sub_id < 0x100 else " (ALTERNATIVE INTERPRETATION if NO SUB) ")  + text + "\n\t\tRequest: " + self.get_hex(bytes(data2)) + data_ascii2 +\
                                       "\n\t\tError: " + body['response']['error'] + "\n"
 
         if _format.strip() not in ["ISO", "UDS"]:

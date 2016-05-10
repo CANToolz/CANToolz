@@ -67,30 +67,22 @@ class gen_ping(CANModule):
 
                     if 'services' in args:
                         for service in args['services']:
-                            subz = []
                             if 'service' in service:
                                 uds_m = UDSMessage(shift, padding)
 
                                 if 'sub' in service:
-                                    subz = [service['sub']]
+                                    sub = service['sub']
 
-                                elif service['service'] in UDSMessage.services_base:
-                                    subs = UDSMessage.services_base[service['service']]
-                                    for sub in list(subs.keys()):
-                                        if not sub:
-                                            sub = 0
-                                        subz.append(sub)
                                 else:
-                                    subz = [0]
+                                    sub = None
 
-                                if 'data' in service:
-                                    dat = service['data']
-                                else:
-                                    dat = []
-                                for sub in subz:
-                                    iso_list = uds_m.add_request(i, service['service'], sub, dat)
-                                    iso_list.reverse()
-                                    self.queue_messages.extend(iso_list)
+                            if 'data' in service:
+                                dat = service['data']
+                            else:
+                                dat = []
+                            iso_list = uds_m.add_request(i, service['service'], sub, dat)
+                            iso_list.reverse()
+                            self.queue_messages.extend(iso_list)
         else:
             self.dprint(1, "No range specified")
             self._active = False
