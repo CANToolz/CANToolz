@@ -18,7 +18,6 @@ actions = [
         'delay': 0.06,
         'range': [1, 2047],           # ID range (from 1790 to 1794)
         'services':[{'service': 0x10, 'sub': 0x01},
-                    {'service': 0x3E, 'sub': None},
                     {'service': 0x3E, 'sub': 0x01}],
         'mode':'UDS'}
     },

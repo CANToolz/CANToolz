@@ -1,3 +1,12 @@
+## Version 3.0-0
+### CHANGES
+ - **ecu_controls** module added, noew you can configure ECU control and monitoring (regex now). Very useful as API 8)
+ - cmd parametrisation changed a bit
+ - **mod_firewall** can filter on BUS values!
+ - by default all gen_* classes uses it's own BUS value (if not set then module name as BUS used)
+ - **UDS lib** and **mod_stat** has been improved, now less error on detection and more info on requests!
+ - **UDS lib** FIX: wrong error code interpretation..
+ 
 ## Version 2.8-0
 ### CHANGES
  - mod_stat feature: Print/Dump diff now have additional parameter - limit on uniq values. This will help a lot! Now you can do diff and exclude all 'noisy' frames
