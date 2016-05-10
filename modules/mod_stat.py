@@ -278,24 +278,33 @@ class mod_stat(CANModule):
             # Print out UDS
             ret_str += "UDS Detected:\n\n"
             for fid, services in uds_list.sessions.items():
-                for service, body in services.items():
-                    text = " (N/A) "
-                    if service in UDSMessage.services_base:
-                        for sub in UDSMessage.services_base[service]:
-                            if list(sub.keys())[0] == body['sub'] or None:
-                                text = " (" + list(sub.values())[0] + ") "
-                        if text == " (N/A) ":
-                            text = " (" + list(UDSMessage.services_base[service][0].values())[0] + ") "
-                    if body['status'] == 1:
-                        data =  body['response']['data']
-                        data_ascii = "\n"
-                        if self.is_ascii(body['response']['data']):
-                            data_ascii = "\n\t\tASCII: " + self.ret_ascii(data)+"\n"
-                        ret_str += "\n\tID: " + hex(fid) + " Service: " + str(hex(service)) + " Sub: " + (str(
-                            hex(body['sub'])) if body['sub'] else "None") + text + "\n\t\tResponse: " + self.get_hex(bytes(data)) + data_ascii
-                    elif body['status'] == 2:
-                       ret_str += "\n\tID: " + hex(fid) + " Service: " + str(hex(service)) + " Sub: " + (str(
-                            hex(body['sub'])) if body['sub'] else "None") + text + "\n\t\tError: " + body['response']['error']
+                for service, sub in services.items():
+                    for sub_id, body in sub.items():
+                        text = " (UNKNOWN) "
+                        if service in UDSMessage.services_base:
+                            serv_name = UDSMessage.services_base[service].get(sub_id,UDSMessage.services_base[service].get(None,'UNKNOWN'))
+                            text = " (" + serv_name + ") "
+
+                        if body['status'] == 1:
+                            data =  body['response']['data']
+                            data2 = body['data']
+                            data_ascii = ""
+                            data_ascii2 = ""
+                            if self.is_ascii(data2):
+                                data_ascii2 = "\n\t\tASCII: " + self.ret_ascii(data2)+"\n"
+                            if self.is_ascii(body['response']['data']):
+                                data_ascii = "\n\t\tASCII: " + self.ret_ascii(data)+"\n"
+                            ret_str += "\n\tID: " + hex(fid) + " Service: " + str(hex(service)) + " Sub: " + (str(
+                                hex(sub_id))) + text + "\n\t\tRequest: " + self.get_hex(bytes(data2)) + data_ascii2 +\
+                                       "\n\t\tResponse: " + self.get_hex(bytes(data)) + data_ascii + "\n"
+                        elif body['status'] == 2:
+                            data2 = body['data']
+                            data_ascii2 = ""
+                            if self.is_ascii(data2):
+                                data_ascii2 = "\n\t\tASCII: " + self.ret_ascii(data2)+"\n"
+                            ret_str += "\n\tID: " + hex(fid) + " Service: " + str(hex(service)) + " Sub: " + (str(
+                                hex(sub_id))) + text + "\n\t\tRequest: " + self.get_hex(bytes(data2)) + data_ascii2 +\
+                                      "\n\t\tError: " + body['response']['error'] + "\n"
 
         if _format.strip() not in ["ISO", "UDS"]:
             # Print detected loops

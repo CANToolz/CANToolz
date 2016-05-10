@@ -64,31 +64,33 @@ class gen_ping(CANModule):
                 elif iso_mode == 0:
                     self.queue_messages.append(CANMessage.init_data(i, len(_data), _data[:8]))
                 elif iso_mode == 2:
+
                     if 'services' in args:
                         for service in args['services']:
+                            subz = []
                             if 'service' in service:
                                 uds_m = UDSMessage(shift, padding)
+
                                 if 'sub' in service:
-                                    sub = service['sub']
+                                    subz = [service['sub']]
+
                                 elif service['service'] in UDSMessage.services_base:
                                     subs = UDSMessage.services_base[service['service']]
-                                    sub = 0
-                                    for s in subs:
-                                        sub = list(s.keys())[0]
+                                    for sub in list(subs.keys()):
                                         if not sub:
                                             sub = 0
-                                            continue
-                                        else:
-                                            break
+                                        subz.append(sub)
                                 else:
-                                    sub = 0
+                                    subz = [0]
+
                                 if 'data' in service:
                                     dat = service['data']
                                 else:
                                     dat = []
-                                iso_list = uds_m.add_request(i, service['service'], sub, dat)
-                                iso_list.reverse()
-                                self.queue_messages.extend(iso_list)
+                                for sub in subz:
+                                    iso_list = uds_m.add_request(i, service['service'], sub, dat)
+                                    iso_list.reverse()
+                                    self.queue_messages.extend(iso_list)
         else:
             self.dprint(1, "No range specified")
             self._active = False
