@@ -154,6 +154,7 @@ class hw_USBtin(CANModule):
             self._serialPort.write(b"O\r")
             self._run = True
             self.wait_for = False
+            self.last = time.clock()
         time.sleep(1)
 
 
@@ -196,7 +197,7 @@ class hw_USBtin(CANModule):
             self.dprint(0, 'No port in config!')
             return 0
 
-        self._restart = bool(params.get('auto_activate', True))
+        self._restart = bool(params.get('auto_activate', False))
         self.act_time = float(params.get('auto_activate', 5.0))
         self.last = time.clock()
         self.wait_for = False
@@ -220,9 +221,15 @@ class hw_USBtin(CANModule):
         if args.get('action') == 'read':
             can_msg = self.do_read(can_msg)
         elif args.get('action') == 'write':
+            # KOSTYL: workaround for BMW e90 bus
+            if self._restart and self._run and (time.clock() - self.last) >= self.act_time:
+                self.dev_write(0, "O")
+                self.last = time.clock()
             self.do_write(can_msg)
         else:
             self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
+
+
         """
         if self._restart:
                 if self.wait_for and can_msg.debugData and can_msg.debugText['text'][0] == "F" and len(can_msg.debugText['text']) > 2:
