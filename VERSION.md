@@ -1,4 +1,4 @@
-## Version 3.1-0
+## Version 3.1-1
  - lib module: cmd now can be any string, not just 1 byte
  - CAN MIDI music R&D example added: Specil for PHDays forum! Done by Hardware Village crew!
  - setup file added
