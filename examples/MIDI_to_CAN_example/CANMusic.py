@@ -4,7 +4,7 @@ from mido import MetaMessage
 from cantoolz.engine import *
 
 CANEngine = CANSploit()
-CANEngine.load_config("CANToolz_config/BMW_E90_MUSIC.py")
+CANEngine.load_config("CANToolz_config/BMW_F10_MUSIC.py")
 CANEngine.start_loop()
 index = CANEngine.find_module('ecu_controls')
 

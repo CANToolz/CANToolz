@@ -1,8 +1,6 @@
 load_modules = {
-    'hw_USBtin':    {'port':'auto', 'debug':2, 'speed':500},  # IO hardware module
 
     'ecu_controls':
-        {'bus':'BMW_E90',
 
         'commands':[
 
