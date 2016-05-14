@@ -1,5 +1,5 @@
-from libs.module import *
-from libs.isotp import *
+from cantoolz.module import *
+from cantoolz.isotp import *
 import time
 
 

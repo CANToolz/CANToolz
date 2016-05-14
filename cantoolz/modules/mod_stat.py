@@ -1,6 +1,6 @@
-from libs.module import *
-from libs.uds import *
-from libs.frag import *
+from cantoolz.module import *
+from cantoolz.uds import *
+from cantoolz.frag import *
 import json
 import re
 import collections
@@ -473,7 +473,6 @@ class mod_stat(CANModule):
         return self.print_diff_orig(1, idx1, idx2, 8 * 256)
 
     def print_diff_orig(self, mode, idx1, idx2, rang):
-
         table1 = self.create_short_table(self.all_frames[idx1]['buf'])
         table2 = self.create_short_table(self.all_frames[idx2]['buf'])
         table3 = self.create_short_table(self.all_frames[idx1]['buf'] + self.all_frames[idx2]['buf'])

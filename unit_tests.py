@@ -124,8 +124,6 @@ class ModUsbTin(unittest.TestCase):
         self.assertTrue(0 < ret.find(" 0x11223344 "), "Message should be in the list")
 
 
-
-
 class ModStatDiffTests(unittest.TestCase):
     def tearDown(self):
         self.CANEngine.stop_loop()
@@ -173,10 +171,10 @@ class ModStatDiffTests(unittest.TestCase):
         self.assertFalse(0 < ret.find(" 0x70b "), "Should be empty diff")
         self.assertFalse(0 < ret.find(" 0x709 "), "Should be empty diff")
 
-        self.CANEngine.call_module(1, "D, TEST BUFF")
+        self.CANEngine.call_module(1, "D , TEST BUFF")
         self.CANEngine.call_module(0, "r 0-6")
         time.sleep(1)
-        self.CANEngine.call_module(1, "D, TEST BUFF2")
+        self.CANEngine.call_module(1, "D , TEST BUFF2")
         self.CANEngine.call_module(0, "r")
         time.sleep(1)
         ret = self.CANEngine.call_module(1, "I 2,3")
@@ -210,7 +208,6 @@ class ModStatDiffTests(unittest.TestCase):
         self.assertFalse(0 < ret.find("1014490201314731"), "Should be empty diff")
         self.assertFalse(0 < ret.find("215a543533383236"), "Should not be empty diff")
         self.assertFalse(0 < ret.find("2246313039313439"), "Should not be empty diff")
-
 
 class LibDefragTests(unittest.TestCase):
     def tearDown(self):
@@ -668,13 +665,13 @@ class ModFirewallTests(unittest.TestCase):
 
 if __name__ == '__main__':
     sys.path.append('./modules')
-    from libs.engine import *
-    from libs.can import *
-    from libs.module import *
+    from cantoolz.engine import *
+    from cantoolz.can import *
+    from cantoolz.module import *
 
     # absPath=os.path.dirname(platform_audit) + "/unit_tests/"
     unittest.main()
 else:
-    from libs.engine import *
-    from libs.can import *
-    from libs.module import *
+    from cantoolz.engine import *
+    from cantoolz.can import *
+    from cantoolz.module import *

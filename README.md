@@ -29,8 +29,21 @@ CANToolz can work with CAN network by using next hardware:
 1. [USBtin](http://www.fischl.de/usbtin/)
 2. [CANBus Triple](https://canb.us/)
 
+
+## Dependencies
+    python 3.4
+      pip install pyserial
+      pip install numpy
+    
+    for MIDI_to_CAN
+      pip install mido
+
+## Install
+
+    python setup.py install
+
 ### Fast start
-sudo python cantoolz.py -g w -c examples/can_sniff.py 
+    sudo python cantoolz.py -g w -c examples/can_sniff.py 
 
 Then use browser and connect to http://localhost:4444
   
@@ -50,11 +63,7 @@ P.S. of course we are working on supporting other types of I/O hardware and modu
 Main idea that community can produce different modules that can be useful for all of us 8)
 
 Sniffing and UDS detection example, screenshot:
-![](https://1.bp.blogspot.com/-_SHafeN7ku0/Vyp4K_Lf_sI/AAAAAAAAAQ4/bVoDm-oN7C4v9t5fg0laAMqxQkEKfwUhQCLcB/s1600/vw2.png)
-
-## Dependencies
-    python 3.4
-    pip install pyserial
+![](https://camo.githubusercontent.com/e9d71e7de801c2f82c2ff4d408c7e737ea1342e2/687474703a2f2f696d6167697a65722e696d616765736861636b2e75732f76322f31303234783736387139302f3932322f537873466b4b2e706e67)
 
 Last stable release for Python 2.7: [https://github.com/eik00d/CANToolz/tree/Python_2.7_last_release](https://github.com/eik00d/CANToolz/tree/Python_2.7_last_release)
 

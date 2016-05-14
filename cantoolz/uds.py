@@ -1,4 +1,4 @@
-from libs.isotp import *
+from cantoolz.isotp import *
 import collections
 
 '''

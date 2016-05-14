@@ -1,5 +1,5 @@
-from libs.can import *
-from libs.module import *
+from cantoolz.can import *
+from cantoolz.module import *
 import serial
 import serial.tools.list_ports
 import time

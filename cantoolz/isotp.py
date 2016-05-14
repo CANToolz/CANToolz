@@ -1,4 +1,4 @@
-from libs.can import *
+from cantoolz.can import *
 
 '''
 dirty ISOTP impl

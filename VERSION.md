@@ -1,3 +1,8 @@
+## Version 3.1-0
+ - lib module: cmd now can be any string, not just 1 byte
+ - CAN MIDI music R&D example added: Specil for PHDays forum! Done by Hardware Village crew!
+ - setup file added
+ 
 ## Version 3.0-0
 ### CHANGES
  - **ecu_controls** module added, noew you can configure ECU control and monitoring (regex now). Very useful as API 8)
