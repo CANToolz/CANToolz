@@ -14,3 +14,5 @@ build/
 cantoolz/modules/emu_honda_civic_4d_2012.py
 cantoolz/modules/honda_civic_4d_2012.py
 tests/meta.txt
+CANToolz.egg-info
+dist
