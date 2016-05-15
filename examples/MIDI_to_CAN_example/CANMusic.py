@@ -16,3 +16,6 @@ for message in MidiFile('CANToolz_config/BMW.mid'):
     time.sleep(message.time)
     if not isinstance(message, MetaMessage) and message.type == 'note_on':
         CANEngine.call_module(index, str(message.note))
+
+CANEngine.stop_loop()
+CANEngine.exit()
