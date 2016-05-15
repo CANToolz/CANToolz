@@ -36,5 +36,5 @@ actions = [
     {'mod_stat':{}},
     {'mod_firewall': {'white_bus': ['ECU_TEST']}},
     {'mod_stat~2':{}},
-    {'hw_USBtin':    {'action':'write','pipe': 2}}
+    {'hw_USBtin':    {'action':'write','pipe': 1}}
     ]

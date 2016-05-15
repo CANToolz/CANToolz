@@ -6,7 +6,7 @@ import re
 import collections
 import ast
 import time
-
+from cantoolz.correl import *
 
 class mod_stat(CANModule):
     name = "Service discovery and statistic"
@@ -39,6 +39,7 @@ class mod_stat(CANModule):
         self.meta_data = {}
         self._bodyList = collections.OrderedDict()
         self.shift = params.get('uds_shift', 8)
+        self.subnet = Subnet(lambda stream: Separator(SeparatedMessage.builder))
 
         if 'meta_file' in params:
             self.dprint(1, self.do_load_meta(params['meta_file']))
@@ -63,6 +64,8 @@ class mod_stat(CANModule):
         self._cmdList['r'] = ["Dump all buffers in replay format", 1, " <filename>, [index]", self.do_dump_replay, True]
         self._cmdList['d'] = ["Dump STAT (all buffers) in CSV format", 1, " <filename>, [index]", self.do_dump_csv, True]
         self._cmdList['g'] = ["Get DELAY value for gen_ping/gen_fuzz (EXPERIMENTAL)",1,"<Bus SPEED in Kb/s>", self.get_delay, True]
+        self._cmdList['show'] = ["Show detected amount of fields for all ECU (EXPEREMENTAL)", 1, "[buffer index]", self.show_fields, True]
+        self._cmdList['fields'] = ["Show values in fields for chosen ECU (EXPEREMENTAL)", 1, "<ECU ID>[, hex|bin|int [, buffer index ]]", self.show_fields_ecu, True]
 
     def get_delay(self, def_in, speed):
         _speed = float(speed)*1024
@@ -550,3 +553,90 @@ class mod_stat(CANModule):
         if can_msg.CANData:
             self.all_frames[self._index]['buf'].append(can_msg)
         return can_msg
+
+    @staticmethod
+    def get_data_in_format(data, idx_1: int, idx_2: int, format: str):
+        bin_data = ''
+        for byte in data:
+            bin_data += bin(byte)[2:].zfill(8)
+
+        selected_value = int(bin_data[idx_1:idx_2], 2)
+
+        if format.strip() in ["bin", "b","binary"]:
+            return bin(selected_value)[2:]
+        elif format.strip() in ["hex", "h"]:
+            return hex(selected_value)[2:]
+        elif format.strip() in ["int","i"]:
+            return str(selected_value)
+        else:
+            return hex(selected_value)[2:]
+
+    def show_fields_ecu(self, zd, ecu_id):
+
+        _index = -1
+        format = "bin"
+        if len(ecu_id.strip().split(",")) == 2:
+            format = str(ecu_id.strip().split(",")[1].strip())
+        elif len(ecu_id.strip().split(",")) == 3:
+            _index = int(ecu_id.strip().split(",")[2])
+            format = ecu_id.strip().split(",")[1].strip()
+
+
+        ecu_id = ecu_id.strip().split(",")[0]
+
+        if ecu_id.strip()[0:2] == '0x':
+            ecu_id = int(ecu_id,16)
+        else:
+            ecu_id = int(ecu_id)
+        table = "Data by fields in ECU: " + hex(ecu_id) + "\n\n"
+        temp_buf = []
+
+        self.show_fields(0, str(_index))
+
+        if _index == -1:
+            for buf in self.all_frames:
+                temp_buf = temp_buf + buf['buf']
+        else:
+            temp_buf = self.all_frames[_index]['buf']
+
+        list_idx = self.subnet._devices[hex(ecu_id)]._indexes()
+
+        rows = []
+
+        for can_msg in temp_buf:
+            if can_msg.CANFrame.frame_id == ecu_id:
+                tmp_f = []
+                idx_0 = 0
+                for idx in list_idx:
+                    tmp_f.append(self.get_data_in_format(can_msg.CANFrame.frame_data, idx_0, idx, format))
+                    idx_0 = idx
+                rows.append(tmp_f)
+
+        cols = list(zip(*rows))
+        col_widths = [ max(len(value) for value in col) for col in cols ]
+        format_table = '    '.join(['%%-%ds' % width for width in col_widths ])
+        for row in rows:
+            table += format_table % tuple(row) + "\n"
+        table += ""
+
+        return table
+
+    def show_fields(self, zd = 0, _index = "-1"):
+        ret_str = ""
+
+        _index = int(_index)
+        temp_buf = []
+        if _index == -1:
+            for buf in self.all_frames:
+                temp_buf = temp_buf + buf['buf']
+        else:
+            temp_buf = self.all_frames[_index]['buf']
+
+        for can_msg in temp_buf:
+            for _ in self.subnet.process(can_msg.CANFrame):
+                    pass
+
+        for key, value in self.subnet._devices.items():
+            ret_str += "ECU: " + str(key) + ", FIELDS: " + str(len(value._indexes())) + "\n"
+
+        return ret_str

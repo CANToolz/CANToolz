@@ -221,7 +221,7 @@ class hw_USBtin(CANModule):
         if args.get('action') == 'read':
             can_msg = self.do_read(can_msg)
         elif args.get('action') == 'write':
-            # KOSTYL: workaround for BMW e90 bus
+            # KOSTYL: workaround for BMW f10 bus
             if self._restart and self._run and (time.clock() - self.last) >= self.act_time:
                 self.dev_write(0, "O")
                 self.last = time.clock()

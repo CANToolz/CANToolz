@@ -18,8 +18,6 @@ class RawMessage:
         self._size = int(size)
         self._payload = bytes(data)
 
-    944
-
 
 class SeparatedMessage:
 
