@@ -173,6 +173,9 @@ class hw_USBtin(CANModule):
             self.dprint(0, 'Error opening port: ' + self._COMPort + str(e))
             return 0
 
+    def do_exit(self, params):
+        self._serialPort.close()
+
     def do_init(self, params):  # Get device and open serial port
         self.DEBUG = int(params.get('debug', 0))
         self.dprint(1, "Init phase started...")

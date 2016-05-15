@@ -66,6 +66,9 @@ class hw_CANBusTriple(CANModule):
         time.sleep(1)
         self.read_all()
 
+    def do_exit(self, params):
+        self._serialPort.close()
+
     def do_start(self, params):  # enable reading
         self._serialPort.write(b"\x03\x01\x01\x00\x00\x00\x00")
         time.sleep(1)

@@ -16,3 +16,4 @@ cantoolz/modules/honda_civic_4d_2012.py
 tests/meta.txt
 CANToolz.egg-info
 dist
+examples/MIDI_to_CAN_example/CANToolz_config/track.mp3

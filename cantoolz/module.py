@@ -104,3 +104,6 @@ class CANModule:
 
     def do_write(self, params):
         return 0
+
+    def do_exit(self, params):
+        return 0

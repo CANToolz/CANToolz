@@ -93,6 +93,10 @@ class CANSploit:
             ret = "Module " + str(index) + " not loaded!"
         return ret
 
+    def exit(self):
+         for name, module, params in self._enabledList:
+            module.do_exit(params)
+
     # Enable loop        
     def start_loop(self):
         self._stop.clear()

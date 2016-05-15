@@ -1,8 +1,9 @@
-## Version 3.1-3
+## Version 3.1-5
  - lib module: cmd now can be any string, not just 1 byte
  - CAN MIDI music R&D example added: Specil for PHDays forum! Done by Hardware Village crew!
  - setup file added
  - simple_io module added
+ - Exit supported, USBtin/CANBusTriple on exit - closing COM port
  
 ## Version 3.0-0
 ### CHANGES
