@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='CANToolz',
-    version='3.1.2',
+    version='3.1.3',
     author='Alexey Sintsov',
     author_email='alex.sintsov@gmail.com',
     packages=['cantoolz', 'cantoolz.stream', 'cantoolz.utils', 'cantoolz.modules'],
@@ -12,7 +12,8 @@ setup(
     description='Framework and library for black-box analysis and reverse engineering of Controller Area Network (CAN)',
     install_requires=[
         'pyserial',
-        'mido'
+        'mido',
+        'numpy'
     ]
 
 )
