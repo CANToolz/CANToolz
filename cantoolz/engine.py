@@ -94,7 +94,7 @@ class CANSploit:
         return ret
 
     def engine_exit(self):
-         for name, module, params in self._enabledList:
+        for name, module, params in self._enabledList:
             module.do_exit(params)
 
     # Enable loop        
