@@ -93,7 +93,7 @@ class CANSploit:
             ret = "Module " + str(index) + " not loaded!"
         return ret
 
-    def exit(self):
+    def engine_exit(self):
          for name, module, params in self._enabledList:
             module.do_exit(params)
 

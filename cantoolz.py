@@ -269,7 +269,6 @@ class UserInterface:
             print("No such GUI...")
 
     def loop_exit(self):
-        self.CANEngine.exit()
         exit()
 
     def web_loop(self):
@@ -286,7 +285,7 @@ class UserInterface:
             server.shutdown()
             server.server_close()
             self.CANEngine.stop_loop()
-            self.CANEngine.exit()
+            self.CANEngine.engine_exit()
             print("gg bb")
             exit()
 
@@ -300,6 +299,7 @@ class UserInterface:
 
             if input_ == 'q' or input_ == 'quit':
                 self.CANEngine.stop_loop()
+                self.CANEngine.engine_exit()
                 self.loop_exit()
             elif input_ == 'start' or input_ == 's':
                 self.CANEngine.start_loop()

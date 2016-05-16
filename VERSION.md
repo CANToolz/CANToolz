@@ -1,3 +1,6 @@
+## Version 3.2-1
+ - USBTin bug with restart fixed... sorry :-)
+
 ## Version 3.2-0
  - lib module: cmd now can be any string, not just 1 byte
  - CAN MIDI music R&D example added: Specil for PHDays forum! Done by Hardware Village crew!
