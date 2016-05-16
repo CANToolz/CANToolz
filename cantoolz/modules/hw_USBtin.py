@@ -207,7 +207,7 @@ class hw_USBtin(CANModule):
         self.act_time = float(params.get('auto_activate', 5.0))
         self.last = time.clock()
         self.wait_for = False
-        self._run = False
+        self._run = True
         self.do_stop({})
         self.set_speed(0, str(params.get('speed', '500')) + ", " + str(params.get('sjw', '3')))
         # print str(self._serialPort)
