@@ -616,6 +616,43 @@ class ModFirewallTests(unittest.TestCase):
     def tearDown(self):
         self.CANEngine.stop_loop()
 
+    def test_blockedBodyHex(self):
+        self.CANEngine = CANSploit()
+        self.CANEngine.load_config("tests/test_1.py")
+        self.CANEngine.edit_module(2, {'pipe': 2, 'hex_black_body': ['0102030605']})
+        self.CANEngine.start_loop()
+        index = 3
+
+        self.CANEngine.call_module(0, "t 4:6:010203060505")  # pass
+        time.sleep(1)
+        mod = self.CANEngine._enabledList[index][1].CANList
+        self.assertFalse(mod is None, "We should find message in PIPE")
+        self.assertTrue(mod.frame_id == 4, "We should be able to find ID 4")
+        self.CANEngine._enabledList[index][1].CANList = None
+
+        self.CANEngine.call_module(0, "t 4:5:0102030605")  # blocked
+
+        mod = self.CANEngine._enabledList[index][1].CANList
+        self.assertTrue(mod is None, "We should NOT find message in PIPE")
+        #self.assertFalse(mod.frame_id == 4, "We should be able to find ID 4")
+        self.CANEngine._enabledList[index][1].CANList = None
+
+        self.CANEngine.edit_module(2, {'pipe': 2, 'hex_white_body': ['0102030605']})
+
+        self.CANEngine.call_module(0, "t 4:5:0102030605")  # pass
+        time.sleep(1)
+        mod = self.CANEngine._enabledList[index][1].CANList
+        self.assertFalse(mod is None, "We should find message in PIPE")
+        self.assertTrue(mod.frame_id == 4, "We should be able to find ID 4")
+        self.CANEngine._enabledList[index][1].CANList = None
+
+        self.CANEngine.call_module(0, "t 4:6:010203060505")  # blocked
+
+        mod = self.CANEngine._enabledList[index][1].CANList
+        self.assertTrue(mod is None, "We should NOT find message in PIPE")
+        #self.assertFalse(mod.frame_id == 4, "We should be able to find ID 4")
+        self.CANEngine._enabledList[index][1].CANList = None
+
     def test_blockedBody(self):
         self.CANEngine = CANSploit()
         self.CANEngine.load_config("tests/test_1.py")
