@@ -44,7 +44,7 @@ class mod_stat(CANModule):
         if 'meta_file' in params:
             self.dprint(1, self.do_load_meta(params['meta_file']))
 
-        self._cmdList['p'] = ["Print current table", 0, "", self.do_print, True]
+        self._cmdList['p'] = ["Print current table",1, "[index]", self.do_print, True]
 
         self._cmdList['a'] = ["Analyses of captured traffic", 1, "<UDS|ISO|FRAG|ALL(defaut)>,[buffer index]", self.do_anal, True]
         self._cmdList['u'] = ["    - UDS shift value",1,"[shift value]", self.change_shift, True]

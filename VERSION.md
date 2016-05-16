@@ -25,7 +25,7 @@
  
 ## Version 2.6-0
 ### CHANGES
- - mod_stat refactoring: now we can support multi-biffers for sniffing and diff
+ - mod_stat refactoring: now we can support multi-buffers for sniffing and diff
  
 ## Version 2.5-0
 ### CHANGES
