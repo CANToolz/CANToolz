@@ -1,7 +1,7 @@
 import sys
 import threading
 from cantoolz.can import *
-
+import time
 '''
 Main class
 '''
@@ -93,7 +93,7 @@ class CANSploit:
             ret = "Module " + str(index) + " not loaded!"
         return ret
 
-    def exit(self):
+    def engine_exit(self):
          for name, module, params in self._enabledList:
             module.do_exit(params)
 
@@ -116,6 +116,7 @@ class CANSploit:
     # Pause loop      
     def stop_loop(self):
         self._stop.set()
+        time.sleep(1)
         return not self._stop.is_set()
 
     # Current status

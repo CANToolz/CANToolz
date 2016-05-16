@@ -135,7 +135,7 @@ class hw_USBtin(CANModule):
             final_cnf3 = ch_btr2
         if final_cnf1 == 0 and final_cnf2 == 0 and final_cnf3 == 0:
             if again:
-                self._run = True
+                #self._run = True
                 self.do_start({})
                 self._active = True
 
@@ -144,14 +144,17 @@ class hw_USBtin(CANModule):
             self.dprint(0, "CNF1 = " + final_cnf1.decode("ISO-8859-1") + " CNF2 = " + final_cnf2.decode("ISO-8859-1")+" CNF3 = " + final_cnf3.decode("ISO-8859-1"))
             self._serialPort.write(b"s" + final_cnf1 + final_cnf2 + final_cnf3 + b"\r")
             if again:
-                self._run = True
+                #self._run = True
                 self.do_start({})
                 self._active = True
             return "Speed: " + str(self._currentSpeed)
 
     def do_start(self, params):  # enable reading
         if not self._run:
-            self._serialPort.write(b"O\r")
+            if not self._usbtin_loop:
+                self._serialPort.write(b"O\r")
+            else:
+                self._serialPort.write(b"l\r")
             self._run = True
             self.wait_for = False
             self.last = time.clock()
@@ -199,12 +202,12 @@ class hw_USBtin(CANModule):
         else:
             self.dprint(0, 'No port in config!')
             return 0
-
+        self._usbtin_loop = bool(params.get('usbtin_loop',False))
         self._restart = bool(params.get('auto_activate', False))
         self.act_time = float(params.get('auto_activate', 5.0))
         self.last = time.clock()
         self.wait_for = False
-        self._run = False
+        self._run = True
         self.do_stop({})
         self.set_speed(0, str(params.get('speed', '500')) + ", " + str(params.get('sjw', '3')))
         # print str(self._serialPort)
