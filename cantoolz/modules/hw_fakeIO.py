@@ -1,5 +1,5 @@
-from libs.can import *
-from libs.module import *
+from cantoolz.can import *
+from cantoolz.module import *
 
 
 class hw_fakeIO(CANModule):

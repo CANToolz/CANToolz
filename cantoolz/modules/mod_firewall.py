@@ -1,4 +1,4 @@
-from libs.module import *
+from cantoolz.module import *
 
 
 class mod_firewall(CANModule):
@@ -39,6 +39,14 @@ class mod_firewall(CANModule):
                 self.dprint(2, "Message " + str(can_msg.CANFrame.frame_id) + " has been blocked(WB) (BUS = " + str(
                     can_msg.bus) + ")")
             elif 'black_body' in args and can_msg.CANFrame.frame_data in args.get('black_body',[]):
+                can_msg.CANData = False
+                self.dprint(2, "Message " + str(can_msg.CANFrame.frame_id) + " has been blocked(BB) (BUS = " + str(
+                    can_msg.bus) + ")")
+            if 'hex_white_body' in args and can_msg.CANFrame.frame_raw_data.hex() not in args.get('hex_white_body',[]):
+                can_msg.CANData = False
+                self.dprint(2, "Message " + str(can_msg.CANFrame.frame_id) + " has been blocked(WB) (BUS = " + str(
+                    can_msg.bus) + ")")
+            elif 'hex_black_body' in args and can_msg.CANFrame.frame_raw_data.hex() in args.get('hex_black_body',[]):
                 can_msg.CANData = False
                 self.dprint(2, "Message " + str(can_msg.CANFrame.frame_id) + " has been blocked(BB) (BUS = " + str(
                     can_msg.bus) + ")")

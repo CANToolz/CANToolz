@@ -1,3 +1,11 @@
+## Version 3.2-0
+ - lib module: cmd now can be any string, not just 1 byte
+ - CAN MIDI music R&D example added: Specil for PHDays forum! Done by Hardware Village crew!
+ - setup file added
+ - **simple_io** module added
+ - Exit supported, USBtin/CANBusTriple on exit - closing COM port
+ - **mod_firewall**, now body can be filtered not by list but by HEX ASCII also, more user-friendly
+ 
 ## Version 3.0-0
 ### CHANGES
  - **ecu_controls** module added, noew you can configure ECU control and monitoring (regex now). Very useful as API 8)
@@ -17,7 +25,7 @@
  
 ## Version 2.6-0
 ### CHANGES
- - mod_stat refactoring: now we can support multi-biffers for sniffing and diff
+ - mod_stat refactoring: now we can support multi-buffers for sniffing and diff
  
 ## Version 2.5-0
 ### CHANGES

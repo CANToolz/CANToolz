@@ -45,13 +45,17 @@ class CANModule:
         ret = ""
         self.thr_block.wait(3)
         self.thr_block.clear()
-        if string[0] in self._cmdList:
-            cmd = self._cmdList[string[0]]
+        in_cmd = string.lstrip().split(" ")[0]
+        lost_cmd = None
+        if len(string.lstrip().split(" ")) > 1:
+            lost_cmd = ' '.join(string.lstrip().split(" ")[1:])
+        if in_cmd in self._cmdList:
+            cmd = self._cmdList[in_cmd]
             if cmd[4]:
                 if len(cmd) == 5:
                     cmd.append(0)
-                if len(string.strip()) > 2:
-                    ret = cmd[3](cmd[5],string[2:])
+                if lost_cmd:
+                    ret = cmd[3](cmd[5], lost_cmd)
                 else:
                     ret = cmd[3](cmd[5])
             else:
@@ -99,4 +103,7 @@ class CANModule:
         return 0
 
     def do_write(self, params):
+        return 0
+
+    def do_exit(self, params):
         return 0

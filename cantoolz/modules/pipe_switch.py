@@ -1,4 +1,4 @@
-from libs.module import *
+from cantoolz.module import *
 import copy
 
 

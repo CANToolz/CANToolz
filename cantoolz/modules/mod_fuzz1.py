@@ -1,5 +1,5 @@
-from libs.module import *
-from libs.can import *
+from cantoolz.module import *
+from cantoolz.can import *
 from random import shuffle
 
 

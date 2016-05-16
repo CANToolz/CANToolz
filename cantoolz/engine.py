@@ -1,7 +1,6 @@
 import sys
 import threading
-from libs.can import *
-
+from cantoolz.can import *
 
 '''
 Main class
@@ -38,7 +37,6 @@ class CANSploit:
         self._stop.set()
         self._raw = threading.Event()
         self._idc = -1
-        sys.path.append('./modules')
         sys.dont_write_bytecode = True
 
     # Main loop with two pipes
@@ -94,6 +92,10 @@ class CANSploit:
         else:
             ret = "Module " + str(index) + " not loaded!"
         return ret
+
+    def exit(self):
+         for name, module, params in self._enabledList:
+            module.do_exit(params)
 
     # Enable loop        
     def start_loop(self):
@@ -170,7 +172,7 @@ class CANSploit:
 
     def init_module(self, mod, params):
         namespace = {}
-        self._modules.append(__import__(mod.split("~")[0]))
+        self._modules.append(__import__("cantoolz.modules." + mod.split("~")[0], globals(), locals(), [mod.split("~")[0]]))
         namespace['mod'] = self._modules[-1]
         namespace['params'] = params
         exec('cls = mod.' + mod.split("~")[0] + '(params)', namespace)  # init module

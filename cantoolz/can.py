@@ -20,6 +20,17 @@ class CANMessage:
 
         self.frame_type = type
 
+    def __bytes__(self):
+        return self.frame_raw_data
+
+    def __len__(self):
+        return self.frame_length
+
+    def __int__(self):
+        return self.frame_id
+
+    def __str__(self):
+        return hex(self.frame_id)
 
     @property
     def frame_raw_id(self):

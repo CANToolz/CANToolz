@@ -1,5 +1,5 @@
-from libs.can import *
-from libs.module import *
+from cantoolz.can import *
+from cantoolz.module import *
 import serial
 import serial.tools.list_ports
 import time
@@ -173,6 +173,9 @@ class hw_USBtin(CANModule):
             self.dprint(0, 'Error opening port: ' + self._COMPort + str(e))
             return 0
 
+    def do_exit(self, params):
+        self._serialPort.close()
+
     def do_init(self, params):  # Get device and open serial port
         self.DEBUG = int(params.get('debug', 0))
         self.dprint(1, "Init phase started...")
@@ -221,7 +224,7 @@ class hw_USBtin(CANModule):
         if args.get('action') == 'read':
             can_msg = self.do_read(can_msg)
         elif args.get('action') == 'write':
-            # KOSTYL: workaround for BMW e90 bus
+            # KOSTYL: workaround for BMW f10 bus
             if self._restart and self._run and (time.clock() - self.last) >= self.act_time:
                 self.dev_write(0, "O")
                 self.last = time.clock()

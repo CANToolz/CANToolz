@@ -1,5 +1,5 @@
-from libs.module import *
-from libs.uds import *
+from cantoolz.module import *
+from cantoolz.uds import *
 import time
 
 class gen_ping(CANModule):

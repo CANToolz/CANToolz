@@ -1,5 +1,5 @@
-from libs.can import *
-from libs.module import *
+from cantoolz.can import *
+from cantoolz.module import *
 import serial
 import serial.tools.list_ports
 import time
@@ -65,6 +65,9 @@ class hw_CANBusTriple(CANModule):
         self._serialPort.write(b"\x03\x03\x00")
         time.sleep(1)
         self.read_all()
+
+    def do_exit(self, params):
+        self._serialPort.close()
 
     def do_start(self, params):  # enable reading
         self._serialPort.write(b"\x03\x01\x01\x00\x00\x00\x00")
