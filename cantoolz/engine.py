@@ -35,6 +35,8 @@ class CANSploit:
         self._mainThread = None
         self._stop = threading.Event()
         self._stop.set()
+        self.do_stop_e = threading.Event()
+        self.do_stop_e.clear()
         self._raw = threading.Event()
         self._idc = -1
         sys.dont_write_bytecode = True
@@ -44,7 +46,7 @@ class CANSploit:
         # Run until STOP
         #error_on_bus = {}
         #error = False
-        while not self._stop.is_set():
+        while not self.do_stop_e.is_set():
             self._pipes = {}
             i = 0
             for name, module, params in self._enabledList:  # Each module
@@ -82,6 +84,7 @@ class CANSploit:
                     # Here when STOP
         for name, module, params in self._enabledList:
             module.do_stop(params)
+        self.do_stop_e.clear()
 
     # Call module command        
     def call_module(self, index, params):
@@ -99,25 +102,28 @@ class CANSploit:
 
     # Enable loop        
     def start_loop(self):
-        self._stop.clear()
-
         for name, module, params in self._enabledList:
             module.do_start(params)
             #params['!error_on_bus'] = False
             module.thr_block.set()
 
         self._thread = threading.Thread(target=self.main_loop)
-
         self._thread.daemon = True
+
+        self._stop.clear()
+        self.do_stop_e.clear()
         self._thread.start()
 
         return not self._stop.is_set()
 
     # Pause loop      
     def stop_loop(self):
-        self._stop.set()
-        time.sleep(1)
-        return not self._stop.is_set()
+        if not self._stop.is_set() and not self.do_stop_e.set():
+            self.do_stop_e.set()
+            while self.do_stop_e.is_set():
+                time.sleep(0.0000001)
+            self._stop.set()
+        return 1
 
     # Current status
     @property

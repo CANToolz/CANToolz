@@ -1,3 +1,6 @@
+## Version 3.2-2
+ - engine do_stop race-condition fixed... sorry :-)
+ 
 ## Version 3.2-1
  - USBTin bug with restart fixed... sorry :-)
 
