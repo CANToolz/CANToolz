@@ -284,6 +284,7 @@ class UserInterface:
         except KeyboardInterrupt:
             server.shutdown()
             server.server_close()
+            print("Please wait... (do not press ctr-c again!)")
             self.CANEngine.stop_loop()
             self.CANEngine.engine_exit()
             print("gg bb")
@@ -298,8 +299,10 @@ class UserInterface:
                 input_ = "stop"
 
             if input_ == 'q' or input_ == 'quit':
+                print("Please wait... (do not press ctr-c again!)")
                 self.CANEngine.stop_loop()
                 self.CANEngine.engine_exit()
+                print("gg bb")
                 self.loop_exit()
             elif input_ == 'start' or input_ == 's':
                 self.CANEngine.start_loop()
@@ -355,11 +358,11 @@ class UserInterface:
                     _mod = int(match.group(2).strip())
                     _paramz = match.group(3).strip()
                     if 1 == 1:
-                        #                    try:
-                        text = self.CANEngine.call_module(_mod, str(_paramz))
-                        print(text)
-                        #                    except Exception as e:
-                        #                        print "CMD input_ error: "+str(e)
+                        try:
+                            text = self.CANEngine.call_module(_mod, str(_paramz))
+                            print("Response: " + text)
+                        except Exception as e:
+                            print("CMD input_ error: " + str(e))
 
             elif input_[0:4] == 'help' or input_[0:2] == 'h ':
 
