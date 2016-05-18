@@ -335,8 +335,8 @@ class hw_USBtin(CANModule):
                 cmd_byte = b"R"
                 id_f = self.get_hex(can_msg.CANFrame.frame_raw_id).zfill(8)[0:8].encode('ISO-8859-1')
             if cmd_byte:
-                self.dprint(2, "w2")
                 write_buf = cmd_byte + id_f + str(can_msg.CANFrame.frame_length).encode('ISO-8859-1') + self.get_hex(can_msg.CANFrame.frame_raw_data).encode('ISO-8859-1') + b"\r"
+                self.dprint(2, "w2: " + write_buf.decode('ISO-8859-1'))
                 self._serialPort.write(write_buf)
                 self.dprint(2, "w3")
                 self.dprint(2, "WRITE: " + write_buf.decode('ISO-8859-1'))
