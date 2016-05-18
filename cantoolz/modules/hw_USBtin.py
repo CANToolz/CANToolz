@@ -55,7 +55,7 @@ class hw_USBtin(CANModule):
 
     def do_stop(self, params):  # disable reading
         if self._run:
-            self._serialPort.write(b"C\r")
+            self.dev_write(0, "C")
             self._run = False
         time.sleep(1)
         self.read_all()
@@ -152,9 +152,9 @@ class hw_USBtin(CANModule):
     def do_start(self, params):  # enable reading
         if not self._run:
             if not self._usbtin_loop:
-                self._serialPort.write(b"O\r")
+                self.dev_write(0, "O")
             else:
-                self._serialPort.write(b"l\r")
+                self.dev_write(0, "l")
             self._run = True
             self.wait_for = False
             self.last = time.clock()
@@ -224,6 +224,7 @@ class hw_USBtin(CANModule):
         return ""
 
     def do_effect(self, can_msg, args):  # read full packet from serial port
+        self.dprint(2, "ACTION: " + args.get('action'))
         if args.get('action') == 'read':
             can_msg = self.do_read(can_msg)
         elif args.get('action') == 'write':
