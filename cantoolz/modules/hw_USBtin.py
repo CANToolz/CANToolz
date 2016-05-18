@@ -163,8 +163,8 @@ class hw_USBtin(CANModule):
 
     def init_port(self):
         try:
-            self._serialPort = serial.Serial(self._COMPort, 57600, timeout=0.5, parity=serial.PARITY_EVEN, rtscts=1)
-
+            self._serialPort = serial.Serial(self._COMPort, 57600, timeout=0.5, write_timeout=1, writeTimeout=1, parity=serial.PARITY_EVEN, rtscts=1)
+            #self._serialPort.writeTimeout = 1
             if (self.get_info().find("V0100")) != -1:
                 self.dprint(1, "Port found: " + self._COMPort)
                 return 1
@@ -224,7 +224,6 @@ class hw_USBtin(CANModule):
         return ""
 
     def do_effect(self, can_msg, args):  # read full packet from serial port
-        self.dprint(2, "ACTION: " + args.get('action'))
         if args.get('action') == 'read':
             can_msg = self.do_read(can_msg)
         elif args.get('action') == 'write':
@@ -339,8 +338,10 @@ class hw_USBtin(CANModule):
                 id_f = self.get_hex(can_msg.CANFrame.frame_raw_id).zfill(8)[0:8].encode('ISO-8859-1')
             if cmd_byte:
                 write_buf = cmd_byte + id_f + str(can_msg.CANFrame.frame_length).encode('ISO-8859-1') + self.get_hex(can_msg.CANFrame.frame_raw_data).encode('ISO-8859-1') + b"\r"
-                self.dprint(2, "w2: " + write_buf.decode('ISO-8859-1'))
-                self._serialPort.write(write_buf)
-                #self.dprint(2, "w3")
+                self.dprint(2, "Try to write: " + write_buf.decode('ISO-8859-1'))
+                try:
+                    self._serialPort.write(write_buf)
+                except:
+                    self.dprint(1, "LOST PACKET: " + write_buf.decode('ISO-8859-1'))
                 self.dprint(2, "WRITE: " + write_buf.decode('ISO-8859-1'))
         return can_msg
