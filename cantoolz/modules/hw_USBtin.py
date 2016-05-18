@@ -261,13 +261,13 @@ class hw_USBtin(CANModule):
 
     def do_read(self, can_msg):
         data = b""
-        self.dprint(2, "r1")
+        #self.dprint(2, "r1")
         if self._serialPort.inWaiting() > 0:
             while not can_msg.CANData and not can_msg.debugData:
-                self.dprint(2, "r2")
+                #self.dprint(2, "r2")
                 byte = self._serialPort.read(1)
-                self.dprint(2, "r3")
-                self.dprint(2, self.get_hex(byte))
+                #self.dprint(2, "r3")
+                #self.dprint(2, self.get_hex(byte))
                 if byte == b"":
                     break
 
@@ -319,7 +319,7 @@ class hw_USBtin(CANModule):
 
     def do_write(self, can_msg):
         if can_msg.CANData:
-            self.dprint(2, "w1")
+            #self.dprint(2, "w1")
             cmd_byte = None
             id_f = None
             if not can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.DataFrame:  # 11 bit format
@@ -338,6 +338,6 @@ class hw_USBtin(CANModule):
                 write_buf = cmd_byte + id_f + str(can_msg.CANFrame.frame_length).encode('ISO-8859-1') + self.get_hex(can_msg.CANFrame.frame_raw_data).encode('ISO-8859-1') + b"\r"
                 self.dprint(2, "w2: " + write_buf.decode('ISO-8859-1'))
                 self._serialPort.write(write_buf)
-                self.dprint(2, "w3")
+                #self.dprint(2, "w3")
                 self.dprint(2, "WRITE: " + write_buf.decode('ISO-8859-1'))
         return can_msg
