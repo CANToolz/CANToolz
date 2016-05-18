@@ -38,7 +38,7 @@ class hw_USBtin(CANModule):
     _bus = "USBTin"
 
     def get_status(self, def_in):
-        return "Current status: " + str(self._active) + "\nCurrent SPEED: " + str(self._currentSpeed) + "\nPORT: " + self._COMPort
+        return "Current status: " + str(self._active) + "\nCurrent SPEED: " + str(self._currentSpeed) + "\nPORT: " + self._COMPort + "\nLost frames: " + str(self._lost_frames)
 
     def get_info(self):  # Read info
         self._serialPort.write(b"S0\r")
@@ -55,7 +55,7 @@ class hw_USBtin(CANModule):
 
     def do_stop(self, params):  # disable reading
         if self._run:
-            self._serialPort.write(b"C\r")
+            self.dev_write(0, "C")
             self._run = False
         time.sleep(1)
         self.read_all()
@@ -150,11 +150,12 @@ class hw_USBtin(CANModule):
             return "Speed: " + str(self._currentSpeed)
 
     def do_start(self, params):  # enable reading
+
         if not self._run:
             if not self._usbtin_loop:
-                self._serialPort.write(b"O\r")
+                self.dev_write(0, "O")
             else:
-                self._serialPort.write(b"l\r")
+                self.dev_write(0, "l")
             self._run = True
             self.wait_for = False
             self.last = time.clock()
@@ -163,8 +164,8 @@ class hw_USBtin(CANModule):
 
     def init_port(self):
         try:
-            self._serialPort = serial.Serial(self._COMPort, 57600, timeout=0.5, parity=serial.PARITY_EVEN, rtscts=1)
-
+            self._serialPort = serial.Serial(self._COMPort, 57600, timeout=0.5, write_timeout=1, writeTimeout=1, parity=serial.PARITY_EVEN, rtscts=1)
+            #self._serialPort.writeTimeout = 1
             if (self.get_info().find("V0100")) != -1:
                 self.dprint(1, "Port found: " + self._COMPort)
                 return 1
@@ -183,6 +184,7 @@ class hw_USBtin(CANModule):
         self.DEBUG = int(params.get('debug', 0))
         self.dprint(1, "Init phase started...")
         self._bus = (params.get('bus', "USBTin"))
+        self._lost_frames = 0
         if 'port' in params:
             self._COMPort = params['port']
             if params['port'] == 'auto':
@@ -215,12 +217,23 @@ class hw_USBtin(CANModule):
         self.dprint(1, "Speed: " + str(self._currentSpeed))
         self.dprint(1, "USBtin device found!")
 
-        self._cmdList['S'] = ["Set device speed (kBaud) and SJW level(optional)", 1, " <speed>,<SJW> ", self.set_speed, True]
+        self._cmdList['speed'] = ["Set device speed (kBaud) and SJW level(optional)", 1, " <speed>,<SJW> ", self.set_speed, True]
         self._cmdList['t'] = ["Send direct command to the device, like t0010411223344", 1, " <cmd> ", self.dev_write, True]
 
     def dev_write(self, def_in, data):
-        self.dprint(1, "CMD: " + data)
-        self._serialPort.write(data.encode("ISO-8859-1") + b"\r")
+        self.dprint(1, "CMD: " + data + " try: " + str(def_in))
+        try:
+            self._serialPort.write(data.encode("ISO-8859-1") + b"\r")
+        except:
+            if int(def_in) < 6:
+                self._serialPort.close()
+                time.sleep(1)
+                self._serialPort = serial.Serial(self._COMPort, 57600, timeout=0.5, write_timeout=1, writeTimeout=1, parity=serial.PARITY_EVEN, rtscts=1)
+                time.sleep(1)
+                self.do_start({})
+                self.dev_write(int(def_in) + 1,  data)
+            else:
+                self.dev_write(0, "USBTIn ERROR")
         return ""
 
     def do_effect(self, can_msg, args):  # read full packet from serial port
@@ -233,7 +246,7 @@ class hw_USBtin(CANModule):
                 self.last = time.clock()
             self.do_write(can_msg)
         else:
-            self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
+            self.dprint(1, 'Command ' + args.get('action', 'NONE') + ' not implemented 8(')
 
 
         """
@@ -260,10 +273,13 @@ class hw_USBtin(CANModule):
 
     def do_read(self, can_msg):
         data = b""
+        #self.dprint(2, "r1")
         if self._serialPort.inWaiting() > 0:
             while not can_msg.CANData and not can_msg.debugData:
+                #self.dprint(2, "r2")
                 byte = self._serialPort.read(1)
-                # print byte
+                #self.dprint(2, "r3")
+                #self.dprint(2, self.get_hex(byte))
                 if byte == b"":
                     break
 
@@ -302,7 +318,8 @@ class hw_USBtin(CANModule):
 
                         can_msg.CANFrame = CANMessage(_id, _length, [], True, CANMessage.RemoteFrame)
                         can_msg.CANData = True
-                    elif data[0:1] == b'z' or data[0:1] == b'Z' or data[0:1] == b"\r" or data[0:1] == b"\x07":
+
+                    elif  data[0:1] == b"z" or data[0:1] == b"Z" or data[0:1] == b"\r" or data[0:1] == b"\x07":
                         break
                     else:
                         can_msg.debugData = True
@@ -314,7 +331,10 @@ class hw_USBtin(CANModule):
         return can_msg
 
     def do_write(self, can_msg):
+
         if can_msg.CANData:
+            #self.dprint(2, "w1")
+            time.sleep(0.01)
             cmd_byte = None
             id_f = None
             if not can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.DataFrame:  # 11 bit format
@@ -331,6 +351,7 @@ class hw_USBtin(CANModule):
                 id_f = self.get_hex(can_msg.CANFrame.frame_raw_id).zfill(8)[0:8].encode('ISO-8859-1')
             if cmd_byte:
                 write_buf = cmd_byte + id_f + str(can_msg.CANFrame.frame_length).encode('ISO-8859-1') + self.get_hex(can_msg.CANFrame.frame_raw_data).encode('ISO-8859-1') + b"\r"
-                self._serialPort.write(write_buf)
+                self.dprint(2, "Try to write: " + write_buf.decode('ISO-8859-1'))
+                self.dev_write(2, write_buf.decode('ISO-8859-1')[:-1])
                 self.dprint(2, "WRITE: " + write_buf.decode('ISO-8859-1'))
         return can_msg

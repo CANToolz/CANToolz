@@ -26,7 +26,7 @@ class CANSploit:
             print((self.__class__.__name__ + ": " + msg))
 
     def __init__(self):
-        self._version = "0.9b"  # version
+        self._version = "3b"  # version
         self._enabledList = []  # queue of active modules with params
         self._pipes = {}  # two pipes with CANMessages
         self._type = {}  # Pointers on instances here
@@ -40,6 +40,8 @@ class CANSploit:
         self._raw = threading.Event()
         self._idc = -1
         sys.dont_write_bytecode = True
+        self.DEBUG = 1
+
 
     # Main loop with two pipes
     def main_loop(self):
@@ -57,7 +59,7 @@ class CANSploit:
                     module.thr_block.clear()
                     if params['pipe'] not in self._pipes:
                         self._pipes[params['pipe']] = CANSploitMessage()
-
+                    self.dprint(2,"DO EFFECT" + name)
                     self._pipes[params['pipe']] = module.do_effect(self._pipes[params['pipe']], params)
 
                     """
@@ -80,11 +82,14 @@ class CANSploit:
                     """
                     module.thr_block.set()
 
-
+        self.dprint(2,"STOPPING...")
                     # Here when STOP
         for name, module, params in self._enabledList:
+            self.dprint(2,"stopping " + name)
             module.do_stop(params)
+
         self.do_stop_e.clear()
+        self.dprint(2,"STOPPED")
 
     # Call module command        
     def call_module(self, index, params):
@@ -98,11 +103,14 @@ class CANSploit:
 
     def engine_exit(self):
         for name, module, params in self._enabledList:
+            self.dprint(2,"exit for " + name)
             module.do_exit(params)
 
     # Enable loop        
     def start_loop(self):
+        self.dprint(2,"START SIGNAL")
         for name, module, params in self._enabledList:
+            self.dprint(2,"startingg " + name)
             module.do_start(params)
             #params['!error_on_bus'] = False
             module.thr_block.set()
@@ -112,17 +120,21 @@ class CANSploit:
 
         self._stop.clear()
         self.do_stop_e.clear()
+        self.dprint(2,"GO")
         self._thread.start()
+        self.dprint(2,"STARTED")
 
         return not self._stop.is_set()
 
     # Pause loop      
     def stop_loop(self):
-        if not self._stop.is_set() and not self.do_stop_e.set():
+        self.dprint(2,"STOP SIGNAL")
+        if not self.do_stop_e.set():
             self.do_stop_e.set()
             while self.do_stop_e.is_set():
                 time.sleep(0.0000001)
-            self._stop.set()
+
+        self._stop.set()
         return 1
 
     # Current status
