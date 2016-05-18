@@ -306,7 +306,8 @@ class hw_USBtin(CANModule):
 
                         can_msg.CANFrame = CANMessage(_id, _length, [], True, CANMessage.RemoteFrame)
                         can_msg.CANData = True
-                    elif data[0:1] == b'z' or data[0:1] == b'Z' or data[0:1] == b"\r" or data[0:1] == b"\x07":
+
+                    elif  data[0:1] == b"\r" or data[0:1] == b"\x07":
                         break
                     else:
                         can_msg.debugData = True
@@ -318,8 +319,10 @@ class hw_USBtin(CANModule):
         return can_msg
 
     def do_write(self, can_msg):
+
         if can_msg.CANData:
             #self.dprint(2, "w1")
+            time.sleep(0.01)
             cmd_byte = None
             id_f = None
             if not can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.DataFrame:  # 11 bit format
