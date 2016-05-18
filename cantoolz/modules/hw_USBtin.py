@@ -267,7 +267,7 @@ class hw_USBtin(CANModule):
                 self.dprint(2, "r2")
                 byte = self._serialPort.read(1)
                 self.dprint(2, "r3")
-                self.dprint(2, byte.hex())
+                self.dprint(2, self.get_hex(byte))
                 if byte == b"":
                     break
 
