@@ -40,8 +40,6 @@ class CANSploit:
         self._raw = threading.Event()
         self._idc = -1
         sys.dont_write_bytecode = True
-        self.DEBUG = 1
-
 
     # Main loop with two pipes
     def main_loop(self):
@@ -109,27 +107,29 @@ class CANSploit:
     # Enable loop        
     def start_loop(self):
         self.dprint(2,"START SIGNAL")
-        for name, module, params in self._enabledList:
-            self.dprint(2,"startingg " + name)
-            module.do_start(params)
-            #params['!error_on_bus'] = False
-            module.thr_block.set()
+        if self._stop.is_set() and not self.do_stop_e.is_set():
+            self.do_stop_e.set()
+            for name, module, params in self._enabledList:
+                self.dprint(2,"startingg " + name)
+                module.do_start(params)
+                #params['!error_on_bus'] = False
+                module.thr_block.set()
 
-        self._thread = threading.Thread(target=self.main_loop)
-        self._thread.daemon = True
+            self._thread = threading.Thread(target=self.main_loop)
+            self._thread.daemon = True
 
-        self._stop.clear()
-        self.do_stop_e.clear()
-        self.dprint(2,"GO")
-        self._thread.start()
-        self.dprint(2,"STARTED")
+            self._stop.clear()
+            self.do_stop_e.clear()
+            self.dprint(2,"GO")
+            self._thread.start()
+            self.dprint(2,"STARTED")
 
         return not self._stop.is_set()
 
     # Pause loop      
     def stop_loop(self):
         self.dprint(2,"STOP SIGNAL")
-        if not self.do_stop_e.set():
+        if not self._stop.is_set() and not self.do_stop_e.is_set():
             self.do_stop_e.set()
             while self.do_stop_e.is_set():
                 time.sleep(0.0000001)
