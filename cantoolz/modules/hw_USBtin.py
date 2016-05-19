@@ -221,7 +221,7 @@ class hw_USBtin(CANModule):
         self._cmdList['t'] = ["Send direct command to the device, like t0010411223344", 1, " <cmd> ", self.dev_write, True]
 
     def dev_write(self, def_in, data):
-        self.dprint(1, "CMD: " + data + " try: " + str(def_in))
+        self.dprint(2, "CMD: " + data + " try: " + str(def_in))
         try:
             self._serialPort.write(data.encode("ISO-8859-1") + b"\r")
         except:

@@ -1,3 +1,6 @@
+## Version 3.2-4
+ - START/STOP now working right... sorry ;)
+ 
 ## Version 3.2-3
  - USBtin bugs fixed... sorry ;)
  
