@@ -1,3 +1,7 @@
+## Version 3.3-0
+ - **mod_stat** - fields enumeration: this simple feature trying to detect CAN FRAME structure and extract fields
+ - **mod_stat** - META-DATA feature added: now we can describe fields by bits
+ 
 ## Version 3.2-4
  - START/STOP now working right... sorry ;)
  
@@ -20,7 +24,7 @@
  
 ## Version 3.0-0
 ### CHANGES
- - **ecu_controls** module added, noew you can configure ECU control and monitoring (regex now). Very useful as API 8)
+ - **ecu_controls** module added, now you can configure ECU control and monitoring (regex now). Very useful as API 8)
  - cmd parametrisation changed a bit
  - **mod_firewall** can filter on BUS values!
  - by default all gen_* classes uses it's own BUS value (if not set then module name as BUS used)

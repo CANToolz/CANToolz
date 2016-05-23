@@ -2,6 +2,73 @@ import sys
 import unittest
 import time
 import codecs
+import re
+
+class ModMetaFields(unittest.TestCase):
+    def tearDown(self):
+        self.CANEngine.stop_loop()
+        self.CANEngine = None
+        print("stopped")
+
+    def test_fields(self):
+        self.CANEngine = CANSploit()
+        self.CANEngine.load_config("tests/test_5.py")
+        self.CANEngine.start_loop()
+        time.sleep(1)
+        self.CANEngine.call_module(0, "c")
+        time.sleep(1)
+        self.CANEngine.call_module(0, "l tests/test_fields.dump")
+        time.sleep(1)
+        self.CANEngine.call_module(0, "r")
+        time.sleep(1)
+        mod_stat = 1
+        self.CANEngine.call_module(mod_stat, "bits 1,8,  hex:16:COUNTER, ascii:56:TEXT")
+        ret1 = self.CANEngine.call_module(mod_stat, "p 0")
+        print(ret1)
+        self.assertTrue(0 <= ret1.find('Default    0x1    8         COUNTER: 1122 TEXT: ."3DUfw'), "Should be found")
+        self.assertTrue(0 <= ret1.find('Default    0x1    8         COUNTER: 3322 TEXT: 3"3DUfw'), "Should be found")
+        self.assertTrue(0 <= ret1.find('Default    0x1    8         COUNTER: 3322 TEXT: 3"3DUfw'), "Should be found")
+
+class ModStatFields(unittest.TestCase):
+    def tearDown(self):
+        self.CANEngine.stop_loop()
+        self.CANEngine = None
+        print("stopped")
+
+    def test_fields(self):
+        self.CANEngine = CANSploit()
+        self.CANEngine.load_config("tests/test_5.py")
+        self.CANEngine.start_loop()
+        time.sleep(1)
+        self.CANEngine.call_module(0, "c")
+        time.sleep(1)
+        self.CANEngine.call_module(0, "l tests/test_fields.dump")
+        time.sleep(1)
+        self.CANEngine.call_module(0, "r")
+        time.sleep(1)
+        mod_stat = 1
+        ret1 = self.CANEngine.call_module(mod_stat, "show")
+        ret2 = self.CANEngine.call_module(mod_stat, "fields 2, hex")
+        print(ret1)
+        self.assertTrue(0 <= ret1.find("ECU: 0x2     Length: 2     FIELDS DETECTED: 2"), "Should be found")
+        self.assertTrue(0 <= ret1.find("ECU: 0x1     Length: 7     FIELDS DETECTED: 2"), "Should be found")
+        self.assertTrue(0 <= ret1.find("ECU: 0x1     Length: 8     FIELDS DETECTED: 3"), "Should be found")
+
+        self.assertTrue(0 <= ret2.find("1111    0"), "Should be found")
+        self.assertTrue(0 <= ret2.find("1110    0"), "Should be found")
+
+        ret2 = self.CANEngine.call_module(mod_stat, "fields 2, bin")
+
+        self.assertTrue(0 <= ret2.find("1000100010001    0"), "Should be found")
+        self.assertTrue(0 <= ret2.find("1000100010000    1"), "Should be found")
+
+        ret2 = self.CANEngine.call_module(mod_stat, "fields 1, int")
+
+        self.assertTrue(0 <= ret2.find("1    1    9626517791733640"), "Should be found")
+        self.assertTrue(0 <= ret2.find("2    2    9626517791733640"), "Should be found")
+        self.assertTrue(0 <= ret2.find("3    3    9626517791733640"), "Should be found")
+        self.assertTrue(0 <= ret2.find("17895699    17895697"), "Should be found")
+        self.assertTrue(0 <= ret2.find("17895697    17895697"), "Should be found")
 
 class SimpleIO(unittest.TestCase):
     def tearDown(self):
