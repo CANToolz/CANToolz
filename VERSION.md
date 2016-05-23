@@ -1,3 +1,6 @@
+## Version 3.3-1
+ - **gen_ping** - sub-commands scan added, based on list or range.
+ 
 ## Version 3.3-0
  - **mod_stat** - fields enumeration: this simple feature trying to detect CAN FRAME structure and extract fields
  - **mod_stat** - META-DATA feature added: now we can describe fields by bits

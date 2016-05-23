@@ -153,15 +153,15 @@ class UDSMessage:
             return -1
         elif len(_input_message.message_data) >= 2 and (_input_message.message_id - self.shift) in self.sessions and (_input_message.message_data[0] - 0x40) in self.sessions[_input_message.message_id - self.shift] and\
                 _input_message.message_data[1] in self.sessions[_input_message.message_id - self.shift][_input_message.message_data[0] - 0x40]:
-            return 2
+            return 2 # RESPONSE
         elif (_input_message.message_id - self.shift) in self.sessions and (_input_message.message_data[0] - 0x40) in self.sessions[_input_message.message_id - self.shift]:
-            return 4
+            return 4 # RESPONSE WITHOUT SUB
         elif len(_input_message.message_data) > 2 and (_input_message.message_id - self.shift) in self.sessions and _input_message.message_data[0] == 0x7f and \
                         _input_message.message_data[1] in self.sessions[_input_message.message_id - self.shift]:
-            return 3
+            return 3 # ERROR
         elif _input_message.message_id not in self.sessions or _input_message.message_data[0] not in self.sessions[_input_message.message_id] or \
                         len(_input_message.message_data) == 1 or (len(_input_message.message_data) > 1 and _input_message.message_data[1] not in self.sessions[_input_message.message_id][_input_message.message_data[0]]):
-            return 0
+            return 0 # NEW Request
         else:
             return -3
 
