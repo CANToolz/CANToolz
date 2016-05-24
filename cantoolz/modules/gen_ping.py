@@ -86,13 +86,22 @@ class gen_ping(CANModule):
                             elif type(sub) == type(str()):
                                 x1 = 16 if sub.split("-")[0].strip()[0:2] == "0x" else 10
                                 x2 = 16 if sub.split("-")[1].strip()[0:2] == "0x" else 10
-
                                 sub = range(int(sub.split("-")[0], x1), int(sub.split("-")[1], x2))
 
-                            for sb in sub:
-                                iso_list = uds_m.add_request(i, service['service'], sb, dat)
-                                iso_list.reverse()
-                                self.queue_messages.extend(iso_list)
+                            serv = service['service']
+
+                            if type(serv) == type(int()):
+                                serv = [serv]
+                            elif type(serv) == type(str()):
+                                x1 = 16 if serv.split("-")[0].strip()[0:2] == "0x" else 10
+                                x2 = 16 if serv.split("-")[1].strip()[0:2] == "0x" else 10
+                                serv = range(int(serv.split("-")[0], x1), int(serv.split("-")[1], x2))
+
+                            for sv in serv:
+                                for sb in sub:
+                                    iso_list = uds_m.add_request(i, sv, sb, dat)
+                                    iso_list.reverse()
+                                    self.queue_messages.extend(iso_list)
         else:
             self.dprint(1, "No range specified")
             self._active = False
