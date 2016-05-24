@@ -16,8 +16,8 @@ class ModGenPingEX(unittest.TestCase):
         self.CANEngine.edit_module(2, {'pipe': 2,
             'services': [
                 {"service":1,"sub":[1,2]},
-                {"service":1,"sub":3},
-                {"service":1,"sub":"0x4-6"},
+                {"service":[2,3],"sub":3},
+                {"service":"0x4-6","sub":"0x4-6"},
             ],
             'mode':'UDS',
             'range':[1,2] })
@@ -29,9 +29,12 @@ class ModGenPingEX(unittest.TestCase):
         mod_stat = 3
         ret1 = self.CANEngine.call_module(mod_stat, "p 0")
         print(ret1)
-        self.assertTrue(0 <= ret1.find('020105'), "Should be found")
-        self.assertTrue(0 <= ret1.find('020104'), "Should be found")
-        self.assertTrue(0 <= ret1.find('020103'), "Should be found")
+        self.assertTrue(0 <= ret1.find('020505'), "Should be found")
+        self.assertTrue(0 <= ret1.find('020504'), "Should be found")
+        self.assertTrue(0 <= ret1.find('020405'), "Should be found")
+        self.assertTrue(0 <= ret1.find('020404'), "Should be found")
+        self.assertTrue(0 <= ret1.find('020303'), "Should be found")
+        self.assertTrue(0 <= ret1.find('020203'), "Should be found")
         self.assertTrue(0 <= ret1.find('020102'), "Should be found")
         self.assertTrue(0 <= ret1.find('020101'), "Should be found")
 
