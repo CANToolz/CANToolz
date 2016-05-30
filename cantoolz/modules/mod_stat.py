@@ -56,6 +56,8 @@ class mod_stat(CANModule):
         self._cmdList['Y'] = ["Dump Diff in replay format", 1, "<filename>,[buffer index ,buffer index], [uniq values max]", self.print_dump_diff, True]
         self._cmdList['y'] = ["Dump Diff in replay format (new ID)", 1, "<filename>,[buffer index 1] , [buffer index 2]", self.print_dump_diff_id, True]
         self._cmdList['F'] = ["Search ID in all buffers", 1, "<ID>", self.search_id, True]
+        self._cmdList['change'] = ["Detect changes for ECU (EXPEREMENTAL)", 1, "[buffer index][, max uniq. values]", self.show_change, True]
+        self._cmdList['detect'] = ["Detect changes for ECU by control FRAME (EXPEREMENTAL)", 1, "<ECU ID:HEX_DATA>[,buffer index]", self.show_detect, True]
         self._cmdList['show'] = ["Show detected amount of fields for all ECU (EXPEREMENTAL)", 1, "[buffer index]", self.show_fields, True]
         self._cmdList['fields'] = ["Show values in fields for chosen ECU (EXPEREMENTAL)", 1, "<ECU ID>[, hex|bin|int [, buffer index ]]", self.show_fields_ecu, True]
 
@@ -710,5 +712,117 @@ class mod_stat(CANModule):
         for row in rows:
             table += format_table % tuple(row) + "\n"
         table += ""
+
+        return table
+
+    def show_change(self, zd = 0, _index = "-1"):
+        table = ""
+        pars = _index.split(",")
+        depth = 31337
+
+        if len(pars) == 2:
+            depth = int(pars[1])
+            _index = pars[0].strip()
+
+        _index = int(_index)
+        temp_buf = []
+        if _index == -1:
+            for buf in self.all_frames:
+                temp_buf = temp_buf + buf['buf']
+        else:
+            temp_buf = self.all_frames[_index]['buf']
+
+        messages = collections.OrderedDict()
+
+        for can_msg in temp_buf:
+            if (can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length) not in messages:
+                messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)] = [[can_msg.CANFrame.frame_raw_data], 0, 1]
+            else:
+                messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)][0].append(can_msg.CANFrame.frame_raw_data)
+                if messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)][0][-1] != messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)][0][-2]:
+                    messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)][1] += 1
+                if messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)][0][-1] not in messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)][0][:-1]:
+                    messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)][2] += 1
+
+        table += "Detected changes (two values):\n\n"
+        for (fid, flen), data in messages.items():
+            msgs = len(data[0])
+            chgs = data[1]
+            uniq = data[2]
+
+            if uniq > 1 and msgs > 3 and uniq <= depth:
+                table += "\t " + hex(fid) + " count of uniq. values: " + str(uniq) + " values/uniq.: " + str(int(msgs/uniq)) + " changes/uniq.: " +(str(int(chgs/uniq))) +"\n"
+
+        return table
+
+    def show_detect(self, zd = 0, _index = "0"):
+        table = ""
+
+        pars = _index.split(",")
+        num_fid = 0
+
+        if len(pars) == 2:
+            _index = pars[1].strip()
+        else:
+            _index = "-1"
+
+        if pars[0].strip().find('0x') == 0:
+             num_fid = int(pars[0].split(":")[0], 16)
+        else:
+             num_fid = int(pars[0].split(":")[0])
+
+        if len(pars[0].split(":")) == 3:
+            body = bytes.fromhex(pars[0].split(":")[2].strip())
+        else:
+            body = bytes.fromhex(pars[0].split(":")[1].strip())
+
+        _index = int(_index)
+
+        temp_buf = []
+        if _index == -1:
+            for buf in self.all_frames:
+                temp_buf = temp_buf + buf['buf']
+        else:
+            temp_buf = self.all_frames[_index]['buf']
+
+        messages = collections.OrderedDict()
+        status = False
+        for can_msg in temp_buf:
+
+            if can_msg.CANFrame.frame_id == num_fid and can_msg.CANFrame.frame_raw_data == body:
+                status = True
+            else:
+
+                if not status:
+
+                    if can_msg.CANFrame.frame_id not in messages:
+                        messages[can_msg.CANFrame.frame_id] = [[can_msg.CANFrame.frame_raw_data], []]
+                    else:
+                        if can_msg.CANFrame.frame_raw_data not in messages[can_msg.CANFrame.frame_id][0]:
+                            messages[can_msg.CANFrame.frame_id][0].append(can_msg.CANFrame.frame_raw_data)
+
+                else:
+                    if can_msg.CANFrame.frame_id not in messages:
+                        messages[can_msg.CANFrame.frame_id] = [[], [can_msg.CANFrame.frame_raw_data]]
+                    else:
+                        if can_msg.CANFrame.frame_raw_data not in messages[can_msg.CANFrame.frame_id][1]:
+                            messages[can_msg.CANFrame.frame_id][1].append(can_msg.CANFrame.frame_raw_data)
+
+        table += "Detected changes (by ID " + hex(num_fid) + " ):\n"
+        if status:
+            for fid, data in messages.items():
+                before = data[0]
+                after = data[1]
+                diff_not = False
+                if after != [] and before!= [] and len(before) <= 10 and len(after) <= 10:
+                    diff_not = bool([x for x in after if x not in before] != [])
+                if diff_not:
+                    table += "\n\t ID: " + hex(fid)
+                    table += "\n\t\t Changed from: " + "\n"
+                    for (st) in [("\t\t" + self.get_hex(x) + "\n") for x in before]:
+                         table += st
+                    table += "\n\t\t Changed to: " + "\n"
+                    for (st) in [("\t\t" + self.get_hex(x) + "\n") for x in after]:
+                         table += st
 
         return table
