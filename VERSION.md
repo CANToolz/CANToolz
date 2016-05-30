@@ -1,3 +1,6 @@
+## Version 3.3-3
+ - **mod_stat** - ECU status changes: feature  to detect STATUS changes of ECU that can correlate to some event (door was open, now it is closed and etc)
+ 
 ## Version 3.3-2
  - **gen_ping** - UDS mode: service scan added, based on value, list or range.
  

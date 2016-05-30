@@ -104,7 +104,7 @@ class ecu_controls(CANModule):
     def read_statuses(self,can_msg):
         for status in self._statuses:
            if can_msg.CANFrame.frame_id in status.get('id_list_can_toolz_system', []):
-               data_hex = can_msg.CANFrame.frame_raw_data.hex()
+               data_hex = self.get_hex(can_msg.CANFrame.frame_raw_data)
                for stat, options in list(status.items()):
                    if stat not in ['id_list_can_toolz_system', 'current_status', 'cmd']:
                         for value, reg in list(options.items()):
