@@ -225,6 +225,7 @@ class hw_USBtin(CANModule):
         try:
             self._serialPort.write(data.encode("ISO-8859-1") + b"\r")
         except:
+            self.dprint(2,"USBTin ERROR: can't write...")
             if int(def_in) < 6:
                 self.dprint(1, "USBTin restart")
                 self._serialPort.close()
@@ -242,9 +243,9 @@ class hw_USBtin(CANModule):
             can_msg = self.do_read(can_msg)
         elif args.get('action') == 'write':
             # KOSTYL: workaround for BMW f10 bus
-            if self._restart and self._run and (time.clock() - self.last) >= self.act_time:
-                self.dev_write(0, "O")
-                self.last = time.clock()
+            #if self._restart and self._run and (time.clock() - self.last) >= self.act_time:
+            #    self.dev_write(0, "O")
+            #    self.last = time.clock()
             self.do_write(can_msg)
         else:
             self.dprint(1, 'Command ' + args.get('action', 'NONE') + ' not implemented 8(')
@@ -334,8 +335,8 @@ class hw_USBtin(CANModule):
     def do_write(self, can_msg):
 
         if can_msg.CANData:
-            #self.dprint(2, "w1")
-            time.sleep(0.01)
+            self.dprint(3, "WRITE")
+            #time.sleep(0.0001)
             cmd_byte = None
             id_f = None
             if not can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.DataFrame:  # 11 bit format
