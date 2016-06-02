@@ -24,7 +24,7 @@ class mod_fuzz1(CANModule):
     _i = 0
     fzb = []
     id = 2
-    _active = True
+    _active = False
     version = 1.0
 
     def counter(self):
@@ -37,12 +37,13 @@ class mod_fuzz1(CANModule):
     def do_init(self, params):
         for i in range(0, 255):
             self.fzb.append(i)
+        self._active = False
 
     # Change one byte to random        
     def do_fuzz(self, can_msg, shift):
         if 0 < shift < 9:
             can_msg.CANFrame.frame_data[shift - 1] = self.fzb[self.counter()]
-            can_msg.CANFrame.parse_params()
+            #can_msg.CANFrame.parse_params()
             self.dprint(2, "Message " + str(can_msg.CANFrame.frame_id) +
                         " has been fuzzed (BUS = " + str(can_msg.bus) + ")")
 

@@ -228,12 +228,16 @@ class hw_USBtin(CANModule):
             self.dprint(2,"USBTin ERROR: can't write...")
             if int(def_in) < 6:
                 self.dprint(1, "USBTin restart")
-                self._serialPort.close()
-                time.sleep(1)
-                self._serialPort = serial.Serial(self._COMPort, 57600, timeout=0.5, write_timeout=1, writeTimeout=1, parity=serial.PARITY_EVEN, rtscts=1)
-                time.sleep(1)
-                self.do_start({})
-                self.dev_write(int(def_in) + 1,  data)
+                try:
+                    self._serialPort.close()
+                    time.sleep(1)
+                    self._serialPort = serial.Serial(self._COMPort, 57600, timeout=0.5, write_timeout=1, writeTimeout=1, parity=serial.PARITY_EVEN, rtscts=1)
+                    time.sleep(1)
+                    self.do_start({})
+                    self.dev_write(int(def_in) + 1,  data)
+                except:
+                    self.dev_write(0, "USBTIn ERROR: can't reopen")
+                    
             else:
                 self.dev_write(0, "USBTIn ERROR")
         return ""
