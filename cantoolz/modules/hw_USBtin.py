@@ -224,7 +224,7 @@ class hw_USBtin(CANModule):
         self.dprint(2, "CMD: " + data + " try: " + str(def_in))
         try:
             self._serialPort.write(data.encode("ISO-8859-1") + b"\r")
-        except:
+        except Exception as e1:
             self.dprint(2,"USBTin ERROR: can't write...")
             if int(def_in) < 6:
                 self.dprint(1, "USBTin restart")
@@ -235,9 +235,9 @@ class hw_USBtin(CANModule):
                     time.sleep(1)
                     self.do_start({})
                     self.dev_write(int(def_in) + 1,  data)
-                except:
-                    self.dev_write(0, "USBTIn ERROR: can't reopen")
-                    
+                except Exception as e2:
+                    self.dev_write(0, "USBTIn ERROR: can't reopen - \n\t" + str(e1) + "\n\t" + str(e2))
+
             else:
                 self.dev_write(0, "USBTIn ERROR")
         return ""
