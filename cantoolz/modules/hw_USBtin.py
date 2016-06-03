@@ -224,15 +224,20 @@ class hw_USBtin(CANModule):
         self.dprint(2, "CMD: " + data + " try: " + str(def_in))
         try:
             self._serialPort.write(data.encode("ISO-8859-1") + b"\r")
-        except:
+        except Exception as e1:
+            self.dprint(2,"USBTin ERROR: can't write...")
             if int(def_in) < 6:
                 self.dprint(1, "USBTin restart")
-                self._serialPort.close()
-                time.sleep(1)
-                self._serialPort = serial.Serial(self._COMPort, 57600, timeout=0.5, write_timeout=1, writeTimeout=1, parity=serial.PARITY_EVEN, rtscts=1)
-                time.sleep(1)
-                self.do_start({})
-                self.dev_write(int(def_in) + 1,  data)
+                try:
+                    self._serialPort.close()
+                    time.sleep(1)
+                    self._serialPort = serial.Serial(self._COMPort, 57600, timeout=0.5, write_timeout=1, writeTimeout=1, parity=serial.PARITY_EVEN, rtscts=1)
+                    time.sleep(1)
+                    self.do_start({})
+                    self.dev_write(int(def_in) + 1,  data)
+                except Exception as e2:
+                    self.dev_write(0, "USBTIn ERROR: can't reopen - \n\t" + str(e1) + "\n\t" + str(e2))
+
             else:
                 self.dev_write(0, "USBTIn ERROR")
         return ""
@@ -242,9 +247,9 @@ class hw_USBtin(CANModule):
             can_msg = self.do_read(can_msg)
         elif args.get('action') == 'write':
             # KOSTYL: workaround for BMW f10 bus
-            if self._restart and self._run and (time.clock() - self.last) >= self.act_time:
-                self.dev_write(0, "O")
-                self.last = time.clock()
+            #if self._restart and self._run and (time.clock() - self.last) >= self.act_time:
+            #    self.dev_write(0, "O")
+            #    self.last = time.clock()
             self.do_write(can_msg)
         else:
             self.dprint(1, 'Command ' + args.get('action', 'NONE') + ' not implemented 8(')
@@ -334,8 +339,8 @@ class hw_USBtin(CANModule):
     def do_write(self, can_msg):
 
         if can_msg.CANData:
-            #self.dprint(2, "w1")
-            time.sleep(0.01)
+            self.dprint(3, "WRITE")
+            #time.sleep(0.0001)
             cmd_byte = None
             id_f = None
             if not can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.DataFrame:  # 11 bit format
