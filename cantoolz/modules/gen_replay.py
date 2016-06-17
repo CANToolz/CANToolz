@@ -132,8 +132,9 @@ class gen_replay(CANModule):
             self.CANList.append(can_msg)
         elif self._replay and not can_msg.CANData:
             d_time = float(args.get('delay', 0))
+            ignore = bool(args.get('ignore_time', False))
             try:
-                next_msg = self.CANList.next(d_time,False)
+                next_msg = self.CANList.next(d_time, ignore)
                 if next_msg:
                     can_msg.CANFrame = next_msg.CANFrame
                     self._num1 += 1
