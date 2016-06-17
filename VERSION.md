@@ -1,3 +1,7 @@
+## Version 3.4-0
+ - **replay** lib added as standard way to work with queue of messages and dump format
+ - timestamp support has been added!
+
 ## Version 3.3-3
  - **mod_stat** - ECU status changes: feature  to detect STATUS changes of ECU that can correlate to some event (door was open, now it is closed and etc)
  

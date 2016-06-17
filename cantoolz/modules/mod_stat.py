@@ -1,6 +1,7 @@
 from cantoolz.module import *
 from cantoolz.uds import *
 from cantoolz.frag import *
+from cantoolz.replay import *
 import json
 import re
 import collections
@@ -34,7 +35,7 @@ class mod_stat(CANModule):
             '\n\t'.join([buf['name'] + "\n\t\tindex: " + str(cnt) + ' sniffed: ' + str(len(buf['buf'])) for buf,cnt in zip(self.all_frames,range(0,len(self.all_frames)))])
 
     def do_init(self, params):
-        self.all_frames = [{'name':'start_buffer','buf':[]}]
+        self.all_frames = [{'name':'start_buffer','buf':Replay()}]
         self._index = 0
         self.meta_data = {}
         self._bodyList = collections.OrderedDict()
@@ -207,7 +208,7 @@ class mod_stat(CANModule):
     @staticmethod
     def create_short_table(input_frames):
         _bodyList = collections.OrderedDict()
-        for can_msg in input_frames:
+        for timestmp, can_msg in input_frames:
             if can_msg.CANFrame.frame_id not in _bodyList:
                 _bodyList[can_msg.CANFrame.frame_id] = collections.OrderedDict()
                 _bodyList[can_msg.CANFrame.frame_id][(
@@ -239,7 +240,7 @@ class mod_stat(CANModule):
     def find_iso_tp(self, in_list):
         message_iso = {}
         iso_list = []
-        for can_msg in in_list:
+        for timestmp, can_msg in in_list:
             if can_msg.CANFrame.frame_id not in message_iso:
                 message_iso[can_msg.CANFrame.frame_id] = ISOTPMessage(can_msg.CANFrame.frame_id)
 
@@ -280,7 +281,7 @@ class mod_stat(CANModule):
         else:
            _format = params[0].strip()
            _index  = int(params[1])
-        temp_buf = []
+        temp_buf = Replay()
         if _index == -1:
             for buf in self.all_frames:
                 temp_buf = temp_buf + buf['buf']
@@ -413,22 +414,23 @@ class mod_stat(CANModule):
         table1 = self.create_short_table(self.all_frames[idx1]['buf'])
         table2 = self.create_short_table(self.all_frames[idx2]['buf'] + self.all_frames[idx1]['buf'])
         try:
-            _name = open(name, 'w')
-            for can_msg in self.all_frames[idx2]['buf']:
+            #_name = open(name, 'w')
+            dump = Replay()
+            for timestmp, can_msg in self.all_frames[idx2]['buf']:
                 if can_msg.CANFrame.frame_id not in list(table1.keys()):
-                    _name.write(str(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + self.get_hex(can_msg.CANFrame.frame_raw_data) + "\n")
+                    dump.append(can_msg)
                 elif mode == 0 and len(table2[can_msg.CANFrame.frame_id]) <= rang:
                     neq = True
                     for (len2, msg, bus, mod), cnt in table1[can_msg.CANFrame.frame_id].items():
                         if msg == can_msg.CANFrame.frame_raw_data:
                             neq = False
                     if neq:
-                        _name.write(hex(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + self.get_hex(can_msg.CANFrame.frame_raw_data) + "\n")
-            _name.close()
+                        dump.append(can_msg)
+            dump.save_dump(name)
         except Exception as e:
             self.dprint(2, "can't open log")
             return str(e)
-        return "Saved into " + name.strip()
+        return "Saved into " + name
 
     def do_dump_replay(self, def_in, name):
         inp = name.split(",")
@@ -439,10 +441,7 @@ class mod_stat(CANModule):
             name = inp[0].strip()
             idx1 = self._index
         try:
-            _name = open(name, 'w')
-            for can_msg in self.all_frames[idx1]['buf']:
-                _name.write(hex(can_msg.CANFrame.frame_id) + ":" + str(can_msg.CANFrame.frame_length) + ":" + self.get_hex(can_msg.CANFrame.frame_raw_data) + "\n")
-            _name.close()
+            self.all_frames[idx1]['buf'].save_dump(name)
         except Exception as e:
             self.dprint(2, "can't open log")
             return str(e)
@@ -555,12 +554,12 @@ class mod_stat(CANModule):
         _name = name.strip()
         _name = _name if _name != "" else "buffer_" + str(len(self.all_frames)-1)
         self._index += 1
-        self.all_frames.append({'name':_name,'buf':[]})
+        self.all_frames.append({'name':_name,'buf':Replay()})
         return "New buffer  " + _name + ", index: " + str(self._index) + " enabled and active"
 
     def do_print(self, def_in, index = "-1"):
         _index = int(index)
-        temp_buf = []
+        temp_buf = Replay()
         if _index == -1:
             for buf in self.all_frames:
                 temp_buf = temp_buf + buf['buf']
@@ -598,7 +597,7 @@ class mod_stat(CANModule):
         return table
 
     def do_clean(self, def_in):
-        self.all_frames = [{'name':'start_buffer','buf':[]}]
+        self.all_frames = [{'name':'start_buffer','buf':Replay()}]
         self._index = 0
         return "Buffers cleaned!"
 
@@ -647,7 +646,7 @@ class mod_stat(CANModule):
 
 
         table = "Data by fields in ECU: " + hex(ecu_id) + "\n\n"
-        temp_buf = []
+        temp_buf = Replay()
 
         self.show_fields(0, str(_index))
 
@@ -692,14 +691,14 @@ class mod_stat(CANModule):
         table = ""
 
         _index = int(_index)
-        temp_buf = []
+        temp_buf = Replay()
         if _index == -1:
             for buf in self.all_frames:
                 temp_buf = temp_buf + buf['buf']
         else:
             temp_buf = self.all_frames[_index]['buf']
 
-        for can_msg in temp_buf:
+        for timestmp, can_msg in temp_buf:
             for _ in self.subnet.process(can_msg.CANFrame):
                     pass
         rows = []
@@ -725,7 +724,7 @@ class mod_stat(CANModule):
             _index = pars[0].strip()
 
         _index = int(_index)
-        temp_buf = []
+        temp_buf = Replay()
         if _index == -1:
             for buf in self.all_frames:
                 temp_buf = temp_buf + buf['buf']
@@ -734,7 +733,7 @@ class mod_stat(CANModule):
 
         messages = collections.OrderedDict()
 
-        for can_msg in temp_buf:
+        for timestmp, can_msg in temp_buf:
             if (can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length) not in messages:
                 messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)] = [[can_msg.CANFrame.frame_raw_data], 0, 1]
             else:
@@ -778,7 +777,7 @@ class mod_stat(CANModule):
 
         _index = int(_index)
 
-        temp_buf = []
+        temp_buf = Replay()
         if _index == -1:
             for buf in self.all_frames:
                 temp_buf = temp_buf + buf['buf']
@@ -787,7 +786,7 @@ class mod_stat(CANModule):
 
         messages = collections.OrderedDict()
         status = False
-        for can_msg in temp_buf:
+        for timestmp, can_msg in temp_buf:
 
             if can_msg.CANFrame.frame_id == num_fid and can_msg.CANFrame.frame_raw_data == body:
                 status = True
@@ -826,3 +825,6 @@ class mod_stat(CANModule):
                          table += st
 
         return table
+
+    def do_start(self, params):  # Start activity of this module
+        self.all_frames[-1]['buf'].restart_time()
