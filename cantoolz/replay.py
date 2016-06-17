@@ -47,7 +47,13 @@ class Replay:
         if self._curr < len(self):
             if not notime and self._stream[self._curr][0] < self._pre_last:
                 self.restart_time(self._stream[self._curr][0])
-            if notime or self._stream[self._curr][0] < 0 or self.passed_time() > self._stream[self._curr][0] + offset:
+            if notime or (self._stream[self._curr][0] >= 0 and self.passed_time() > (self._stream[self._curr][0] + offset)):
+                self._pre_last = self._stream[self._curr][0]
+                ret = self._stream[self._curr][1]
+                self._curr += 1
+                return ret
+            elif (self._stream[self._curr][0] < 0):
+                time.sleep(offset)
                 self._pre_last = self._stream[self._curr][0]
                 ret = self._stream[self._curr][1]
                 self._curr += 1
