@@ -107,8 +107,6 @@ class Replay:
         try:
             with open(name.strip(), "r") as ins:
                 # "[TIME_STAMP]0x111:4:11223344"
-                print("SSSSS")
-
                 for line in ins:
                     if len(line[:].split(":")) >= 3:
                         fid = line[:].split(":")[0].strip()
