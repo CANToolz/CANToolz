@@ -35,8 +35,8 @@ class gen_replay(CANModule):
         try:
                 self.CANList.parse_file(name, self._bus)
                 self.dprint(1, "Loaded " + str(len(self.CANList)) + " frames")
-        except:
-            self.dprint(2, "can't open files with CAN messages!")
+        except Exception as e:
+            self.dprint(2, "can't open files with CAN messages: " + str(e))
         return "Loaded: " + str(len(self.CANList))
 
     def do_init(self, params):
@@ -76,7 +76,6 @@ class gen_replay(CANModule):
         if len(input_params.split(',')) > 1:
             fname = input_params.split(',')[1].strip()
 
-
         try:
             _num1 = int(indexes.split("-")[0])
             _num2 = int(indexes.split("-")[1])
@@ -114,7 +113,7 @@ class gen_replay(CANModule):
                 self._full = self._num2 - self._num1
                 self._last = 0
                 self._cmdList['g'][4] =  False
-                self.CANList.start(self._num1)
+                self.CANList.set_index(self._num1)
 
 
         except:
@@ -135,7 +134,7 @@ class gen_replay(CANModule):
             ignore = bool(args.get('ignore_time', False))
             try:
                 next_msg = self.CANList.next(d_time, ignore)
-                if next_msg:
+                if next_msg and next_msg.CANData:
                     can_msg.CANFrame = next_msg.CANFrame
                     self._num1 += 1
                     can_msg.CANData = True

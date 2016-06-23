@@ -29,6 +29,17 @@ class mod_stat(CANModule):
     _active = True
     version = 1.0
 
+    def do_activate(self, def_in = 0, mode = -1):
+        if mode == -1:
+            self._active = not self._active
+        elif mode == 0:
+            self._active = False
+        else:
+            self._active = True
+        self.all_frames[-1]['buf'].add_timestamp()
+
+        return "Active status: " + str(self._active)
+
     def get_status(self, def_in = 0):
         return "Current status: " + str(self._active) + "\nSniffed frames (overall): " + str(self.get_num(-1))+"\nCurrent BUFF: index - " + str(self._index) + " name - " + self.all_frames[self._index]['name'] + \
                "\nAll buffers: \n\t" + \
@@ -209,50 +220,58 @@ class mod_stat(CANModule):
     def create_short_table(input_frames):
         _bodyList = collections.OrderedDict()
         for timestmp, can_msg in input_frames:
-            if can_msg.CANFrame.frame_id not in _bodyList:
-                _bodyList[can_msg.CANFrame.frame_id] = collections.OrderedDict()
-                _bodyList[can_msg.CANFrame.frame_id][(
-                can_msg.CANFrame.frame_length,
-                can_msg.CANFrame.frame_raw_data,
-                can_msg.bus,
-                can_msg.CANFrame.frame_ext)
-                    ] = 1
-            else:
-                if (can_msg.CANFrame.frame_length,
-                    can_msg.CANFrame.frame_raw_data,
-                    can_msg.bus,
-                    can_msg.CANFrame.frame_ext) not in _bodyList[can_msg.CANFrame.frame_id]:
-                    _bodyList[can_msg.CANFrame.frame_id][(
-                        can_msg.CANFrame.frame_length,
-                        can_msg.CANFrame.frame_raw_data,
-                        can_msg.bus,
-                        can_msg.CANFrame.frame_ext)
-                        ] = 1
-                else:
+            #print(len(input_frames))
+            #print(can_msg.CANData)
+
+            if can_msg.CANData:
+                #print(can_msg.CANFrame)
+                #print(can_msg.CANFrame.frame_raw_data)
+                #print()
+                if can_msg.CANFrame.frame_id not in _bodyList:
+                    _bodyList[can_msg.CANFrame.frame_id] = collections.OrderedDict()
                     _bodyList[can_msg.CANFrame.frame_id][(
                     can_msg.CANFrame.frame_length,
                     can_msg.CANFrame.frame_raw_data,
                     can_msg.bus,
                     can_msg.CANFrame.frame_ext)
-                    ] += 1
+                        ] = 1
+                else:
+                    if (can_msg.CANFrame.frame_length,
+                        can_msg.CANFrame.frame_raw_data,
+                        can_msg.bus,
+                        can_msg.CANFrame.frame_ext) not in _bodyList[can_msg.CANFrame.frame_id]:
+                        _bodyList[can_msg.CANFrame.frame_id][(
+                            can_msg.CANFrame.frame_length,
+                            can_msg.CANFrame.frame_raw_data,
+                            can_msg.bus,
+                            can_msg.CANFrame.frame_ext)
+                            ] = 1
+                    else:
+                        _bodyList[can_msg.CANFrame.frame_id][(
+                        can_msg.CANFrame.frame_length,
+                        can_msg.CANFrame.frame_raw_data,
+                        can_msg.bus,
+                        can_msg.CANFrame.frame_ext)
+                        ] += 1
         return _bodyList
 
     def find_iso_tp(self, in_list):
         message_iso = {}
         iso_list = []
         for timestmp, can_msg in in_list:
-            if can_msg.CANFrame.frame_id not in message_iso:
-                message_iso[can_msg.CANFrame.frame_id] = ISOTPMessage(can_msg.CANFrame.frame_id)
+            if can_msg.CANData:
+                if can_msg.CANFrame.frame_id not in message_iso:
+                    message_iso[can_msg.CANFrame.frame_id] = ISOTPMessage(can_msg.CANFrame.frame_id)
 
-            if 1 < can_msg.CANFrame.frame_length:
-                ret = message_iso[can_msg.CANFrame.frame_id].add_can(can_msg.CANFrame)
-                if ret < 0:
+                if 1 < can_msg.CANFrame.frame_length:
+                    ret = message_iso[can_msg.CANFrame.frame_id].add_can(can_msg.CANFrame)
+                    if ret < 0:
+                        del message_iso[can_msg.CANFrame.frame_id]
+                    elif ret == 1:
+                        iso_list.append(message_iso[can_msg.CANFrame.frame_id])
+                        del message_iso[can_msg.CANFrame.frame_id]
+                else:
                     del message_iso[can_msg.CANFrame.frame_id]
-                elif ret == 1:
-                    iso_list.append(message_iso[can_msg.CANFrame.frame_id])
-                    del message_iso[can_msg.CANFrame.frame_id]
-            else:
-                del message_iso[can_msg.CANFrame.frame_id]
         return iso_list
 
     def find_uds(self, iso_list):
@@ -412,20 +431,29 @@ class mod_stat(CANModule):
             rang = 8 * 256
 
         table1 = self.create_short_table(self.all_frames[idx1]['buf'])
-        table2 = self.create_short_table(self.all_frames[idx2]['buf'] + self.all_frames[idx1]['buf'])
+        tblDif = self.all_frames[idx2]['buf'] + self.all_frames[idx1]['buf']
+        table2 = self.create_short_table(tblDif)
         try:
             #_name = open(name, 'w')
             dump = Replay()
+            dump.add_timestamp()
+            tms = 0.0
             for timestmp, can_msg in self.all_frames[idx2]['buf']:
-                if can_msg.CANFrame.frame_id not in list(table1.keys()):
-                    dump.append(can_msg)
-                elif mode == 0 and len(table2[can_msg.CANFrame.frame_id]) <= rang:
-                    neq = True
-                    for (len2, msg, bus, mod), cnt in table1[can_msg.CANFrame.frame_id].items():
-                        if msg == can_msg.CANFrame.frame_raw_data:
-                            neq = False
-                    if neq:
-                        dump.append(can_msg)
+                if can_msg.CANData:
+                    if tms == 0.0:
+                        tms = timestmp
+                    if can_msg.CANFrame.frame_id not in list(table1.keys()):
+                        dump.append_time(timestmp - tms, can_msg)
+                    elif mode == 0 and len(table2[can_msg.CANFrame.frame_id]) <= rang:
+                        neq = True
+                        for (len2, msg, bus, mod), cnt in table1[can_msg.CANFrame.frame_id].items():
+                            if msg == can_msg.CANFrame.frame_raw_data:
+                                neq = False
+                        if neq:
+                            dump.append_time(timestmp - tms,can_msg)
+                elif can_msg.debugData:
+                    dump.add_timestamp()
+                    tms = 0.0
             dump.save_dump(name)
         except Exception as e:
             self.dprint(2, "can't open log")
@@ -439,9 +467,17 @@ class mod_stat(CANModule):
             idx1 = int(inp[1])
         else:
             name = inp[0].strip()
-            idx1 = self._index
+            idx1 = -1
+
+        temp_buf = Replay()
+        if idx1 == -1:
+            for buf in self.all_frames:
+                temp_buf = temp_buf + buf['buf']
+        else:
+            temp_buf = self.all_frames[idx1]['buf']
+
         try:
-            self.all_frames[idx1]['buf'].save_dump(name)
+            temp_buf.save_dump(name)
         except Exception as e:
             self.dprint(2, "can't open log")
             return str(e)
@@ -455,8 +491,16 @@ class mod_stat(CANModule):
             idx1 = int(inp[1])
         else:
             name = inp[0].strip()
-            idx1 = self._index
-        self._bodyList = self.create_short_table(self.all_frames[idx1]['buf'])
+            idx1 = -1
+
+        temp_buf = Replay()
+        if idx1 == -1:
+            for buf in self.all_frames:
+                temp_buf = temp_buf + buf['buf']
+        else:
+            temp_buf = self.all_frames[idx1]['buf']
+
+        self._bodyList = self.create_short_table(temp_buf)
         try:
             _name = open(name.strip(), 'w')
             _name.write("BUS,ID,LENGTH,MESSAGE,ASCII,COMMENT,COUNT\n")
@@ -485,7 +529,7 @@ class mod_stat(CANModule):
                         str(bus) + "," + hex(fid) + "," + str(lenX) + "," + msg_s + ',' + " " + ',' +\
                         "\"" + self.get_meta_descr(fid, msg) + "\"" + ',' + str(cnt) + "\n"
                         )
-
+            _name.close()
         except Exception as e:
             self.dprint(2, "can't open log")
             return str(e)
@@ -552,9 +596,10 @@ class mod_stat(CANModule):
 
     def new_diff(self, def_in, name = ""):
         _name = name.strip()
-        _name = _name if _name != "" else "buffer_" + str(len(self.all_frames)-1)
+        _name = _name if _name != "" else "buffer_" + str(len(self.all_frames))
         self._index += 1
-        self.all_frames.append({'name':_name,'buf':Replay()})
+        self.all_frames.append({'name':_name,'buf': Replay()})
+        self.all_frames[-1]['buf'].add_timestamp()
         return "New buffer  " + _name + ", index: " + str(self._index) + " enabled and active"
 
     def do_print(self, def_in, index = "-1"):
@@ -565,6 +610,7 @@ class mod_stat(CANModule):
                 temp_buf = temp_buf + buf['buf']
         else:
             temp_buf = self.all_frames[_index]['buf']
+
         self._bodyList = self.create_short_table(temp_buf)
         table = "\n"
         rows = [['BUS', 'ID', 'LENGTH', 'MESSAGE', 'ASCII', 'DESCR', 'COUNT']]
@@ -603,7 +649,7 @@ class mod_stat(CANModule):
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
     def do_effect(self, can_msg, args):
-        if can_msg.CANData:
+        if can_msg.CANData or can_msg.debugData:
             self.all_frames[self._index]['buf'].append(can_msg)
         return can_msg
 
@@ -699,8 +745,9 @@ class mod_stat(CANModule):
             temp_buf = self.all_frames[_index]['buf']
 
         for timestmp, can_msg in temp_buf:
-            for _ in self.subnet.process(can_msg.CANFrame):
-                    pass
+            if can_msg.CANData:
+                for _ in self.subnet.process(can_msg.CANFrame):
+                        pass
         rows = []
         for key, value in self.subnet._devices.items():
             rows.append(["ECU: " + str(key).split(":")[0], " Length: " + str(key).split(":")[1]," FIELDS DETECTED: " + str(len(value._indexes()))])
@@ -734,14 +781,15 @@ class mod_stat(CANModule):
         messages = collections.OrderedDict()
 
         for timestmp, can_msg in temp_buf:
-            if (can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length) not in messages:
-                messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)] = [[can_msg.CANFrame.frame_raw_data], 0, 1]
-            else:
-                messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)][0].append(can_msg.CANFrame.frame_raw_data)
-                if messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)][0][-1] != messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)][0][-2]:
-                    messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)][1] += 1
-                if messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)][0][-1] not in messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)][0][:-1]:
-                    messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)][2] += 1
+            if can_msg.CANData:
+                if (can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length) not in messages:
+                    messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)] = [[can_msg.CANFrame.frame_raw_data], 0, 1]
+                else:
+                    messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)][0].append(can_msg.CANFrame.frame_raw_data)
+                    if messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)][0][-1] != messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)][0][-2]:
+                        messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)][1] += 1
+                    if messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)][0][-1] not in messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)][0][:-1]:
+                        messages[(can_msg.CANFrame.frame_id, can_msg.CANFrame.frame_length)][2] += 1
 
         table += "Detected changes (two values):\n\n"
         for (fid, flen), data in messages.items():
@@ -787,25 +835,25 @@ class mod_stat(CANModule):
         messages = collections.OrderedDict()
         status = False
         for timestmp, can_msg in temp_buf:
-
-            if can_msg.CANFrame.frame_id == num_fid and can_msg.CANFrame.frame_raw_data == body:
-                status = True
-            else:
-
-                if not status:
-
-                    if can_msg.CANFrame.frame_id not in messages:
-                        messages[can_msg.CANFrame.frame_id] = [[can_msg.CANFrame.frame_raw_data], []]
-                    else:
-                        if can_msg.CANFrame.frame_raw_data not in messages[can_msg.CANFrame.frame_id][0]:
-                            messages[can_msg.CANFrame.frame_id][0].append(can_msg.CANFrame.frame_raw_data)
-
+            if can_msg.CANData:
+                if can_msg.CANFrame.frame_id == num_fid and can_msg.CANFrame.frame_raw_data == body:
+                    status = True
                 else:
-                    if can_msg.CANFrame.frame_id not in messages:
-                        messages[can_msg.CANFrame.frame_id] = [[], [can_msg.CANFrame.frame_raw_data]]
+
+                    if not status:
+
+                        if can_msg.CANFrame.frame_id not in messages:
+                            messages[can_msg.CANFrame.frame_id] = [[can_msg.CANFrame.frame_raw_data], []]
+                        else:
+                            if can_msg.CANFrame.frame_raw_data not in messages[can_msg.CANFrame.frame_id][0]:
+                                messages[can_msg.CANFrame.frame_id][0].append(can_msg.CANFrame.frame_raw_data)
+
                     else:
-                        if can_msg.CANFrame.frame_raw_data not in messages[can_msg.CANFrame.frame_id][1]:
-                            messages[can_msg.CANFrame.frame_id][1].append(can_msg.CANFrame.frame_raw_data)
+                        if can_msg.CANFrame.frame_id not in messages:
+                            messages[can_msg.CANFrame.frame_id] = [[], [can_msg.CANFrame.frame_raw_data]]
+                        else:
+                            if can_msg.CANFrame.frame_raw_data not in messages[can_msg.CANFrame.frame_id][1]:
+                                messages[can_msg.CANFrame.frame_id][1].append(can_msg.CANFrame.frame_raw_data)
 
         table += "Detected changes (by ID " + hex(num_fid) + " ):\n"
         if status:
@@ -826,5 +874,8 @@ class mod_stat(CANModule):
 
         return table
 
-    def do_start(self, params):  # Start activity of this module
-        self.all_frames[-1]['buf'].restart_time()
+    def do_start(self, params):
+        if len(self.all_frames[-1]['buf'].stream) == 0:
+            self.all_frames[-1]['buf'].add_timestamp()
+            self.dprint(2, "TIME ADDED")
+

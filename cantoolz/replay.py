@@ -1,6 +1,7 @@
 import time
 from cantoolz.module import *
 from cantoolz.can import *
+import copy
 
 class Replay:
     def __init__(self):
@@ -9,6 +10,7 @@ class Replay:
         self._curr = 0
         self._pre_last = 0
         self._shift = 0
+        self._size = 0
 
     def reset(self):
         self._last = time.clock()
@@ -18,7 +20,7 @@ class Replay:
 
     @property
     def stream(self):
-        return self._stream
+        return copy.deepcopy(self._stream)
 
     def passed_time(self):
         return time.clock() + self._shift - self._last
@@ -28,70 +30,118 @@ class Replay:
         self._pre_last = shift
         self._shift =  shift
 
-    def append(self, can_msg):
-        self._stream.append((self.passed_time(), can_msg))
+    def append_time(self, times, can_msg):
+        if can_msg.CANData:
+            self._stream.append((times, copy.deepcopy(can_msg)))
+            self._size += 1
 
-    def start(self, i = 0):
+    def append(self, can_msg):
+        if can_msg.CANData:
+            self._stream.append((self.passed_time(), copy.deepcopy(can_msg)))
+            self._size += 1
+
+        elif can_msg.debugData:
+            self._stream.append((0.0, copy.deepcopy(can_msg)))
+
+    def set_index(self, i=0):
         if i < len(self):
-            self._curr = i
-            self._pre_last = self._stream[self._curr][0]
-            self._last = time.clock()
-            self._shift = self._stream[self._curr][0]
+            self._curr = 0
+            for x in self._stream:
+                if i == self._curr:
+                    break
+                elif x[1].CANData:
+                    self._curr += 1
+
+
+    def add_timestamp(self, def_time = None):
+        msg = CANSploitMessage()
+        if not def_time:
+            msg.debugText = str(time.time())
         else:
-            return Exception('Cant start, cos empty!')
+            msg.debugText = str(def_time)
+        msg.CANFrame = None
+        msg.CANData = False
+        msg.debugData = True
+        msg.bus = "TIMESTAMP"
+        self._stream.append( (0.0, msg) )
 
     def __iter__(self):
         return iter(self._stream)
 
     def next(self, offset = 0, notime = True):
-        if self._curr < len(self):
+        if self._curr < len(self._stream):
+            if self._stream[self._curr][1].debugData:
+                self.restart_time(self._stream[self._curr][0])
+                self._curr += 1
+                return None
             if not notime and self._stream[self._curr][0] < self._pre_last:
                 self.restart_time(self._stream[self._curr][0])
+
             if not notime and (self._stream[self._curr][0] >= 0 and self.passed_time() > (self._stream[self._curr][0] + offset)):
                 self._pre_last = self._stream[self._curr][0]
                 ret = self._stream[self._curr][1]
                 self._curr += 1
-                return ret
+                return copy.deepcopy(ret)
             elif (self._stream[self._curr][0] < 0) or notime:
                 time.sleep(offset)
                 self._pre_last = self._stream[self._curr][0]
                 ret = self._stream[self._curr][1]
                 self._curr += 1
-                return ret
+                return copy.deepcopy(ret)
             else:
                 return None
         else:
             return Exception('No more messages!')
 
     def __add__(self, other):
-        return self._stream + other.stream
+        newRep = Replay()
+        newRep._size = len(self) + len(other)
+        newRep._stream = self._stream + other.stream
+
+        return newRep
 
     def __len__(self):
-        return len(self._stream)
+        return self._size
 
     def parse_file(self, name, _bus):
         try:
             with open(name.strip(), "r") as ins:
                 # "[TIME_STAMP]0x111:4:11223344"
                 for line in ins:
-                    fid = line[:-1].split(":")[0].strip()
-                    if fid[0] == "[" and fid.find(']') > 0:
-                        time_stamp = float(fid[1:fid.find(']')])
-                        fid = fid.split(']')[1].strip()
-                    else:
-                        time_stamp = -1.0
-                    if fid.find('0x') == 0:
-                        num_fid = int(fid, 16)
-                    else:
-                        num_fid = int(fid)
-                    length = line[:-1].split(":")[1]
-                    data = line[:-1].split(":")[2]
-                    msg = CANSploitMessage()
-                    msg.CANFrame = CANMessage.init_data(num_fid, int(length), bytes.fromhex(data)[:8])
-                    msg.CANData = True
-                    msg.bus = _bus
-                    self._stream.append((time_stamp, msg))
+                    if len(line[:-1].split(":")) > 2:
+                        fid = line[:].split(":")[0].strip()
+
+                        if fid[0] == "[" and fid.find(']') > 0:
+                            time_stamp = float(fid[1:fid.find(']')])
+                            fid = fid.split(']')[1].strip()
+                        elif fid[0] == "<" and fid.find('>') > 0:
+                            time_stamp = float(fid[1:fid.find('>')])
+                            self.add_timestamp(time_stamp)
+                            continue
+                        elif len(line[:-1].split(":")) >= 3:
+                            time_stamp = -1.0
+                        else:
+                            continue
+
+                        if fid.find('0x') == 0:
+                            num_fid = int(fid, 16)
+                        else:
+                            num_fid = int(fid)
+                        length = line[:].split(":")[1]
+                        data = line[:].split(":")[2]
+                        if data[-1] == "\n":
+                            data = data[:-1]
+                        if data[-1] == "\r":
+                            data = data[:-1]
+                        msg = CANSploitMessage()
+                        msg.CANFrame = CANMessage.init_data(num_fid, int(length), bytes.fromhex(data)[:8])
+                        msg.CANData = True
+                        msg.bus = _bus
+                        self._stream.append((time_stamp, msg))
+                        self._size += 1
+
         except Exception as e:
+            print(str(e))
             return "Can't open files with CAN messages: " + str(e)
         return "Loaded from file: " + str(len(self)) + " messages"
 
@@ -112,33 +162,22 @@ class Replay:
         if len(self) >= _num2 > _num1 >= 0:
             try:
                 _file = open(fname, 'w')
-                for i in range(_num1, _num2):
-                    _file.write((("[" + str(self._stream[i][0]) + "]") if self._stream[i][0] >= 0.0 else "") + (hex(self._stream[i][1].CANFrame.frame_id) + ":" + str(self._stream[i][1].CANFrame.frame_length) + ":" +
-                        CANModule.get_hex(self._stream[i][1].CANFrame.frame_raw_data) + "\n"))
+                #for i in range(_num1, _num2):
+                curr = 0
+                for times, msg in self._stream:
+                    if curr < _num1:
+                        continue
+                    elif curr >= _num2:
+                        break
+
+                    if not msg.debugData:
+                        _file.write((("[" + str(times) + "]") if times >= 0.0 else "") + (hex(msg.CANFrame.frame_id) + ":" + str(msg.CANFrame.frame_length) + ":" +
+                        CANModule.get_hex(msg.CANFrame.frame_raw_data) + "\n"))
+                        curr += 1
+                    else:
+                        _file.write("<" + str(msg.debugText) + ">\n")
+
                 _file.close()
             except Exception as e:
                 ret = "Not saved. Error: " + str(e)
-        return ret
-
-    def return_dump(self, offset = 0, amount = -1):
-        if amount <= 0 :
-            amount = len(self)
-
-        ret = []
-
-        try:
-            _num1 = offset
-            _num2 = offset + amount
-        except:
-            _num1 = 0
-            _num2 = len(self)
-
-        if len(self) >= _num2 > _num1 >= 0:
-            try:
-                for i in range(_num1, _num2):
-                    ret.append([(str(self._stream[i][0]) if self._stream[i][0] >= 0.0 else ""), hex(self._stream[i][1].CANFrame.frame_id), str(self._stream[i][1].CANFrame.frame_length),
-                        CANModule.get_hex(self._stream[i][1].CANFrame.frame_raw_data)])
-
-            except Exception as e:
-                return ret
         return ret

@@ -24,11 +24,12 @@ class TimeStampz(unittest.TestCase):
         ret = self.CANEngine.call_module(1, "p")
         time2 = time.clock()
         print("TIME: " + str(time2-time1))
-        self.assertTrue(13.99 < time2-time1 < 15.99, "Should be around 14 seconds")
+
         st = self.CANEngine.call_module(1, "S")
+        print(st)
         self.assertTrue(0 <= st.find("Sniffed frames (overall): 11"), "Should be be 11 packets")
         self.CANEngine.call_module(1, "r tests/format.dump")
-
+        self.assertTrue(13.99 < time2-time1 < 15.99, "Should be around 14 seconds")
         self.CANEngine.stop_loop()
         self.CANEngine = None
 
@@ -205,7 +206,7 @@ class EcuControl(unittest.TestCase):
         ret2 = self.CANEngine.call_module(1, "b")
         print(ret)
         self.assertFalse(ret.find("Unknown") >= 0, "Should be status")
-        self.assertFalse(ret2.find("Unknown")>= 0, "Should be statu")
+        self.assertFalse(ret2.find("Unknown")>= 0, "Should be status")
         self.assertTrue(ret.find("Closed") >= 0, "Should be status")
         self.assertTrue(ret2.find("Closed") >= 0, "Should be statu")
 
@@ -221,11 +222,12 @@ class EcuControl(unittest.TestCase):
         time.sleep(1)
         ret = self.CANEngine.call_module(2, "p")
         ret2 = self.CANEngine.call_module(4, "p")
-
+        print(ret)
+        print(ret2)
         self.assertTrue(ret.find("0x122") >= 0, "0x122 should be there")
         self.assertTrue(ret.find("fff0") >= 0, "fff0 as body should be there")
         self.assertTrue(ret.find("ffff") >= 0, "ffff as body should be there")
-        self.assertTrue(ret.find("ff22") >= 0, "ffff as body should be there")
+        self.assertTrue(ret.find("ff22") >= 0, "ff22 as body should be there")
         self.assertTrue(ret.find("0x133") >= 0, "0x133 should be there")
         self.assertFalse(ret2.find("0x133") >= 0, "0x133 should NOT be there")
         self.assertFalse(ret2.find("ff22") >= 0, "0x133 should NOT be there")
@@ -303,7 +305,6 @@ class ModUsbTin(unittest.TestCase):
         self.assertTrue(0 <= ret.find(" 112233445566"), "Message should be in the list")
         self.assertTrue(0 <= ret.find(" 0x11223344 "), "Message should be in the list")
 
-
 class ModStatDiffTests(unittest.TestCase):
     def tearDown(self):
         self.CANEngine.stop_loop()
@@ -343,6 +344,7 @@ class ModStatDiffTests(unittest.TestCase):
         time.sleep(1)
 
         ret = self.CANEngine.call_module(1, "N ")
+        print(ret)
         self.assertTrue(0 <= ret.find(" 0x707 "), "Should be empty diff")
         self.assertTrue(0 <= ret.find(" 0x708 "), "Should be empty diff")
         self.assertTrue(0 <= ret.find("03410d00"), "Should not be empty diff")
@@ -597,7 +599,6 @@ class ModReplayTests(unittest.TestCase):
         self.CANEngine.call_module(2, "s")
         time.sleep(1)
         self.CANEngine.call_module(1, "r 0-4")
-        print("X")
         time.sleep(5)
         self.CANEngine.call_module(1, "c")
         time.sleep(1)
@@ -623,7 +624,6 @@ class ModReplayTests(unittest.TestCase):
         _bodyList = self.CANEngine._enabledList[index][1]._bodyList
         self.assertTrue(len(_bodyList) == 0, "Should be 0 packets sent")
         self.CANEngine.call_module(1, "r 2-4")
-        print("X")
         time.sleep(3)
 
         ret = self.CANEngine.call_module(2, "p")

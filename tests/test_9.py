@@ -25,8 +25,8 @@ load_modules = {
         ]
     },
     'mod_firewall': {},
-    'mod_stat':    {},
-    'mod_stat~2':    {}
+    'mod_stat':    {'debug':2},
+    'mod_stat~2':    {'debug':2}
 }
 
 # Now let's describe the logic of this test
