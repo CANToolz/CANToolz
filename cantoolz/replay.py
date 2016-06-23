@@ -107,8 +107,10 @@ class Replay:
         try:
             with open(name.strip(), "r") as ins:
                 # "[TIME_STAMP]0x111:4:11223344"
+                print("SSSSS")
+
                 for line in ins:
-                    if len(line[:-1].split(":")) > 2:
+                    if len(line[:].split(":")) >= 3:
                         fid = line[:].split(":")[0].strip()
 
                         if fid[0] == "[" and fid.find(']') > 0:
@@ -120,18 +122,17 @@ class Replay:
                             continue
                         elif len(line[:-1].split(":")) >= 3:
                             time_stamp = -1.0
-                        else:
-                            continue
 
                         if fid.find('0x') == 0:
                             num_fid = int(fid, 16)
                         else:
                             num_fid = int(fid)
+
                         length = line[:].split(":")[1]
                         data = line[:].split(":")[2]
-                        if data[-1] == "\n":
+                        if data[-1:] == "\n":
                             data = data[:-1]
-                        if data[-1] == "\r":
+                        if data[-1:] == "\r":
                             data = data[:-1]
                         msg = CANSploitMessage()
                         msg.CANFrame = CANMessage.init_data(num_fid, int(length), bytes.fromhex(data)[:8])
@@ -139,6 +140,7 @@ class Replay:
                         msg.bus = _bus
                         self._stream.append((time_stamp, msg))
                         self._size += 1
+
 
         except Exception as e:
             print(str(e))
