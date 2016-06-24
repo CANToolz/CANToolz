@@ -11,12 +11,12 @@ class Replay:
         self._pre_last = 0
         self._shift = 0
         self._size = 0
+        self.add_timestamp()
 
     def reset(self):
         self._last = time.clock()
         self._curr = 0
         self._pre_last = 0
-        self._shift = 0
 
     @property
     def stream(self):
@@ -25,10 +25,9 @@ class Replay:
     def passed_time(self):
         return time.clock() + self._shift - self._last
 
-    def restart_time(self, shift=0.0):
-        self._last = time.clock()
-        self._pre_last = shift
-        self._shift =  shift
+    def restart_time(self, shift = 0.0):
+        self._last = time.clock() - shift
+
 
     def append_time(self, times, can_msg):
         if can_msg.CANData:
@@ -46,11 +45,13 @@ class Replay:
     def set_index(self, i=0):
         if i < len(self):
             self._curr = 0
+            curr_can = 0
             for x in self._stream:
-                if i == self._curr:
+                if i == curr_can:
                     break
                 elif x[1].CANData:
-                    self._curr += 1
+                    curr_can += 1
+                self._curr += 1
 
 
     def add_timestamp(self, def_time = None):
@@ -63,6 +64,8 @@ class Replay:
         msg.CANData = False
         msg.debugData = True
         msg.bus = "TIMESTAMP"
+        self._pre_last = 0
+        self.restart_time()
         self._stream.append( (0.0, msg) )
 
     def __iter__(self):
@@ -70,27 +73,47 @@ class Replay:
 
     def next(self, offset = 0, notime = True):
         if self._curr < len(self._stream):
-            if self._stream[self._curr][1].debugData:
-                self.restart_time(self._stream[self._curr][0])
-                self._curr += 1
-                return None
-            if not notime and self._stream[self._curr][0] < self._pre_last:
-                self.restart_time(self._stream[self._curr][0])
-
-            if not notime and (self._stream[self._curr][0] >= 0 and self.passed_time() > (self._stream[self._curr][0] + offset)):
-                self._pre_last = self._stream[self._curr][0]
-                ret = self._stream[self._curr][1]
-                self._curr += 1
-                return copy.deepcopy(ret)
-            elif (self._stream[self._curr][0] < 0) or notime:
-                time.sleep(offset)
-                self._pre_last = self._stream[self._curr][0]
-                ret = self._stream[self._curr][1]
-                self._curr += 1
-                return copy.deepcopy(ret)
+            if notime:
+                if self._stream[self._curr][1].CANData:
+                    ret = self._stream[self._curr][1]
+                    self._curr += 1
+                    return copy.deepcopy(ret)
+                else:
+                    self._curr += 1
+                    return None
             else:
-                return None
+                if self._stream[self._curr][1].debugData:
+                    self.restart_time()
+                    self._pre_last = 0
+                    self._curr += 1
+                    return None
+                if self._stream[self._curr][0] < self._pre_last:
+                    self._pre_last = 0
+
+                if self._pre_last != 0.0 and self._stream[self._curr][0] >= 0 and self.passed_time() > (self._stream[self._curr][0]):
+                    time.sleep(offset)
+                    self._pre_last = self._stream[self._curr][0]
+                    ret = self._stream[self._curr][1]
+                    self._curr += 1
+                    return copy.deepcopy(ret)
+                elif self._pre_last == 0.0:
+                    time.sleep(offset)
+                    self._pre_last = self._stream[self._curr][0]
+                    ret = self._stream[self._curr][1]
+                    self.restart_time(self._stream[self._curr][0])
+                    self._curr += 1
+                    return copy.deepcopy(ret)
+                elif (self._stream[self._curr][0] < 0):
+                    time.sleep(offset)
+                    self.restart_time()
+                    self._pre_last = 0.0
+                    ret = self._stream[self._curr][1]
+                    self._curr += 1
+                    return copy.deepcopy(ret)
+                else:
+                    return None
         else:
+            self._curr = 0
             return Exception('No more messages!')
 
     def __add__(self, other):
