@@ -1,5 +1,5 @@
 from cantoolz.module import *
-from cantoolz.can import *
+from cantoolz.replay import *
 import time
 import codecs
 
@@ -20,8 +20,6 @@ class gen_replay(CANModule):
 
     _fname = None
 
-    CANList = []
-
     _active = True
     version = 1.0
 
@@ -35,23 +33,14 @@ class gen_replay(CANModule):
 
     def cmd_load(self, def_in, name):
         try:
-            with open(name.strip(), "r") as ins:
-                for line in ins:
-                    fid = line[:-1].split(":")[0].strip()
-                    if fid.find('0x') == 0:
-                        num_fid = int(fid, 16)
-                    else:
-                        num_fid = int(fid)
-                    length = line[:-1].split(":")[1]
-                    data = line[:-1].split(":")[2]
-                    self.CANList.append(CANMessage.init_data(num_fid, int(length), bytes.fromhex(data)[:8]))
+                self.CANList.parse_file(name, self._bus)
                 self.dprint(1, "Loaded " + str(len(self.CANList)) + " frames")
-        except:
-            self.dprint(2, "can't open files with CAN messages!")
+        except Exception as e:
+            self.dprint(2, "can't open files with CAN messages: " + str(e))
         return "Loaded: " + str(len(self.CANList))
 
     def do_init(self, params):
-        self.CANList = []
+        self.CANList = Replay()
         self.last = time.clock()
         self._last = 0
         self._full = 1
@@ -74,7 +63,7 @@ class gen_replay(CANModule):
 
 
     def clean_table(self, def_in):
-        self.CANList = []
+        self.CANList = Replay()
         self._last = 0
         self._full = 1
         self._num1 = 0
@@ -87,27 +76,18 @@ class gen_replay(CANModule):
         if len(input_params.split(',')) > 1:
             fname = input_params.split(',')[1].strip()
 
-        ret = "Saved to " + fname
-
         try:
             _num1 = int(indexes.split("-")[0])
             _num2 = int(indexes.split("-")[1])
         except:
             _num1 = 0
             _num2 = len(self.CANList)
-        if len(self.CANList) >= _num2 > _num1 >= 0:
-            try:
-                _file = open(fname, 'w')
-                for i in range(_num1, _num2):
-                    _file.write((hex(self.CANList[i].frame_id) + ":" + str(self.CANList[i].frame_length) + ":" +
-                        self.get_hex(self.CANList[i].frame_raw_data) + "\n"))
-                _file.close()
-            except Exception as e:
-                ret = "Not saved. Error: " + str(e)
+        ret = self.CANList.save_dump(fname, _num1, _num2 - _num1)
         return ret
 
     def sniff_mode(self, def_in):
         self._replay = False
+
         if self._sniff:
             self._sniff = False
             self._cmdList['r'][4] = True
@@ -116,6 +96,7 @@ class gen_replay(CANModule):
             self._sniff = True
             self._cmdList['r'][4] = False
             self._cmdList['d'][4] = False
+            self.CANList.restart_time()
         return str(self._sniff)
 
     def replay_mode(self, def_in, indexes = None):
@@ -132,6 +113,9 @@ class gen_replay(CANModule):
                 self._full = self._num2 - self._num1
                 self._last = 0
                 self._cmdList['g'][4] =  False
+                self.CANList.set_index(self._num1)
+
+
         except:
             self._replay = False
 
@@ -144,27 +128,25 @@ class gen_replay(CANModule):
     # Effect (could be fuzz operation, sniff, filter or whatever)
     def do_effect(self, can_msg, args):
         if self._sniff and can_msg.CANData:
-            self.CANList.append(can_msg.CANFrame)
+            self.CANList.append(can_msg)
         elif self._replay and not can_msg.CANData:
             d_time = float(args.get('delay', 0))
-            if d_time > 0:
-                if time.clock() - self.last >= d_time:
-                    self.last = time.clock()
-                    can_msg.CANFrame = self.CANList[self._num1]
+            ignore = bool(args.get('ignore_time', False))
+            try:
+                next_msg = self.CANList.next(d_time, ignore)
+                if next_msg and next_msg.CANData:
+                    can_msg.CANFrame = next_msg.CANFrame
                     self._num1 += 1
                     can_msg.CANData = True
-                    can_msg.bus = self._bus
                     self._last += 1
-                    self._status = self._last/(self._full/100.0)
-            else:
-                can_msg.CANFrame = self.CANList[self._num1]
-                self._num1 += 1
-                can_msg.CANData = True
                 can_msg.bus = self._bus
-                self._last += 1
                 self._status = self._last/(self._full/100.0)
-
+            except Exception as e:
+                self._replay = False
+                self._cmdList['g'][4] = True
+                self.CANList.reset()
             if self._num1 == self._num2:
                 self._replay = False
-                self._cmdList['g'][4] =  True
+                self._cmdList['g'][4] = True
+                self.CANList.reset()
         return can_msg

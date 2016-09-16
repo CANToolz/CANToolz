@@ -4,6 +4,52 @@ import time
 import codecs
 import re
 
+class TimeStampz(unittest.TestCase):
+    def tearDown(self):
+        self.CANEngine.stop_loop()
+        self.CANEngine = None
+        print("stopped")
+
+    def test_timestamp(self):
+        self.CANEngine = CANSploit()
+        self.CANEngine.load_config("tests/test_11.py")
+        self.CANEngine.start_loop()
+        time.sleep(1)
+        num = self.CANEngine.call_module(0, "p")
+        self.assertTrue(0 <= num.find("Loaded packets: 11"), "Should be be 11 packets")
+        time1 = time.clock()
+        self.CANEngine.call_module(0, "r")
+        while self.CANEngine._enabledList[0][1]._status < 100.0:
+            x = 1
+        ret = self.CANEngine.call_module(1, "p")
+        time2 = time.clock()
+        print("TIME: " + str(time2-time1))
+
+        st = self.CANEngine.call_module(1, "S")
+        print(st)
+        self.assertTrue(0 <= st.find("Sniffed frames (overall): 11"), "Should be be 11 packets")
+        self.CANEngine.call_module(1, "r tests/format.dump")
+        self.assertTrue(13.99 < time2-time1 < 15.99, "Should be around 14 seconds")
+        self.CANEngine.stop_loop()
+        self.CANEngine = None
+
+        self.CANEngine = CANSploit()
+        self.CANEngine.load_config("tests/test_12.py")
+        self.CANEngine.start_loop()
+        time.sleep(1)
+        num = self.CANEngine.call_module(0, "p")
+        self.assertTrue(0 <= num.find("Loaded packets: 11"), "Should be be 11 packets")
+        time1 = time.clock()
+        self.CANEngine.call_module(0, "r")
+        while self.CANEngine._enabledList[0][1]._status < 100.0:
+            x = 1
+        ret = self.CANEngine.call_module(1, "p")
+        time2 = time.clock()
+        print("TIME: " + str(time2-time1))
+        self.assertTrue(13.99 < time2-time1 < 15.99, "Should be around 14 seconds")
+        st = self.CANEngine.call_module(1, "S")
+        self.assertTrue(0 <= st.find("Sniffed frames (overall): 11"), "Should be be 11 packets")
+
 class ModGenPingEX(unittest.TestCase):
     def tearDown(self):
         self.CANEngine.stop_loop()
@@ -160,7 +206,7 @@ class EcuControl(unittest.TestCase):
         ret2 = self.CANEngine.call_module(1, "b")
         print(ret)
         self.assertFalse(ret.find("Unknown") >= 0, "Should be status")
-        self.assertFalse(ret2.find("Unknown")>= 0, "Should be statu")
+        self.assertFalse(ret2.find("Unknown")>= 0, "Should be status")
         self.assertTrue(ret.find("Closed") >= 0, "Should be status")
         self.assertTrue(ret2.find("Closed") >= 0, "Should be statu")
 
@@ -176,11 +222,12 @@ class EcuControl(unittest.TestCase):
         time.sleep(1)
         ret = self.CANEngine.call_module(2, "p")
         ret2 = self.CANEngine.call_module(4, "p")
-
+        print(ret)
+        print(ret2)
         self.assertTrue(ret.find("0x122") >= 0, "0x122 should be there")
         self.assertTrue(ret.find("fff0") >= 0, "fff0 as body should be there")
         self.assertTrue(ret.find("ffff") >= 0, "ffff as body should be there")
-        self.assertTrue(ret.find("ff22") >= 0, "ffff as body should be there")
+        self.assertTrue(ret.find("ff22") >= 0, "ff22 as body should be there")
         self.assertTrue(ret.find("0x133") >= 0, "0x133 should be there")
         self.assertFalse(ret2.find("0x133") >= 0, "0x133 should NOT be there")
         self.assertFalse(ret2.find("ff22") >= 0, "0x133 should NOT be there")
@@ -258,7 +305,6 @@ class ModUsbTin(unittest.TestCase):
         self.assertTrue(0 <= ret.find(" 112233445566"), "Message should be in the list")
         self.assertTrue(0 <= ret.find(" 0x11223344 "), "Message should be in the list")
 
-
 class ModStatDiffTests(unittest.TestCase):
     def tearDown(self):
         self.CANEngine.stop_loop()
@@ -298,6 +344,7 @@ class ModStatDiffTests(unittest.TestCase):
         time.sleep(1)
 
         ret = self.CANEngine.call_module(1, "N ")
+        print(ret)
         self.assertTrue(0 <= ret.find(" 0x707 "), "Should be empty diff")
         self.assertTrue(0 <= ret.find(" 0x708 "), "Should be empty diff")
         self.assertTrue(0 <= ret.find("03410d00"), "Should not be empty diff")
@@ -418,6 +465,7 @@ class ModStatMetaTests(unittest.TestCase):
         self.CANEngine.call_module(mod_stat, "l tests/meta.txt")
         ret = self.CANEngine.call_module(mod_stat, "p")
         print(ret)
+        self.CANEngine.call_module(mod_stat, "d tests/meta_test.csv")
         idx = ret.find("TEST UDS")
         self.assertTrue(0 <= idx, "Comment 'TEST UDS' should be found 1 times")
         idx2 = ret.find("TEST UDS", idx + 8)
@@ -491,13 +539,13 @@ class ModUdsTests(unittest.TestCase):
         self.assertTrue((3, bytes.fromhex("02010d"), "Default", False) in _bodyList[1790], "02010d as packet should be there")
         self.assertFalse((3, bytes.fromhex("020904"), "Default", False) in _bodyList[1791],
                          "020904 as packet should not be there")
-        _bodyList = self.CANEngine._enabledList[index][1]._bodyList
+
         ret = self.CANEngine.call_module(1, "p")
-        print(ret)
+        #print(ret)
         self.CANEngine.call_module(0, "r 0-9")
         time.sleep(2)
         ret = self.CANEngine.call_module(1, "p")
-        print(ret)
+        #print(ret)
         _bodyList = self.CANEngine._enabledList[index][1]._bodyList
         ret = self.CANEngine.call_module(1, "a")
         print(ret)
@@ -529,7 +577,9 @@ class ModReplayTests(unittest.TestCase):
         self.CANEngine.call_module(2, "s")
         num = self.CANEngine.call_module(1, "p")
         self.assertTrue(0 <= num.find("Loaded packets: 0"), "Should be be 0 packets")
+        time.sleep(3)
         self.CANEngine.call_module(1, "g")
+        #time.sleep(1)
         self.CANEngine.call_module(0, "t 4:8:1122334411111111")
         time.sleep(1)
         self.CANEngine.call_module(0, "t 4:8:1122334411111111")
@@ -537,7 +587,7 @@ class ModReplayTests(unittest.TestCase):
         self.CANEngine.call_module(0, "t 666:8:1122334411111111")
         time.sleep(1)
         self.CANEngine.call_module(0, "t 5:8:1122334411111111")
-        time.sleep(1)
+        time.sleep(3)
         num = self.CANEngine.call_module(1, "p")
 
         #print("num is " + num)
@@ -549,7 +599,7 @@ class ModReplayTests(unittest.TestCase):
         self.CANEngine.call_module(2, "s")
         time.sleep(1)
         self.CANEngine.call_module(1, "r 0-4")
-        time.sleep(1)
+        time.sleep(5)
         self.CANEngine.call_module(1, "c")
         time.sleep(1)
         num = self.CANEngine.call_module(1, "p")
@@ -574,7 +624,7 @@ class ModReplayTests(unittest.TestCase):
         _bodyList = self.CANEngine._enabledList[index][1]._bodyList
         self.assertTrue(len(_bodyList) == 0, "Should be 0 packets sent")
         self.CANEngine.call_module(1, "r 2-4")
-        time.sleep(1)
+        time.sleep(3)
 
         ret = self.CANEngine.call_module(2, "p")
         print(ret)
@@ -585,12 +635,15 @@ class ModReplayTests(unittest.TestCase):
         self.assertTrue(5 in _bodyList, "ID 5 should be found")
         self.assertFalse(4 in _bodyList, "ID 4 should not be found ")
         self.CANEngine.call_module(2, "r tests/new.save")
-        self.CANEngine.call_module(2, "c")
         self.CANEngine.call_module(1, "l tests/new.save")
         ret = self.CANEngine.call_module(1, "p")
         print(ret)
-        self.assertTrue(0 <= ret.find("Loaded packets: 6"), "Should be 6 packets")
-
+        self.assertTrue(0 <= ret.find("Loaded packets: 6"), "Should be 26packets")
+        self.CANEngine.call_module(1, "c")
+        self.CANEngine.call_module(1, "l tests/new.save")
+        ret = self.CANEngine.call_module(1, "p")
+        print(ret)
+        self.assertTrue(0 <= ret.find("Loaded packets: 2"), "Should be 2 packets")
 
 class ModPingTests(unittest.TestCase):
     def tearDown(self):

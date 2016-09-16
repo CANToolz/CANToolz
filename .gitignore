@@ -18,3 +18,5 @@ CANToolz.egg-info
 dist
 examples/MIDI_to_CAN_example/CANToolz_config/track.mp3
 examples/can_phdays_bmw.py
+/LOCK_ACTION.dump.txt
+/NOISE.dump.txt
