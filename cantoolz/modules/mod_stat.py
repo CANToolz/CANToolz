@@ -798,7 +798,7 @@ class mod_stat(CANModule):
             uniq = data[2]
 
             if uniq > 1 and msgs > 3 and uniq <= depth:
-                table += "\t " + hex(fid) + " count of uniq. values: " + str(uniq) + " values/uniq.: " + str(int(msgs/uniq)) + " changes/uniq.: " +(str(int(chgs/uniq))) +"\n"
+                table += "\t " + hex(fid) + " count of uniq. values: " + str(uniq) + " values/uniq.: " + str(round(float(msgs/uniq), 2)) + " changes/uniq.: " +(str(round(float(chgs/uniq), 2))) +"\n"
 
         return table
 

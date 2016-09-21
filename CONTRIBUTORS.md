@@ -1,4 +1,5 @@
 ### Developers
+* Alexey Sintsov
 * Sergey Kononenko 
 
 ### Designers
