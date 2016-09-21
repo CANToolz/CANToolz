@@ -1,3 +1,6 @@
+## Version 3.4-2
+ - **mod_stat** cosmetic fix: Experimental function "detect changes" now return float for some values
+
 ## Version 3.4-1
  - **replay** real timestamp added
 
