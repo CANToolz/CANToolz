@@ -9,7 +9,7 @@ load_modules = {
 # Scenario
 
 actions = [
-    {'hw_fakeIO'     : {'action':'read','pipe':2}},
+    {'hw_fakeIO'     : {'action':'write','pipe':2}},
     {'gen_replay~1'      : {'pipe':2}},
     {'mod_stat'   : {'pipe': 2}}
 ]

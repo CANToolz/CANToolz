@@ -1,7 +1,7 @@
 load_modules = {
     'hw_USBtin':    {'port':'loop', 'debug':2, 'speed':500},  # IO hardware module
 
-    'ecu_controls':
+    'can_controls':
         {'bus':'ECU_TEST',
 
         'commands':[
@@ -32,7 +32,7 @@ load_modules = {
 # Now let's describe the logic of this test
 actions = [
     {'hw_USBtin':   {'action': 'read','pipe': 1}},
-    {'ecu_controls'     : {}},
+    {'can_controls'     : {}},
     {'mod_stat':{}},
     {'mod_firewall': {'white_bus': ['ECU_TEST']}},
     {'mod_stat~2':{}},

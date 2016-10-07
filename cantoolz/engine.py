@@ -132,7 +132,7 @@ class CANSploit:
         if not self._stop.is_set() and not self.do_stop_e.is_set():
             self.do_stop_e.set()
             while self.do_stop_e.is_set():
-                time.sleep(0.0000001)
+                time.sleep(0.01)
 
         self._stop.set()
         return 1

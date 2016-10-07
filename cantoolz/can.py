@@ -15,7 +15,7 @@ class CANMessage:
     def __init__(self, fid, length, data, extended, type):  # Init EMPTY message
         self.frame_id = int(fid)  # Message ID
         self.frame_length = int(length)  # DATA length
-        self.frame_data = list(data)  # DATA
+        self.frame_data = list(data)[0:int(length)]  # DATA
         self.frame_ext = bool(extended)  # 29 bit message ID - boolean flag
 
         self.frame_type = type
