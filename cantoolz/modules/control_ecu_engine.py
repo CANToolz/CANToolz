@@ -58,7 +58,7 @@ class control_ecu_engine(CANModule):
             key_x += chr(ord(byte_k) ^ ord(self._auth[i]))  # XOR with KEY (to get VIN)
             i += 1
 
-        self.frames.extend(ISOTPMessage.generate_can(self._status2['id_command'], list(key_x.encode())))
+        self.frames.extend(ISOTPMessage.generate_can(self._status2['id_command'], [ord(byt) for byt in list(key_x)] ))
         return ""
 
     def control_stop_engine(self, flag):

@@ -15,8 +15,9 @@ class ecu_engine(CANModule):
         'id_uds': 0x701,
         'uds_shift': 0x08,
         'id_command': 0x71,
-        'vin':'NLXXX6#666CW0:06666',
-        'start_uniq_key':'aXdloDoospOidd78%^5hak$fdbbaLL18^%a**;:"d:1#AA',
+        'vin_id': 0x811,
+        'vin':'NLXXX6666CW006666',
+        'start_uniq_key':'aXdloDoospOidd78%',
         'uds_key':'secret_uds_auth',
         'commands': {
                 'rpm_up':'01',
@@ -45,11 +46,28 @@ class ecu_engine(CANModule):
         self.rpm_down = 0
         self.default = 0x300
         self.current = 0
-        self._authenticated = False
         self.frames = []
         self.init_sess = None
         self.init_sess2 = None
         self._last_sent = time.clock()
+        self.vin_gen = [time.clock(), time.clock(),0.7, 2.9]
+
+        left = len(self._vin)
+        count = int(left / 7) + 1
+        if (left % 7) > 0:
+            count += 1
+        curr = 0
+        self.vin = []
+        self.count_part = 0
+        while left > 0:
+            if curr == 0:
+                self.vin.append([0,0,0,0,count,0,0 , left])
+                curr += 1
+            else:
+                part = [ord(byt) for byt in (self._vin[(curr-1)*7:(curr-1)*7+7])]
+                self.vin.append([curr] + list(part + list(bytes(7-len(part)))))
+                left += -7
+                curr += 1
 
     def generate_rpm(self):
         if self._status2['status'] == 1:
@@ -80,23 +98,36 @@ class ecu_engine(CANModule):
                     ))
                 self._last_sent = time.clock()
 
+    def generate_vin(self):
+        curr_t = time.clock()
+        if self.vin_gen[0] == 0 or curr_t - self.vin_gen[0] > self.vin_gen[2]:
+            if self.vin_gen[1] == 0 or curr_t - self.vin_gen[1] > self.vin_gen[3]:
+                self.frames.append(CANMessage.init_data(self._status2.get('vin_id',1), len(self.vin[self.count_part]), self.vin[self.count_part]))
+                self.count_part+=1
+                self.vin_gen[1] = curr_t
+                if self.count_part == len(self.vin):
+                    self.vin_gen[0] = curr_t
+                    self.count_part = 0
+
     # Effect (could be fuzz operation, sniff, filter or whatever)
     def do_effect(self, can_msg, args):
         if self._status2['status'] > 0:
             self.generate_rpm()
+        self.generate_vin()
         if args['action'] == 'read' and can_msg.CANData: # READ
             if self._status2['id_command'] == can_msg.CANFrame.frame_id:
                 for cmd, value in self._status2['commands'].items():
                     len_cmd = int(len(str(value))/2)
-                    if cmd == "rpm_up":
+                    self._status2['status'] != 0
+                    if self._status2['status'] != 0 and cmd == "rpm_up":
                         len_cmd2 = len_cmd + 1
                         if can_msg.CANFrame.frame_length == len_cmd2 and can_msg.CANFrame.frame_raw_data[0:len_cmd] == bytes.fromhex(value)[0:len_cmd] and self._status2['status'] == 1:
                             self.rpm_up += ord(can_msg.CANFrame.frame_raw_data[len_cmd:len_cmd2])
-                    elif cmd == "rpm_down":
+                    elif self._status2['status'] != 0 and cmd == "rpm_down":
                         len_cmd2 = len_cmd + 1
                         if can_msg.CANFrame.frame_length == len_cmd2 and can_msg.CANFrame.frame_raw_data[0:len_cmd] == bytes.fromhex(value)[0:len_cmd] and self._status2['status'] == 1:
                             self.rpm_down += ord(can_msg.CANFrame.frame_raw_data[len_cmd:len_cmd2])
-                    elif cmd == "stop":
+                    elif self._status2['status'] != 0 and cmd == "stop":
                         if can_msg.CANFrame.frame_length == len_cmd and can_msg.CANFrame.frame_raw_data[0:len_cmd] == bytes.fromhex(value)[0:len_cmd]:
                             self._status2['status'] = 3
                     elif cmd == "init":
@@ -140,8 +171,8 @@ class ecu_engine(CANModule):
 
 
             elif self._status2['id_uds'] == can_msg.CANFrame.frame_id:
-                if not self.init_sess2:
-                    self.init_sess2 = ISOTPMessage(can_msg.CANFrame.frame_id)
+                    if not self.init_sess2:
+                        self.init_sess2 = ISOTPMessage(can_msg.CANFrame.frame_id)
 
                     ret = self.init_sess2.add_can(can_msg.CANFrame)
 
@@ -168,6 +199,7 @@ class ecu_engine(CANModule):
                                         i = 0
                                         for byte_k in key:
                                             key_x += chr(byte_k ^ self._seed[i % 4])
+                                            i += 1
                                         if key_x == self._uds_auth:
                                             self._uds_auth_done = True
                                             self.frames.extend(uds_msg.add_request(
@@ -185,9 +217,10 @@ class ecu_engine(CANModule):
                                     self._seed = None
                             elif 0x2e in uds_msg.sessions[can_msg.CANFrame.frame_id] and 0x55 in uds_msg.sessions[can_msg.CANFrame.frame_id][0x2e] and uds_msg.sessions[can_msg.CANFrame.frame_id][0x2e][0x55]['data'][0] == 0x55:
                                 if  self._uds_auth_done:
-                                    new_key = ''.join(uds_msg.sessions[can_msg.CANFrame.frame_id][0x2e][0x55]['data'][1:])
+                                    new_key = ''.join(chr(x) for x in uds_msg.sessions[can_msg.CANFrame.frame_id][0x2e][0x55]['data'][1:])
                                     if len(new_key) == 17:
                                         self._uds_auth_done = False
+                                        self._auth = new_key
                                         self.frames.extend(uds_msg.add_request(
                                                     self._status2['id_uds'] + self._status2['uds_shift'], # ID
                                                     0x2e + 0x40,                                        # Service
@@ -208,6 +241,7 @@ class ecu_engine(CANModule):
                                                 0x00,                                               # Sub function
                                                 [0x00]))                                        # data
                         self.init_sess2 = None
+
         elif args['action'] == 'write' and not can_msg.CANData:
             if len(self.frames) > 0:
                 can_msg.CANFrame = self.frames.pop(0)

@@ -1,5 +1,17 @@
 load_modules = {
+    ########### Attacker
+
+    'uds_engine_auth_baypass': {
+         'id_command': 0x71
+    },
+
     ########### CONTROLS
+    'uds_tester_ecu_engine':{
+        'id_uds': 0x701,
+        'uds_shift': 0x08,
+        'uds_key':''
+    },
+
     'control_ecu_doors': {
             'id_report': {0x91:'Left', 0x92:'Right'},
             'id_command': 0x81,
@@ -45,7 +57,8 @@ load_modules = {
 
                 'OBD2': [
                     0x79,
-                    0x709
+                    0x709,
+                    0x811
                     ],
 
                 'Cabin':[
@@ -103,6 +116,7 @@ load_modules = {
         'id_uds': 0x701,
         'uds_shift': 0x08,
         'id_command': 0x71,
+        'vin_id': 0x811,
         'vin':'NLXXX6666CW006666',
         'start_uniq_key':'tGh&ujKnf5$rFgvc%',
         'uds_key':'secret_uds_auth',
@@ -122,6 +136,10 @@ load_modules = {
 
 actions = [
 
+    {'uds_engine_auth_baypass':   {
+         'action': 'write',
+         'pipe': 'Engine'}},
+
     {'ecu_door~1':   {
          'action': 'write',
          'pipe': 'Cabin'}},
@@ -137,6 +155,10 @@ actions = [
     {'control_ecu_engine': {
          'action': 'write',
          'pipe': 'Engine'}},
+
+    {'uds_tester_ecu_engine': {
+         'action': 'write',
+         'pipe': 'OBD2'}},
 
     {'control_ecu_doors': {
          'action': 'write',
@@ -169,6 +191,10 @@ actions = [
     {'control_ecu_engine': {
          'action': 'read',
          'pipe': 'Engine'}},
+
+    {'uds_tester_ecu_engine': {
+         'action': 'read',
+         'pipe': 'OBD2'}},
 
     {'control_ecu_doors': {
          'action': 'read',

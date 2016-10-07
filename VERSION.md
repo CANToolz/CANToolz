@@ -1,3 +1,8 @@
+## Version 3.5-0
+ - **CANBusTriple** change: now you need provide in 'bus' parameter to which BUS of CBT you want to work (read/write). It gives more flexibility
+ - Inspired by @_db5 and his cool vircar I have decide to create an analog but on CANToolz engine. Now you can emulate a car. You build car from ECU modules and CONTROL modules. ECU modules could be connected via virtual CAN Switch.
+ see example car_config.py. So it is really flexible and abstract CAR emulator - you can write new ECU/Sensors/Controls and connect them like you want to emulate whole car!
+
 ## Version 3.4-2
  - **mod_stat** cosmetic fix: Experimental function "detect changes" now return float for some values
 
