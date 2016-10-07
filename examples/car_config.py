@@ -5,6 +5,8 @@ load_modules = {
          'id_command': 0x71
     },
 
+    'gen_ping' :    {},
+
     ########### CONTROLS
     'uds_tester_ecu_engine':{
         'id_uds': 0x701,
@@ -139,6 +141,14 @@ actions = [
     {'uds_engine_auth_baypass':   {
          'action': 'write',
          'pipe': 'Engine'}},
+
+     {'gen_ping':    {                    # Generate UDS requests
+        'pipe': 'OBD2',
+        'delay': 0.06,
+        'range': [1, 2047],           # ID range (from 1790 to 1794)
+        'services':[{'service': 0x27, 'sub': 0x01}],
+        'mode':'UDS'}
+    },
 
     {'ecu_door~1':   {
          'action': 'write',
