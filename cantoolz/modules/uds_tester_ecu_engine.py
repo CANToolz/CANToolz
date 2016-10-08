@@ -97,7 +97,7 @@ class uds_tester_ecu_engine(CANModule):
                                 self.auth_resp_byte = uds_msg.sessions[can_msg.CANFrame.frame_id][0x27 + 0x40][2]['data'][0]
                         elif 0x2e + 0x40 in uds_msg.sessions[can_msg.CANFrame.frame_id] and 0x55 in uds_msg.sessions[can_msg.CANFrame.frame_id][0x2e + 0x40] and uds_msg.sessions[can_msg.CANFrame.frame_id][0x2e + 0x40][0x55]['data'][0] == 0x55:
                             self.record_status = True
-                        elif 0x2e + 0x40 in uds_msg.sessions[can_msg.CANFrame.frame_id] and 0x0 in uds_msg.sessions[can_msg.CANFrame.frame_id][0x2e + 0x40] and uds_msg.sessions[can_msg.CANFrame.frame_id][0x2e + 0x40][0x0]['data'][0] == 0x0:                                   # data
+                        elif 0x2e + 0x40 in uds_msg.sessions[can_msg.CANFrame.frame_id] and 0x0 in uds_msg.sessions[can_msg.CANFrame.frame_id][0x2e + 0x40] and uds_msg.sessions[can_msg.CANFrame.frame_id][0x2e + 0x40][0x0]['data'][0:1] == [0x0]:                                   # data
                             self.record_status = False
                     self.init_sess2 = None
 
