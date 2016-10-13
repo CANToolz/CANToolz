@@ -6,11 +6,14 @@ if len(sys.argv) >= 2 and sys.argv[1] == 'install':
     pip.main(['install', 'pyserial'])
     pip.main(['install', 'numpy'])
     pip.main(['install', 'mido'])
+    #pip.main(['install', 'structure'])
+    pip.main(['install', 'bitstring'])
+    #pip.main(['install', 'TensorFlow'])
 
 
 setup(
     name='CANToolz',
-    version='3.5.0',
+    version='3.5.1',
     author='Alexey Sintsov',
     install_requires=[
         'pyserial',

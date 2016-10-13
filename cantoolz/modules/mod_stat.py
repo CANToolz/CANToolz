@@ -1,13 +1,13 @@
-from cantoolz.module import *
 from cantoolz.uds import *
 from cantoolz.frag import *
 from cantoolz.replay import *
-import json
+import bitstring
 import re
 import collections
 import ast
 import time
 from cantoolz.correl import *
+
 
 class mod_stat(CANModule):
     name = "Service discovery and statistic"
@@ -52,9 +52,16 @@ class mod_stat(CANModule):
         self._bodyList = collections.OrderedDict()
         self.shift = params.get('uds_shift', 8)
         self.subnet = Subnet(lambda stream: Separator(SeparatedMessage.builder))
+        self.data_set = {}
+        self._train_buffer = -1
+        self._action = threading.Event()
+        self._action.clear()
+        self._last = 0
+        self._full = 1
+        self._need_status = False
 
         if 'meta_file' in params:
-            self.dprint(1, self.do_load_meta(params['meta_file']))
+            self.dprint(1, self.do_load_meta(0, params['meta_file']))
 
         self._cmdList['p'] = ["Print current table",1, "[index]", self.do_print, True]
 
@@ -68,6 +75,10 @@ class mod_stat(CANModule):
         self._cmdList['Y'] = ["Dump Diff in replay format", 1, "<filename>,[buffer index ,buffer index], [uniq values max]", self.print_dump_diff, True]
         self._cmdList['y'] = ["Dump Diff in replay format (new ID)", 1, "<filename>,[buffer index 1] , [buffer index 2]", self.print_dump_diff_id, True]
         self._cmdList['F'] = ["Search ID in all buffers", 1, "<ID>", self.search_id, True]
+
+        self._cmdList['train'] = ["STATCHECK: profiling on normal traffic (EXPEREMENTAL)", 1, "[buffer index]", self.train, True]
+        self._cmdList['check'] = ["STATCHECK: find abnormalities on 'event' traffic  (EXPEREMENTAL)", 1, "[buffer index]", self.find_ab, True]
+
         self._cmdList['change'] = ["Detect changes for ECU (EXPEREMENTAL)", 1, "[buffer index][, max uniq. values]", self.show_change, True]
         self._cmdList['detect'] = ["Detect changes for ECU by control FRAME (EXPEREMENTAL)", 1, "<ECU ID:HEX_DATA>[,buffer index]", self.show_detect, True]
         self._cmdList['show'] = ["Show detected amount of fields for all ECU (EXPEREMENTAL)", 1, "[buffer index]", self.show_fields, True]
@@ -649,6 +660,11 @@ class mod_stat(CANModule):
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
     def do_effect(self, can_msg, args):
+        if not self._action.is_set() and self._need_status:
+            self._action.set()
+            self._status = self._last/(self._full/100.0)
+            self._action.clear()
+
         if can_msg.CANData or can_msg.debugData:
             self.all_frames[self._index]['buf'].append(can_msg)
         return can_msg
@@ -874,7 +890,284 @@ class mod_stat(CANModule):
 
         return table
 
+    def train(self, zn, _index="-1"):
+        _index = int(_index.strip())
+        temp_buf = Replay()
+        if _index == -1:
+            for buf in self.all_frames:
+                temp_buf = temp_buf + buf['buf']
+        else:
+            temp_buf = self.all_frames[_index]['buf']
+
+        if self._train_buffer >= 0:
+            del self.data_set[self._train_buffer]
+        self._train_buffer = _index
+        self.data_set.update({_index:{}})
+
+        self._last = 0
+        self._full = len(temp_buf)
+
+        if not self._action.is_set():
+                    self._action.set()
+                    self._need_status = True
+                    self._action.clear()
+        # Prepare DataSet
+        for timestmp, can_msg in temp_buf:
+            if can_msg.CANData:
+                if can_msg.CANFrame.frame_id not in self.data_set[_index]:
+
+                    self.data_set[_index][can_msg.CANFrame.frame_id] = {
+
+                        'values_array': [ can_msg.CANFrame.get_bits() ],
+                        'count': 1,
+                        'changes': 0,
+                        'last': can_msg.CANFrame.get_bits(),
+
+                        'ch_last_time': round(timestmp,4),
+                        'ch_max_time': 0,
+                        'ch_min_time': 0,
+
+                        'last_time': round(timestmp,4),
+                        'min_time': 0,
+                        'max_time': 0,
+
+                        'change_bits': bitstring.BitArray('0b' + ('0' * 64), length=64)
+
+                    }
+
+                else:
+                    self.data_set[_index][can_msg.CANFrame.frame_id]['count'] += 1
+                    new_arr = can_msg.CANFrame.get_bits()
+
+                    #if  new_arr not in self.data_set[_index][can_msg.CANFrame.frame_id]['values_array']:
+                    #    self.data_set[_index][can_msg.CANFrame.frame_id]['values_array'].append(new_arr)
+
+                    if new_arr != self.data_set[_index][can_msg.CANFrame.frame_id]['last']:
+
+                        self.data_set[_index][can_msg.CANFrame.frame_id]['changes'] += 1
+                        self.data_set[_index][can_msg.CANFrame.frame_id]['change_bits'] |= (self.data_set[_index][can_msg.CANFrame.frame_id]['last'] ^ new_arr)
+                        self.data_set[_index][can_msg.CANFrame.frame_id]['last'] = new_arr
+
+                        if self.data_set[_index][can_msg.CANFrame.frame_id]['changes'] == 2 :
+                            self.data_set[_index][can_msg.CANFrame.frame_id]['ch_max_time'] = round(timestmp - self.data_set[_index][can_msg.CANFrame.frame_id]['ch_last_time']+ 0.001,4)
+                            self.data_set[_index][can_msg.CANFrame.frame_id]['ch_min_time'] = round(timestmp - self.data_set[_index][can_msg.CANFrame.frame_id]['ch_last_time']- 0.001,4)
+
+
+                        if self.data_set[_index][can_msg.CANFrame.frame_id]['changes'] > 2:
+                            ch_time = round(timestmp - self.data_set[_index][can_msg.CANFrame.frame_id]['ch_last_time'],4)
+                            if ch_time > self.data_set[_index][can_msg.CANFrame.frame_id]['ch_max_time']:
+                                self.data_set[_index][can_msg.CANFrame.frame_id]['ch_max_time'] = ch_time
+                            elif ch_time < self.data_set[_index][can_msg.CANFrame.frame_id]['ch_min_time']:
+                                self.data_set[_index][can_msg.CANFrame.frame_id]['ch_min_time'] = ch_time
+
+                        self.data_set[_index][can_msg.CANFrame.frame_id]['ch_last_time'] = round(timestmp,4)
+
+
+                    if self.data_set[_index][can_msg.CANFrame.frame_id]['count'] == 2:
+                         self.data_set[_index][can_msg.CANFrame.frame_id]['max_time'] = round(timestmp - self.data_set[_index][can_msg.CANFrame.frame_id]['last_time']+ 0.001,4)
+                         self.data_set[_index][can_msg.CANFrame.frame_id]['min_time'] = round(timestmp - self.data_set[_index][can_msg.CANFrame.frame_id]['last_time']- 0.001,4)
+
+                    if self.data_set[_index][can_msg.CANFrame.frame_id]['count'] > 2:
+                        ch_time = round(timestmp - self.data_set[_index][can_msg.CANFrame.frame_id]['last_time'],4)
+                        if ch_time > self.data_set[_index][can_msg.CANFrame.frame_id]['max_time']:
+                            self.data_set[_index][can_msg.CANFrame.frame_id]['max_time'] = ch_time
+                        elif ch_time < self.data_set[_index][can_msg.CANFrame.frame_id]['min_time']:
+                            self.data_set[_index][can_msg.CANFrame.frame_id]['min_time'] = ch_time
+                        if can_msg.CANFrame.frame_id == 0x2a0:
+                            print(str(ch_time))
+
+                    self.data_set[_index][can_msg.CANFrame.frame_id]['last_time'] = round(timestmp,4)
+
+                if not self._action.is_set():
+                    self._action.set()
+                    self._last += 1
+                    self._action.clear()
+
+        time.sleep(1)
+        if not self._action.is_set():
+                    self._action.set()
+                    self._need_status = False
+                    self._action.clear()
+
+        return "Profiling finished: " + str(len(self.data_set[_index])) + " uniq. arb. ID"
+
+    def find_ab(self, bred_kakoi_to, _index):
+        _index = int(_index.strip())
+
+        if self._train_buffer < 0:
+            return "Not trained yet..."
+        elif self._train_buffer == _index:
+            return "Why?"
+
+        temp_buf = Replay()
+        if _index == -1:
+            for buf in self.all_frames:
+                temp_buf = temp_buf + buf['buf']
+        else:
+            temp_buf = self.all_frames[_index]['buf']
+
+        self.data_set.update({_index:{}})
+
+        self._last = 0
+        self._full = len(temp_buf) * 2
+
+        if not self._action.is_set():
+                    self._action.set()
+                    self._need_status = True
+                    self._action.clear()
+        # Prepare DataSet
+        for timestmp, can_msg in temp_buf:
+            init_ch = []
+            cont_ch = []
+            if can_msg.CANData:
+                if can_msg.CANFrame.frame_id not in self.data_set[_index]:
+
+                    self.data_set[_index][can_msg.CANFrame.frame_id] = {
+
+                        'count': 1,
+                        'changes': 0,
+                        'last': can_msg.CANFrame.get_bits(),
+
+                        'last_time': round(timestmp,4),
+
+
+                        'ch_last_time': round(timestmp,4),
+
+
+                    }
+
+                else:
+                    self.data_set[_index][can_msg.CANFrame.frame_id]['count'] += 1
+                    new_arr = can_msg.CANFrame.get_bits()
+
+                    chg = self.data_set[_index][can_msg.CANFrame.frame_id].get('changed', False)
+
+                    if new_arr != self.data_set[_index][can_msg.CANFrame.frame_id]['last']:
+
+                        self.data_set[_index][can_msg.CANFrame.frame_id]['changes'] += 1
+                        diff = new_arr ^ self.data_set[_index][can_msg.CANFrame.frame_id]['last']
+                        self.data_set[_index][can_msg.CANFrame.frame_id]['last'] = new_arr
+
+                        orig = self.data_set[self._train_buffer].get(can_msg.CANFrame.frame_id, {})
+                        orig_bits = orig.get('change_bits', bitstring.BitArray('0b'+'0'*64, length=64))
+
+                        if (diff | orig_bits) != orig_bits:
+
+                            if not chg:
+                                self.data_set[_index][can_msg.CANFrame.frame_id].update({'changed': True, 'diff': diff})
+                                ev = " INITIAL CHANGE "
+                                init_ch.append(can_msg.CANFrame.frame_id)
+                            elif diff == self.data_set[_index][can_msg.CANFrame.frame_id]['diff']  :
+                                ev = " RELEASED BACK "
+                                self.data_set[_index][can_msg.CANFrame.frame_id]['changed'] = False
+                            else:
+                                ev = " CHANGED AGAIN "
+                                self.data_set[_index][can_msg.CANFrame.frame_id].update({'diff': (self.data_set[_index][can_msg.CANFrame.frame_id]['diff']|diff),'chc':True})
+
+
+                            msgs = self.data_set[_index][can_msg.CANFrame.frame_id].get('breaking_bits_messages',[])
+                            msgs.append(can_msg.CANFrame.get_text() + ev ) #+ " diff: " + ( diff | orig_bits).bin + " orig: " + orig_bits.bin + " new: " + diff.bin)
+                            self.data_set[_index][can_msg.CANFrame.frame_id].update({'breaking_bits_messages': msgs})
+
+                        """
+                        if self.data_set[_index][can_msg.CANFrame.frame_id]['changes'] > 2:
+                            orig = self.data_set[self._train_buffer].get(can_msg.CANFrame.frame_id, None)
+                            error_rate = 0.15
+                            if orig:
+                                orig_max_time = orig.get('ch_max_time', None )
+                                orig_min_time = orig.get('ch_min_time', None)
+                                curr_ch_time = round(timestmp - self.data_set[_index][can_msg.CANFrame.frame_id]['ch_last_time'],4)
+                                if orig_max_time and orig_min_time:
+                                    error_rate += orig_max_time - orig_min_time
+                                    if curr_ch_time < (orig_min_time - error_rate):
+                                        if chg:
+                                            ev = " BUTTON/EVENT signs "
+                                        else:
+                                            ev = ""
+                                        msgs = self.data_set[_index][can_msg.CANFrame.frame_id].get('breaking_ch_time_messages',[])
+                                        msgs.append(can_msg.CANFrame.get_text() + ev + " max.time: " + str(orig_max_time) + " min.time: " + str(orig_min_time) + " new time: " + str(curr_ch_time))
+                                        self.data_set[_index][can_msg.CANFrame.frame_id].update({'breaking_ch_time_messages': msgs})
+                        """
+                        self.data_set[_index][can_msg.CANFrame.frame_id]['ch_last_time'] = round(timestmp,4)
+
+
+                    if self.data_set[_index][can_msg.CANFrame.frame_id]['count'] > 2:
+                        orig = self.data_set[self._train_buffer].get(can_msg.CANFrame.frame_id, None)
+                        error_rate = 0.15
+                        if orig:
+                            orig_max_time = orig.get('max_time', None)
+                            orig_min_time = orig.get('min_time', None)
+                            curr_ch_time = round(timestmp - self.data_set[_index][can_msg.CANFrame.frame_id]['last_time'],4)
+                            if orig_max_time and orig_min_time:
+                                    error_rate += orig_max_time - orig_min_time
+                                    if curr_ch_time < (orig_min_time - error_rate):
+                                        if chg:
+                                            ev = " < BUTTON ACTION or EVENT "
+                                        else:
+                                            ev = ""
+                                        msgs = self.data_set[_index][can_msg.CANFrame.frame_id].get('breaking_time_messages',[])
+                                        msgs.append(can_msg.CANFrame.get_text() + ev )#)+ " max.time: " + str(orig_max_time) + " min.time: " + str(orig_min_time) + " new time: " + str(curr_ch_time))
+                                        self.data_set[_index][can_msg.CANFrame.frame_id].update({'breaking_time_messages': msgs})
+
+                    self.data_set[_index][can_msg.CANFrame.frame_id]['last_time'] = round(timestmp,4)
+
+                if not self._action.is_set():
+                    self._action.set()
+                    self._last += 1
+                    self._action.clear()
+
+        ### Checking!
+
+        result = " Profiling comparison results (abnormalities):\n\n"
+
+
+        null_mask = bitstring.BitArray('0b' + ('0'*64), length=64)
+        for aid, body in self.data_set[_index].items():
+
+            # New devices
+            if aid not in self.data_set[self._train_buffer]:
+                result += "\t" + hex(aid) + ": Unknown arb. ID found! (use SEARCH by ID)\n"
+            else:
+
+            # Bitmask changed
+                msgs = body.get('breaking_bits_messages',[])
+                if len(msgs) > 0 :
+                    result += "\t" + hex(aid) + ": New bits in values found, with next frames:\n"
+                    # Let's find those packets
+                    for msg in msgs:
+                        result += "\t\t" + msg + "\n"
+
+            # Time changed:
+                msgs = body.get('breaking_time_messages', [])
+                if len(msgs) > 0 :
+                    result += "\t" + hex(aid) + ": Avg. 'impulse' rate outside allowed error, with next frames:\n"
+                    # Let's find those packets
+                    for msg in msgs:
+                        result += "\t\t" + msg +  "\n"
+            # Changes time changed:
+                msgs = body.get('breaking_ch_time_messages',[])
+                if len(msgs) > 0 :
+                    result += "\t" + hex(aid) + ": Avg. 'impulse' rate of changes outside allowed error, with next frames:\n"
+                    # Let's find those packets
+                    for msg in msgs:
+                        result += "\t\t" + msg + "\n"
+
+
+
+            if not self._action.is_set():
+                    self._action.set()
+                    self._last += body['count']
+                    self._action.clear()
+
+        if not self._action.is_set():
+                    self._action.set()
+                    self._need_status = False
+                    self._action.clear()
+
+        return result
+
     def do_start(self, params):
+
         if len(self.all_frames[-1]['buf'].stream) == 0:
             self.all_frames[-1]['buf'].add_timestamp()
             self.dprint(2, "TIME ADDED")

@@ -194,8 +194,7 @@ class Replay:
                         break
 
                     if not msg.debugData:
-                        _file.write((("[" + str(times) + "]") if times >= 0.0 else "") + (hex(msg.CANFrame.frame_id) + ":" + str(msg.CANFrame.frame_length) + ":" +
-                        CANModule.get_hex(msg.CANFrame.frame_raw_data) + "\n"))
+                        _file.write((("[" + str(times) + "]") if times >= 0.0 else "") + msg.CANFrame.get_text() + "\n")
                         curr += 1
                     else:
                         _file.write("<" + str(msg.debugText) + ">\n")

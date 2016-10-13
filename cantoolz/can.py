@@ -1,5 +1,6 @@
 import struct
-import collections
+import bitstring
+from cantoolz.module import CANModule
 
 '''
 Generic class for CAN message
@@ -31,6 +32,17 @@ class CANMessage:
 
     def __str__(self):
         return hex(self.frame_id)
+
+    def get_bits(self):
+        fill  = 8 - self.frame_length
+        bits_array = '0b'
+        bits_array += '0' * fill * 8
+        for byte in self.frame_data:
+            bits_array+= bin(byte)[2:].zfill(8)
+        return bitstring.BitArray(bits_array, length=64)
+
+    def get_text(self):
+        return hex(self.frame_id) + ":" + str(self.frame_length) + ":" + CANModule.get_hex(self.frame_raw_data)
 
     @property
     def frame_raw_id(self):

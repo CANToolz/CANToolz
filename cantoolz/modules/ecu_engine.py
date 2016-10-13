@@ -118,7 +118,7 @@ class ecu_engine(CANModule):
             if self._status2['id_command'] == can_msg.CANFrame.frame_id:
                 for cmd, value in self._status2['commands'].items():
                     len_cmd = int(len(str(value))/2)
-                    self._status2['status'] != 0
+
                     if self._status2['status'] != 0 and cmd == "rpm_up":
                         len_cmd2 = len_cmd + 1
                         if can_msg.CANFrame.frame_length == len_cmd2 and can_msg.CANFrame.frame_raw_data[0:len_cmd] == bytes.fromhex(value)[0:len_cmd] and self._status2['status'] == 1:
