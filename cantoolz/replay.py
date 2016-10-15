@@ -31,16 +31,16 @@ class Replay:
 
     def append_time(self, times, can_msg):
         if can_msg.CANData:
-            self._stream.append((times, copy.deepcopy(can_msg)))
+            self._stream.append([times, copy.deepcopy(can_msg)])
             self._size += 1
 
     def append(self, can_msg):
         if can_msg.CANData:
-            self._stream.append((self.passed_time(), copy.deepcopy(can_msg)))
+            self._stream.append([self.passed_time(), copy.deepcopy(can_msg)])
             self._size += 1
 
         elif can_msg.debugData:
-            self._stream.append((0.0, copy.deepcopy(can_msg)))
+            self._stream.append([0.0, copy.deepcopy(can_msg)])
 
     def set_index(self, i=0):
         if i < len(self):
@@ -66,7 +66,7 @@ class Replay:
         msg.bus = "TIMESTAMP"
         self._pre_last = 0
         self.restart_time()
-        self._stream.append( (0.0, msg) )
+        self._stream.append( [0.0, msg] )
 
     def __iter__(self):
         return iter(self._stream)
@@ -143,6 +143,8 @@ class Replay:
                             continue
                         elif len(line[:-1].split(":")) >= 3:
                             time_stamp = -1.0
+                        else:
+                            time_stamp = -1.0
 
                         if fid.find('0x') == 0:
                             num_fid = int(fid, 16)
@@ -159,7 +161,7 @@ class Replay:
                         msg.CANFrame = CANMessage.init_data(num_fid, int(length), bytes.fromhex(data)[:8])
                         msg.CANData = True
                         msg.bus = _bus
-                        self._stream.append((time_stamp, msg))
+                        self._stream.append([time_stamp, msg])
                         self._size += 1
 
 
@@ -168,6 +170,12 @@ class Replay:
             return "Can't open files with CAN messages: " + str(e)
         return "Loaded from file: " + str(len(self)) + " messages"
 
+    def remove_by_id(self, idf):
+        i = 0
+        for times, msg in self._stream:
+            if msg.CANData and msg.CANFrame.frame_id == idf:
+                self._stream[i][1].CANData = False
+            i += 1
     def save_dump(self, fname, offset = 0, amount = -1):
 
         if amount <= 0 :
@@ -193,10 +201,10 @@ class Replay:
                     elif curr >= _num2:
                         break
 
-                    if not msg.debugData:
+                    if not msg.debugData and msg.CANData:
                         _file.write((("[" + str(times) + "]") if times >= 0.0 else "") + msg.CANFrame.get_text() + "\n")
                         curr += 1
-                    else:
+                    elif msg.debugData:
                         _file.write("<" + str(msg.debugText) + ">\n")
 
                 _file.close()

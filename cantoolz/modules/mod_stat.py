@@ -47,6 +47,7 @@ class mod_stat(CANModule):
 
     def do_init(self, params):
         self.all_frames = [{'name':'start_buffer','buf':Replay()}]
+        self.dump_stat = Replay()
         self._index = 0
         self.meta_data = {}
         self._bodyList = collections.OrderedDict()
@@ -78,6 +79,9 @@ class mod_stat(CANModule):
 
         self._cmdList['train'] = ["STATCHECK: profiling on normal traffic (EXPEREMENTAL)", 1, "[buffer index]", self.train, True]
         self._cmdList['check'] = ["STATCHECK: find abnormalities on 'event' traffic  (EXPEREMENTAL)", 1, "[buffer index]", self.find_ab, True]
+        self._cmdList['dump_st'] = ["STATCHECK: dump abnormalities in Replay format  (EXPEREMENTAL)", 1, "<filename>", self.dump_ab, True]
+
+        self._cmdList['load'] = ["Load Replay dumps from files into buffers", 1, "filename1[,filename2,...] ", self.load_rep, True]
 
         self._cmdList['change'] = ["Detect changes for ECU (EXPEREMENTAL)", 1, "[buffer index][, max uniq. values]", self.show_change, True]
         self._cmdList['detect'] = ["Detect changes for ECU by control FRAME (EXPEREMENTAL)", 1, "<ECU ID:HEX_DATA>[,buffer index]", self.show_detect, True]
@@ -560,6 +564,7 @@ class mod_stat(CANModule):
             idx2 = self._index
             idx1 = self._index - 1 if self._index - 1 >=0 else 0
             rang = 8 * 256
+
         return self.print_diff_orig(0, idx1, idx2, rang)
 
     def print_diff_id(self, def_in, inp = ""):
@@ -655,7 +660,10 @@ class mod_stat(CANModule):
 
     def do_clean(self, def_in):
         self.all_frames = [{'name':'start_buffer','buf':Replay()}]
+        self.dump_stat = Replay()
+        self._train_buffer = None
         self._index = 0
+        self.data_set = {}
         return "Buffers cleaned!"
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
@@ -1006,6 +1014,9 @@ class mod_stat(CANModule):
 
         self.data_set.update({_index:{}})
 
+        correlator_changes = []
+        known_changes = []
+        history = []
         self._last = 0
         self._full = len(temp_buf) * 2
 
@@ -1015,8 +1026,6 @@ class mod_stat(CANModule):
                     self._action.clear()
         # Prepare DataSet
         for timestmp, can_msg in temp_buf:
-            init_ch = []
-            cont_ch = []
             if can_msg.CANData:
 
                 if can_msg.CANFrame.frame_id not in self.data_set[_index]:
@@ -1031,17 +1040,22 @@ class mod_stat(CANModule):
 
 
                         'ch_last_time': round(timestmp,4),
+                        'diff': bitstring.BitArray('0b'+'0'*64, length=64),
+                        'history': [],
+                        'curr_comm': 0,
+                        'comm': []
 
 
                     }
-
-
 
                 else:
                     self.data_set[_index][can_msg.CANFrame.frame_id]['count'] += 1
                     new_arr = can_msg.CANFrame.get_bits()
 
                     chg = self.data_set[_index][can_msg.CANFrame.frame_id].get('changed', False)
+                    xchg =  self.data_set[_index][can_msg.CANFrame.frame_id].get('released', False)
+                    schg =  self.data_set[_index][can_msg.CANFrame.frame_id].get('changed_same', False)
+                    nchg =  self.data_set[_index][can_msg.CANFrame.frame_id].get('changed_1', False)
 
                     if new_arr != self.data_set[_index][can_msg.CANFrame.frame_id]['last']:
 
@@ -1051,56 +1065,128 @@ class mod_stat(CANModule):
                         orig = self.data_set[self._train_buffer].get(can_msg.CANFrame.frame_id, {})
                         orig_bits = orig.get('change_bits', bitstring.BitArray('0b'+'0'*64, length=64))
 
+
+
                         if (diff | orig_bits) != orig_bits:
 
-                            if not chg:
-                                self.data_set[_index][can_msg.CANFrame.frame_id].update({'changed': True, 'released': False, 'changed_1': False, 'diff': diff})
+                            if not chg and not schg and not nchg:
+                                self.data_set[_index][can_msg.CANFrame.frame_id]['changed_same'] = False
                                 ev = " INITIAL CHANGE (new bitmask), FROM: " + str(self.data_set[_index][can_msg.CANFrame.frame_id]['last'].hex)
-                                init_ch.append(can_msg.CANFrame.frame_id)
 
-                            elif diff == self.data_set[_index][can_msg.CANFrame.frame_id]['diff']  :
+                                if len(correlator_changes) > 0:
+                                    ev = " " +str([hex(cor) for cor in correlator_changes]) + ev
+                                    if can_msg.CANFrame.frame_id not in history:
+                                        history.append(can_msg.CANFrame.frame_id)
+                                    history = list(set(history).union(correlator_changes))
+                                    self.data_set[_index][can_msg.CANFrame.frame_id]['comm'].append(" first change from "+ str(self.data_set[_index][can_msg.CANFrame.frame_id]['last'].hex) + ", probably because of next events before: " + str([hex(cor) for cor in correlator_changes]))
+                                else:
+                                    self.data_set[_index][can_msg.CANFrame.frame_id]['comm'].append(" first event, changed from " + str(self.data_set[_index][can_msg.CANFrame.frame_id]['last'].hex))
+
+                                if  (can_msg.CANFrame.frame_id, self.data_set[_index][can_msg.CANFrame.frame_id]['diff']) not in known_changes:
+                                    correlator_changes.append(can_msg.CANFrame.frame_id)
+
+
+                                self.data_set[_index][can_msg.CANFrame.frame_id].update({'changed': True, 'released': False, 'changed_1': False, 'diff': diff| self.data_set[_index][can_msg.CANFrame.frame_id]['diff']})
+
+                            elif (chg or schg or nchg) and diff == self.data_set[_index][can_msg.CANFrame.frame_id]['diff']  :
                                 ev = " RELEASED to original value "
                                 self.data_set[_index][can_msg.CANFrame.frame_id]['released'] = True
                                 self.data_set[_index][can_msg.CANFrame.frame_id]['changed'] = False
+                                self.data_set[_index][can_msg.CANFrame.frame_id]['changed_1'] = False
+                                self.data_set[_index][can_msg.CANFrame.frame_id]['changed_same'] = False
+
+                                if can_msg.CANFrame.frame_id in correlator_changes:
+                                    correlator_changes.remove(can_msg.CANFrame.frame_id)
+                                    known_changes.append((can_msg.CANFrame.frame_id, self.data_set[_index][can_msg.CANFrame.frame_id]['diff']))
+                                self.data_set[_index][can_msg.CANFrame.frame_id]['comm'].append(" released value back ")
                             else:
                                 ev = " CHANGED AGAIN "
-                                self.data_set[_index][can_msg.CANFrame.frame_id].update({'diff': (self.data_set[_index][can_msg.CANFrame.frame_id]['diff']|diff),'chc':True})
-                                self.data_set[_index][can_msg.CANFrame.frame_id]['changed_1'] = True
 
+                                if len(correlator_changes) > 0:
+                                    ev = " " +str([hex(cor) for cor in correlator_changes]) + ev
+                                    if can_msg.CANFrame.frame_id not in history:
+                                        history.append(can_msg.CANFrame.frame_id)
+                                    history = list(set(history).union(correlator_changes))
+                                    self.data_set[_index][can_msg.CANFrame.frame_id]['comm'].append(" additional changes, probably because of: " + str([hex(cor) for cor in correlator_changes]))
+
+
+                                if can_msg.CANFrame.frame_id in correlator_changes:
+                                    correlator_changes.remove(can_msg.CANFrame.frame_id)
+                                    known_changes.append((can_msg.CANFrame.frame_id, self.data_set[_index][can_msg.CANFrame.frame_id]['diff']))
+
+                                if  (can_msg.CANFrame.frame_id, self.data_set[_index][can_msg.CANFrame.frame_id]['diff']|diff) not in known_changes:
+                                    correlator_changes.append(can_msg.CANFrame.frame_id)
+
+
+                                self.data_set[_index][can_msg.CANFrame.frame_id].update({'diff': (self.data_set[_index][can_msg.CANFrame.frame_id]['diff']|diff)})
+                                self.data_set[_index][can_msg.CANFrame.frame_id]['changed_1'] = True
+                                self.data_set[_index][can_msg.CANFrame.frame_id]['changed'] = False
+                                self.data_set[_index][can_msg.CANFrame.frame_id]['changed_same'] = False
                             msgs = self.data_set[_index][can_msg.CANFrame.frame_id].get('breaking_messages',[])
                             msgs.append("#" + str(self.data_set[_index][can_msg.CANFrame.frame_id]['count'])+" ["+ str(round(timestmp, 4)) +"] " +  can_msg.CANFrame.get_text() + ev ) #+ " diff: " + ( diff | orig_bits).bin + " orig: " + orig_bits.bin + " new: " + diff.bin)
+                            self.dump_stat.append_time(timestmp,can_msg)
                             self.data_set[_index][can_msg.CANFrame.frame_id].update({'breaking_messages': msgs})
 
-                        self.data_set[_index][can_msg.CANFrame.frame_id]['last'] = new_arr
-                        self.data_set[_index][can_msg.CANFrame.frame_id]['ch_last_time'] = round(timestmp,4)
+                    elif self.data_set[_index][can_msg.CANFrame.frame_id].get('changed', False):
+                        self.data_set[_index][can_msg.CANFrame.frame_id]['changed'] = False
+                        self.data_set[_index][can_msg.CANFrame.frame_id]['changed_same'] = True
+                        if can_msg.CANFrame.frame_id in correlator_changes:
+                                    correlator_changes.remove(can_msg.CANFrame.frame_id)
+                                    known_changes.append((can_msg.CANFrame.frame_id, self.data_set[_index][can_msg.CANFrame.frame_id]['diff']))
+
+                    elif self.data_set[_index][can_msg.CANFrame.frame_id].get('changed_1', False):
+                        self.data_set[_index][can_msg.CANFrame.frame_id]['changed_1'] = False
+                        self.data_set[_index][can_msg.CANFrame.frame_id]['changed_same'] = True
+                        if can_msg.CANFrame.frame_id in correlator_changes:
+                                    correlator_changes.remove(can_msg.CANFrame.frame_id)
+                                    known_changes.append((can_msg.CANFrame.frame_id, self.data_set[_index][can_msg.CANFrame.frame_id]['diff']))
+
 
                     chg = self.data_set[_index][can_msg.CANFrame.frame_id].get('changed', False)
                     xchg =  self.data_set[_index][can_msg.CANFrame.frame_id].get('released', False)
+                    schg =  self.data_set[_index][can_msg.CANFrame.frame_id].get('changed_same', False)
+                    nchg =  self.data_set[_index][can_msg.CANFrame.frame_id].get('changed_1', False)
+
+                    self.data_set[_index][can_msg.CANFrame.frame_id]['last'] = new_arr
+                    self.data_set[_index][can_msg.CANFrame.frame_id]['ch_last_time'] = round(timestmp,4)
+
                     if self.data_set[_index][can_msg.CANFrame.frame_id]['count'] > 2:
                         orig = self.data_set[self._train_buffer].get(can_msg.CANFrame.frame_id, None)
-                        error_rate = 0.15
+                        error_rate = 0.04
                         if orig:
                             orig_max_time = orig.get('max_time', None)
                             orig_min_time = orig.get('min_time', None)
                             curr_ch_time = round(timestmp - self.data_set[_index][can_msg.CANFrame.frame_id]['last_time'],4)
-                            if orig_max_time and orig_min_time:
-                                    error_rate += orig_max_time - orig_min_time
-                                    if curr_ch_time < (orig_min_time - error_rate):
-                                        ev = " 'impulse' rate increased,  delay: " + str(curr_ch_time) + " orig: " + str(orig_min_time)
-                                        if chg:
-                                            ev = " EVENT STARTED " + ev
-                                        elif xchg:
-                                            ev = " EVENT FINISHED " + ev
+                            if orig_max_time is not None and orig_min_time is not None:
+                                #error_rate += orig_max_time - orig_min_time
+                                if curr_ch_time < (orig_min_time - error_rate):
+                                    ev = " 'impulse' rate increased,  delay: " + str(curr_ch_time) + " orig: " + str(orig_min_time)
+                                    if schg:
+                                        ev = " EVENT CONTINUED " + ev
+                                        self.data_set[_index][can_msg.CANFrame.frame_id]['comm'].append(" 'impulse' rate increased abnormally: EVENT")
+                                    elif nchg:
+                                        ev = " EVENT NEXT STAGE" + ev
+                                        self.data_set[_index][can_msg.CANFrame.frame_id]['comm'].append(" 'impulse' rate increased abnormally: NEW STAGE")
+                                    elif xchg:
+                                        ev = " EVENT FINISHED " + ev
+                                        self.data_set[_index][can_msg.CANFrame.frame_id]['comm'].append(" 'impulse' rate increased abnormally: EVENT FINISHED")
+                                    elif not chg:
+                                        self.data_set[_index][can_msg.CANFrame.frame_id]['comm'].append(" 'impulse' rate increased abnormally...")
 
+                                    if not chg and not nchg  and not xchg:
                                         msgs = self.data_set[_index][can_msg.CANFrame.frame_id].get('breaking_messages',[])
                                         msgs.append("\t#" + str(self.data_set[_index][can_msg.CANFrame.frame_id]['count'])+" ["+ str(round(timestmp, 4)) +"] " + can_msg.CANFrame.get_text() + ev )#)+ " max.time: " + str(orig_max_time) + " min.time: " + str(orig_min_time) + " new time: " + str(curr_ch_time))
+                                        self.dump_stat.append_time(timestmp,can_msg)
                                         self.data_set[_index][can_msg.CANFrame.frame_id].update({'breaking_messages': msgs})
 
                     self.data_set[_index][can_msg.CANFrame.frame_id]['last_time'] = round(timestmp,4)
 
                 if can_msg.CANFrame.frame_id not in self.data_set[self._train_buffer]:
+                    correlator_changes.append(can_msg.CANFrame.frame_id)
+                    self.data_set[_index][can_msg.CANFrame.frame_id]['comm'].append(" New arb. ID ")
                     msgs = self.data_set[_index][can_msg.CANFrame.frame_id].get('breaking_id_messages',[])
-                    msgs.append("#" + str(self.data_set[_index][can_msg.CANFrame.frame_id]['count'])+" ["+ str(round(timestmp, 4)) +"] " + can_msg.CANFrame.get_text())
+                    msgs.append("#" + str(self.data_set[_index][can_msg.CANFrame.frame_id]['count'])+" ["+ str(round(timestmp, 4)) +"] " + can_msg.CANFrame.get_text() + " NEW Arb. ID")
+                    self.dump_stat.append_time(timestmp,can_msg)
                     self.data_set[_index][can_msg.CANFrame.frame_id].update({'breaking_messages': msgs})
 
                 if not self._action.is_set():
@@ -1110,34 +1196,65 @@ class mod_stat(CANModule):
 
         ### Checking!
 
-        result = " Profiling comparison results (abnormalities):\n\n"
+        result = " Profiling comparison results (abnormalities by ID):\n\n"
 
-
-        null_mask = bitstring.BitArray('0b' + ('0'*64), length=64)
         for aid, body in self.data_set[_index].items():
-
             # New devices
             msgs = body.get('breaking_messages',[])
             if len(msgs) > 0:
-                result += "\t" + hex(aid) + " - found abnormalities:\n"
-                for msg in msgs:
-                    result += "\t\t" + msg + "\n"
-
+                if aid in history:
+                    result += "\t" + hex(aid) + " - found abnormalities:\n"
+                    for msg  in msgs:
+                        result += "\t\t" + msg + "\n"
+                else:
+                    self.dump_stat.remove_by_id(aid)
             if not self._action.is_set():
                     self._action.set()
                     self._last += body['count']
                     self._action.clear()
+
+        result2 = "\n\nSELECTED SESSION(ready to dump into file now)::\n\n"
+        rows = [['TIME', 'ID', 'LENGTH', 'MESSAGE', 'COMMENT']]
+        for (tms, can_msg) in self.dump_stat._stream:
+            if can_msg.CANData:
+                if len(self.data_set[_index][can_msg.CANFrame.frame_id]['comm']) > 0:
+                    comment = self.data_set[_index][can_msg.CANFrame.frame_id]['comm'][self.data_set[_index][can_msg.CANFrame.frame_id]['curr_comm']%len(self.data_set[_index][can_msg.CANFrame.frame_id]['comm'])]
+                else:
+                    comment = " hz "
+                self.data_set[_index][can_msg.CANFrame.frame_id]['curr_comm'] += 1
+                #result2 += "[" + str(round(tms,4)) + "] " + can_msg.CANFrame.get_text() + " \t\t " + comment + "\n"
+                rows.append([str(round(tms,4)), hex(can_msg.CANFrame.frame_id), str(can_msg.CANFrame.frame_length), self.get_hex(can_msg.CANFrame.frame_raw_data), comment ])
+
+        cols = list(zip(*rows))
+        col_widths = [ max(len(value) for value in col) for col in cols ]
+        format_table = '    '.join(['%%-%ds' % width for width in col_widths ])
+        for row in rows:
+            result2 += format_table % tuple(row) + "\n"
+        result2 += "\n"
 
         if not self._action.is_set():
                     self._action.set()
                     self._need_status = False
                     self._action.clear()
 
-        return result
+        return result2 + result
+
+    def dump_ab(self, fn, file):
+        file = file.strip()
+        return self.dump_stat.save_dump(file)
+
+    def load_rep(self, sh, files):
+        files = [fl.strip() for fl in files.split(',')]
+        ret = "Loaded buffers:\n"
+        for fl in files:
+            self.new_diff(0, fl + "_buffer")
+            self.all_frames[-1]['buf'].parse_file(fl, self._bus)
+            ret += "\t"+fl+", index: " + str(len(self.all_frames) - 1) + " with " + str(len(self.all_frames[-1]['buf'].stream) ) + " frames\n"
+            self.dprint(0, ret)
+        return ret
 
     def do_start(self, params):
 
         if len(self.all_frames[-1]['buf'].stream) == 0:
             self.all_frames[-1]['buf'].add_timestamp()
             self.dprint(2, "TIME ADDED")
-
