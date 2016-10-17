@@ -7,6 +7,7 @@ import collections
 import ast
 import time
 from cantoolz.correl import *
+import operator
 
 
 class mod_stat(CANModule):
@@ -41,7 +42,7 @@ class mod_stat(CANModule):
         return "Active status: " + str(self._active)
 
     def get_status(self, def_in = 0):
-        return "Current status: " + str(self._active) + "\nSniffed frames (overall): " + str(self.get_num(-1))+"\nCurrent BUFF: index - " + str(self._index) + " name - " + self.all_frames[self._index]['name'] + \
+        return "Current status: " + "\nActive STATCHECK running:" + str(self._active_check) + "\nSniffed frames (overall): " + str(self.get_num(-1))+"\nCurrent BUFF: index - " + str(self._index) + " name - " + self.all_frames[self._index]['name'] + \
                "\nAll buffers: \n\t" + \
             '\n\t'.join([buf['name'] + "\n\t\tindex: " + str(cnt) + ' sniffed: ' + str(len(buf['buf'])) for buf,cnt in zip(self.all_frames,range(0,len(self.all_frames)))])
 
@@ -49,6 +50,7 @@ class mod_stat(CANModule):
         self.all_frames = [{'name':'start_buffer','buf':Replay()}]
         self.dump_stat = Replay()
         self._index = 0
+        self._rep_index = None
         self.meta_data = {}
         self._bodyList = collections.OrderedDict()
         self.shift = params.get('uds_shift', 8)
@@ -60,6 +62,8 @@ class mod_stat(CANModule):
         self._last = 0
         self._full = 1
         self._need_status = False
+        self._stat_resend = None
+        self._active_check = False
 
         if 'meta_file' in params:
             self.dprint(1, self.do_load_meta(0, params['meta_file']))
@@ -79,7 +83,8 @@ class mod_stat(CANModule):
 
         self._cmdList['train'] = ["STATCHECK: profiling on normal traffic (EXPEREMENTAL)", 1, "[buffer index]", self.train, True]
         self._cmdList['check'] = ["STATCHECK: find abnormalities on 'event' traffic  (EXPEREMENTAL)", 1, "[buffer index]", self.find_ab, True]
-        self._cmdList['dump_st'] = ["STATCHECK: dump abnormalities in Replay format  (EXPEREMENTAL)", 1, "<filename>", self.dump_ab, True]
+        self._cmdList['act'] = ["STATCHECK: find action frame  (EXPEREMENTAL)", 0, "", self.act_detect, False]
+        self._cmdList['dump_st'] = ["STATCHECK: dump abnormalities in Replay format  (EXPEREMENTAL)", 1, "<filename>", self.dump_ab, False]
 
         self._cmdList['load'] = ["Load Replay dumps from files into buffers", 1, "filename1[,filename2,...] ", self.load_rep, True]
 
@@ -664,17 +669,28 @@ class mod_stat(CANModule):
         self._train_buffer = None
         self._index = 0
         self.data_set = {}
+        self._cmdList['act'][4] = False
+        self._cmdList['dump_st'][4] = False
         return "Buffers cleaned!"
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
     def do_effect(self, can_msg, args):
-        if not self._action.is_set() and self._need_status:
+        if self._need_status and not self._action.is_set():
             self._action.set()
             self._status = self._last/(self._full/100.0)
             self._action.clear()
 
-        if can_msg.CANData or can_msg.debugData:
+        if (can_msg.CANData or can_msg.debugData) and not args.get('no_read', False):
             self.all_frames[self._index]['buf'].append(can_msg)
+
+        elif not can_msg.CANData and not can_msg.debugData and not args.get('no_write', False) and not self._action.is_set():
+            self._action.set()
+            if  self._stat_resend:
+                can_msg.CANData = True
+                can_msg.CANFrame = copy.deepcopy(self._stat_resend)
+                self._stat_resend = None
+            self._action.clear()
+
         return can_msg
 
     def get_data_in_format(self, data, idx_1: int, idx_2: int, format: str):
@@ -1016,7 +1032,7 @@ class mod_stat(CANModule):
 
         correlator_changes = []
         known_changes = []
-        history = []
+        self.history = []
         self._last = 0
         self._full = len(temp_buf) * 2
 
@@ -1075,9 +1091,9 @@ class mod_stat(CANModule):
 
                                 if len(correlator_changes) > 0:
                                     ev = " " +str([hex(cor) for cor in correlator_changes]) + ev
-                                    if can_msg.CANFrame.frame_id not in history:
-                                        history.append(can_msg.CANFrame.frame_id)
-                                    history = list(set(history).union(correlator_changes))
+                                    if can_msg.CANFrame.frame_id not in self.history:
+                                        self.history.append(can_msg.CANFrame.frame_id)
+                                    self.history = list(set(self.history).union(correlator_changes))
                                     self.data_set[_index][can_msg.CANFrame.frame_id]['comm'].append(" first change from "+ str(self.data_set[_index][can_msg.CANFrame.frame_id]['last'].hex) + ", probably because of next events before: " + str([hex(cor) for cor in correlator_changes]))
                                 else:
                                     self.data_set[_index][can_msg.CANFrame.frame_id]['comm'].append(" first event, changed from " + str(self.data_set[_index][can_msg.CANFrame.frame_id]['last'].hex))
@@ -1104,9 +1120,9 @@ class mod_stat(CANModule):
 
                                 if len(correlator_changes) > 0:
                                     ev = " " +str([hex(cor) for cor in correlator_changes]) + ev
-                                    if can_msg.CANFrame.frame_id not in history:
-                                        history.append(can_msg.CANFrame.frame_id)
-                                    history = list(set(history).union(correlator_changes))
+                                    if can_msg.CANFrame.frame_id not in self.history:
+                                        self.history.append(can_msg.CANFrame.frame_id)
+                                    self.history = list(set(self.history).union(correlator_changes))
                                     self.data_set[_index][can_msg.CANFrame.frame_id]['comm'].append(" additional changes, probably because of: " + str([hex(cor) for cor in correlator_changes]))
 
 
@@ -1202,7 +1218,7 @@ class mod_stat(CANModule):
             # New devices
             msgs = body.get('breaking_messages',[])
             if len(msgs) > 0:
-                if aid in history:
+                if aid in self.history:
                     result += "\t" + hex(aid) + " - found abnormalities:\n"
                     for msg  in msgs:
                         result += "\t\t" + msg + "\n"
@@ -1213,7 +1229,7 @@ class mod_stat(CANModule):
                     self._last += body['count']
                     self._action.clear()
 
-        result2 = "\n\nSELECTED SESSION(ready to dump into file now)::\n\n"
+        result2 = "\n\nSELECTED SESSION(ready to dump into file now and for ACTIVE check)::\n\n"
         rows = [['TIME', 'ID', 'LENGTH', 'MESSAGE', 'COMMENT']]
         for (tms, can_msg) in self.dump_stat._stream:
             if can_msg.CANData:
@@ -1232,6 +1248,10 @@ class mod_stat(CANModule):
             result2 += format_table % tuple(row) + "\n"
         result2 += "\n"
 
+        self._rep_index = _index
+        self._cmdList['act'][4] = True
+        self._cmdList['dump_st'][4] = True
+
         if not self._action.is_set():
                     self._action.set()
                     self._need_status = False
@@ -1242,6 +1262,82 @@ class mod_stat(CANModule):
     def dump_ab(self, fn, file):
         file = file.strip()
         return self.dump_stat.save_dump(file)
+
+    def act_detect(self, fn):
+        curr = 0
+        weigths = {"Not found": 0}
+        self._active_check = True
+        if self._active:
+            last = len(self.dump_stat)
+            if last > 0:
+                (last_time, last_frame) = self.dump_stat.get_message(last-1)
+                while curr < last - 1:
+                    (timeo, test_frame) = self.dump_stat.get_message(curr)
+                    waiting_time = last_time - timeo + 1
+                    curr += 1
+                    if test_frame:
+                        key = test_frame.get_text()
+                        idg = test_frame.frame_id
+                        self.new_diff(0, "STAT_CHECK_ACT_" + key)
+                        self.dprint(1, " Send test frame: " + key)
+                        tmp_w = weigths.get(key, 0)
+                        print(1)
+                        while self._action.is_set():
+                            time.sleep(0.01)
+                            print(2)
+                        self._action.set()
+                        self._stat_resend = test_frame
+                        self._action.clear()
+                        print(3)
+                        while 1:
+                            time.sleep(1)
+                            print(4)
+                            if not self._action.is_set():
+                                self._action.set()
+                                print(self._stat_resend)
+                                if self._stat_resend is None:
+                                    self._action.clear()
+                                    self.dprint(1, " Test frame has been sent: " + test_frame.get_text())
+                                    time.sleep(waiting_time)
+                                    print(5)
+                                    break
+                                self._action.clear()
+                            print(6)
+                        self.dprint(1, " Check changes... ")
+                        self._active = False
+
+                        for idf in  self.history:
+                            buf1 = self.all_frames[-1]['buf'].search_messages_by_id(idf)
+                            #buf2 = self.dump_stat.search_messages_by_id(idf)
+
+                            buf1x = [bitstring.BitArray( (b'\x00' * (8-len(x))) + x) for x in buf1]
+
+                            j = 0
+                            if idf in self.data_set[self._train_buffer]:
+                                orig_bits = self.data_set[self._train_buffer][idf]['change_bits']
+                            else:
+                                orig_bits = bitstring.BitArray( b'\x00' * 8)
+                            if idg != idf:
+                                looking_bits = orig_bits ^ self.data_set[self._rep_index][idf]['diff']
+                                self.dprint(1, "DIFF BIT ("+hex(idf)+"): " + looking_bits.bin)
+                                for bit in buf1x:
+                                    self.dprint(1, "\nCOMPARE with " + bit.bin + " = " + (looking_bits & bit).bin )
+                                    if (looking_bits & bit).int != 0:
+                                        tmp_w +=1
+
+                        weigths[key] = tmp_w
+                        self._active = True
+                self.dprint(2, "RET: " + str(weigths))
+                self._active_check = False
+                max_cur = 0
+                return "Event's cause: " + str(max(weigths.keys(), key=(lambda k: weigths[k])))
+            else:
+                self._active_check = False
+                return "stat-check session not found"
+        else:
+            self._active_check = False
+            return "module is not active"
+
 
     def load_rep(self, sh, files):
         files = [fl.strip() for fl in files.split(',')]

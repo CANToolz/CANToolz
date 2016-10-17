@@ -125,6 +125,13 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
 
         return
 
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header('X-Clacks-Overhead', 'GNU Terry Pratchett')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Connection', 'closed')
+        self.end_headers()
+
     def do_GET(self):
         resp_code = 500
         cont_type = 'text/plain'

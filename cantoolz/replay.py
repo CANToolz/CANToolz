@@ -47,11 +47,22 @@ class Replay:
             self._curr = 0
             curr_can = 0
             for x in self._stream:
-                if i == curr_can:
+                if i == curr_can and x[1].CANData:
                     break
                 elif x[1].CANData:
                     curr_can += 1
                 self._curr += 1
+
+    def get_message(self, cnt):
+        curr_can = 0
+
+        for x in self._stream:
+            if cnt == curr_can and x[1].CANData:
+                return (x[0], x[1].CANFrame)
+            elif x[1].CANData:
+                curr_can += 1
+
+        return (None, None)
 
 
     def add_timestamp(self, def_time = None):
@@ -176,6 +187,15 @@ class Replay:
             if msg.CANData and msg.CANFrame.frame_id == idf:
                 self._stream[i][1].CANData = False
             i += 1
+    def search_messages_by_id(self, idf):
+        i = 0
+        ret = []
+        for times, msg in self._stream:
+            if msg.CANData and msg.CANFrame.frame_id == idf:
+                ret.append(msg.CANFrame.frame_raw_data)
+            i += 1
+        return ret
+
     def save_dump(self, fname, offset = 0, amount = -1):
 
         if amount <= 0 :

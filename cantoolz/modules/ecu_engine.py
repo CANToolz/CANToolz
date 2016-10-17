@@ -44,7 +44,7 @@ class ecu_engine(CANModule):
         self._status2.update({'rpm':0,'status':0})
         self.rpm_up = 0
         self.rpm_down = 0
-        self.default = 0x300
+        self.default = 500
         self.current = 0
         self.frames = []
         self.init_sess = None
@@ -73,9 +73,9 @@ class ecu_engine(CANModule):
         if self._status2['status'] == 1:
             self.current +=  self.rpm_up - self.rpm_down
             self._status2['rpm'] = self.current + random.randrange(-20, 20)
-            if self._status2['rpm'] < 100:
+            if self._status2['rpm'] < 150:
                 self._status2['status'] = 2 # dead
-            elif self._status2['rpm'] > 0x2000:
+            elif self._status2['rpm'] > 4500:
                 self._status2['status'] = 2 # also dead
 
         elif self._status2['status'] == 3:
@@ -130,6 +130,7 @@ class ecu_engine(CANModule):
                     elif self._status2['status'] != 0 and cmd == "stop":
                         if can_msg.CANFrame.frame_length == len_cmd and can_msg.CANFrame.frame_raw_data[0:len_cmd] == bytes.fromhex(value)[0:len_cmd]:
                             self._status2['status'] = 3
+                            self.current = 0
                     elif cmd == "init":
                         if not self.init_sess:
                             self.init_sess = ISOTPMessage(can_msg.CANFrame.frame_id)
@@ -166,7 +167,8 @@ class ecu_engine(CANModule):
                                             CANMessage.DataFrame
                                         )
                                     )
-                                    self.current = self.default
+                                    if self.current < 150:
+                                        self.current = self.default
                                 self.init_sess = None
 
 

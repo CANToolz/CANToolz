@@ -28,6 +28,23 @@ load_modules = {
                 'Unlocked': '20ff'
             }
     },
+
+    'control_ecu_lights': {
+             'id_report': {0x111:'Left', 0x112:'Right'},
+            'id_command': 0x101,
+            'commands': {
+                'on':'01',
+                'off':'00',
+                'distance': '02',
+            },
+
+            'reports': {
+                'LIGHTS ON': 'ff0101',
+                'DISTANCE LIGHTS ON': 'ff0202',
+                'Lights OFF': '000000'
+            }
+    },
+
     'control_ecu_engine': {
 
         'id_report': 0x79,
@@ -50,7 +67,9 @@ load_modules = {
 
                 'OBD2':[    # To OBD2 allowed next ID
                     0x91,   # Left door  status
-                    0x92    # Right door status
+                    0x92,    # Right door status
+                    0x111,
+                    0x112
                     ],
 
                 },
@@ -64,7 +83,8 @@ load_modules = {
                     ],
 
                 'Cabin':[
-                    0x79
+                    0x79,
+                    0x811
                     ]
 
             },
@@ -77,6 +97,44 @@ load_modules = {
 
 
                 }
+    },
+
+    'ecu_light~1':{
+
+        'id_report': 0x111,
+            'id_command': 0x101,
+            'commands': {
+                'off':'00',
+                'on':'01',
+                'distance': '02',
+            },
+
+            'reports': {
+                'LIGHTS ON': 'ff0101',
+                'DISTANCE LIGHTS ON': 'ff0202',
+                'Lights OFF': '000000',
+            },
+            'reports_delay': 1.4
+
+    },
+
+    'ecu_light~2':{
+
+        'id_report': 0x112,
+            'id_command': 0x101,
+            'commands': {
+                'off':'00',
+                'on':'01',
+                'distance': '02',
+            },
+
+            'reports': {
+                'LIGHTS ON': 'ff0101',
+                'DISTANCE LIGHTS ON': 'ff0202',
+                'Lights OFF': '000000',
+            },
+            'reports_delay': 1.4
+
     },
 
     'ecu_door~1':    {
@@ -150,6 +208,14 @@ actions = [
         'mode':'UDS'}
     },
 
+     {'ecu_light~1':   {
+         'action': 'write',
+         'pipe': 'Cabin'}},
+
+     {'ecu_light~2':   {
+         'action': 'write',
+         'pipe': 'Cabin'}},
+
     {'ecu_door~1':   {
          'action': 'write',
          'pipe': 'Cabin'}},
@@ -173,6 +239,12 @@ actions = [
     {'control_ecu_doors': {
          'action': 'write',
          'pipe': 'Cabin'}},
+
+    {'control_ecu_lights': {
+     'action': 'write',
+         'pipe': 'Cabin'}},
+
+    {'mod_stat':    {'pipe': 'Cabin', 'no_read': True}},
 
                 {'ecu_switch':   {
                      'action': 'read',
@@ -198,6 +270,8 @@ actions = [
                      'action': 'write',
                      'pipe': 'Engine'}},
 
+    {'mod_stat':    {'pipe': 'Cabin', 'no_write': True}},
+
     {'control_ecu_engine': {
          'action': 'read',
          'pipe': 'Engine'}},
@@ -207,6 +281,20 @@ actions = [
          'pipe': 'OBD2'}},
 
     {'control_ecu_doors': {
+         'action': 'read',
+         'pipe': 'Cabin'}},
+
+    {'control_ecu_lights': {
+     'action': 'read',
+         'pipe': 'Cabin'}},
+
+
+    {'ecu_light~1':   {
+         'action': 'read',
+         'pipe': 'Cabin'}},
+
+
+    {'ecu_light~2':   {
          'action': 'read',
          'pipe': 'Cabin'}},
 
@@ -220,11 +308,6 @@ actions = [
 
     {'ecu_engine':   {
          'action': 'read',
-         'pipe': 'Engine'}},
-
-
-    {'mod_stat':    {'pipe': 'OBD2'}}
-    #{'mod_stat':    {'pipe': 'Cabin'}},
-    #{'mod_stat':    {'pipe': 'Engine'}}
+         'pipe': 'Engine'}}
 
     ]
