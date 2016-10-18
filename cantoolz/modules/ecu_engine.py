@@ -37,7 +37,7 @@ class ecu_engine(CANModule):
     def do_init(self, params):
         self._status2 = params
         self._vin = self._status2.get("vin","NLXXX6666CW006666")
-        self._auth = self._status2.get("start_uniq_key","tGh&ujKnf5$rFgvc%")
+        self._auth = self._status2.get("start_uniq_key","tGh&ujKnf5$rFgvc1")
         self._uds_auth = self._status2.get("uds_key","secret_uds_auth1")
         self._seed = None
         self._uds_auth_done = False

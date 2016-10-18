@@ -77,42 +77,73 @@
 
 
   </style>
+  <style>
+   table {
+    width: 20%;
+    height: 250px;
+    border-collapse: collapse;
+}
+
+td {
+    padding: 25px;
+    padding-right: 10px;
+
+}
+
+th {
+    padding: 10px;
+
+}
+
+caption {
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+  </style>
 
   <body class="application" style="background-color: rgb(233, 242, 243);" onload="">
 <img src="img/1.png" class="logo">
 
 <br>
 
- <table class="table">
-              <tbody></tbody>
-
+<table>
+<tbody>
 <tr>
+<td><span id="gpGaugeContainer"></span></td>
+<td>
+    <button type="button" class="btn  btn-default" onclick="engine_start();"> START ENGINE </button>
+    <button type="button" class="btn  btn-default" onclick="engine_stop();"> STOP&nbsp; ENGINE </button>
 
-    <span id="gpGaugeContainer"></span>
+    <button type="button" class="btn  btn-default btn-arrow-right" id="rup">   RPM&nbsp;&nbsp;UP</button>
+    <button type="button" class="btn  btn-default btn-arrow-right"  id="rdw">RPM DOWN</button>
 
+</td>
+<td rowspan="3">
 
-  <td>
-<button type="button" class="btn  btn-default btn-arrow-left"  onclick="rpm_up();">  RPM &nbsp;&nbsp;&nbsp;UP</button>
-<button type="button" class="btn  btn-default btn-arrow-right" onclick="rpm_down();">RPM DOWN</button>
-  </td>
-  <tr>
-    <button type="button" class="btn  btn-default" onclick="engine_start();">START</button>
-   <button type="button" class="btn  btn-default" onclick="stop_start();">&nbsp;STOP</button>
-      <td>
-    <button type="button" class="btn  btn-default" onclick="lock();">CENTRAL &nbsp;&nbsp;LOCK</button>
-   <button type="button" class="btn  btn-default" onclick="ulock();">CENTRAL UNLOCK</button>
-  </td>
-    <td>
-    <button type="button" class="btn  btn-default" onclick="loff();">Light OFF</button>
-   <button type="button" class="btn  btn-default" onclick="lon();">Light ON</button>
-       <button type="button" class="btn  btn-default" onclick="ldl();">Distance light</button>
-  </td>
-  </tr>
+<canvas id="canvas" height="1148" width="4528"></canvas>
 
+</td>
 </tr>
+<tr>
+<td colspan="2">
 
+    <button type="button" class="btn  btn-default" onclick="lock();">CENTRAL &nbsp;&nbsp;LOCK</button>
+    <button type="button" class="btn  btn-default" onclick="ulock();">CENTRAL UNLOCK</button>
 
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
+    <button type="button" class="btn  btn-default" onclick="loff();">Lights OFF</button>
+    <button type="button" class="btn  btn-default" onclick="lon();">Lights ON</button>
+    <button type="button" class="btn  btn-default" onclick="ldl();">Distance lights</button>
+
+</td>
+</tr>
+</tbody>
 </table>
+
 
 <!--<img src="img/vircar/just-car.png">-->
 
@@ -120,21 +151,115 @@
 
     <script>
 
+    var canvas = document.getElementById('canvas');
+
+
+    var img_front_1 = new Image();
+    var img_front_2 = new Image();
+    var img_front_3 = new Image();
+
+    var img_back_1 = new Image();
+    var img_back_2 = new Image();
+    var img_back_3 = new Image();
+
+    var img_up_1 = new Image();
+    var img_up_2 = new Image();
+
+    var img_down_1 = new Image();
+    var img_down_2 = new Image();
+
+    img_front_1.src = '/img/vircar/tiles/front_1.png';
+    img_front_2.src = '/img/vircar/tiles/front_2.png';
+    img_front_3.src = '/img/vircar/tiles/front_3.png';
+
+    img_back_1.src = '/img/vircar/tiles/back_1.png';
+    img_back_2.src = '/img/vircar/tiles/back_2.png';
+    img_back_3.src = '/img/vircar/tiles/back_3.png';
+
+    img_up_1.src = '/img/vircar/tiles/up_1.png';
+    img_up_2.src = '/img/vircar/tiles/up_2.png';
+
+    img_down_1.src = '/img/vircar/tiles/down_1.png';
+    img_down_2.src = '/img/vircar/tiles/down_2.png';
+    var mul = 3;
+    var w = 4528/mul
+    var h = 1148/mul
+    canvas.width = w ;
+    canvas.height = h ;
+    var context = canvas.getContext('2d');
+
+    function draw_front(image1){
+        context.clearRect(0,canvas.height-image1.height/mul,image1.width/mul, image1.height/mul);
+        context.drawImage(image1,0,canvas.height-image1.height/mul,image1.width/mul, image1.height/mul);
+
+    }
+
+    function draw_up(image1){
+        context.clearRect(0,0,image1.width/mul, image1.height/mul)
+        context.drawImage(image1, 0,0,image1.width/mul, image1.height/mul);
+
+    }
+
+    function draw_down(image1){
+         context.clearRect(canvas.width-((image1.width+754)/mul), 0,image1.width/mul, image1.height/mul);
+        context.drawImage(image1, canvas.width-((image1.width+754)/mul), 0,image1.width/mul, image1.height/mul);
+
+    }
+
+    function draw_back(image1){
+        context.clearRect(canvas.width-(image1.width + 2)/mul, 0,image1.width/mul, image1.height/mul);
+        context.drawImage(image1, canvas.width-(image1.width + 2)/mul, 0,image1.width/mul, image1.height/mul);
+
+    }
+
+
+    setTimeout("draw_front(img_front_1)",800);
+    setTimeout("draw_up(img_up_1)",800);
+    setTimeout("draw_down(img_down_1)",800);
+    setTimeout("draw_back(img_back_1)",800);
+
+
+    document.getElementById("rdw").addEventListener("mousedown", rdw_mousedown);
+    document.getElementById("rdw").addEventListener("mouseup", rdw_mouseup);
+    document.getElementById("rup").addEventListener("mousedown", rup_mousedown);
+    document.getElementById("rup").addEventListener("mouseup", rup_mouseup);
+
+    var interval = null;
+
+    function rdw_mousedown(){
+        interval = setInterval( rpm_down, 100 );
+    };
+
+    function rdw_mouseup(){
+        clearInterval(interval)
+    };
+
+
+    function rup_mousedown(){
+        interval = setInterval( rpm_up, 100 );
+    };
+
+    function rup_mouseup(){
+        clearInterval(interval)
+    };
+
+
+
      function loff(){
 
-       d3.json('/api/cmd/control_lights').post(
+       d3.json('/api/cmd/control_ecu_lights').post(
             JSON.stringify({'cmd': 'off'}))
 
     }
      function lon(){
 
-       d3.json('/api/cmd/control_lights').post(
+       d3.json('/api/cmd/control_ecu_lights').post(
             JSON.stringify({'cmd': 'on'}))
 
     }
      function ldl(){
 
-       d3.json('/api/cmd/control_lights').post(
+       d3.json('/api/cmd/control_ecu_lights').post(
             JSON.stringify({'cmd': 'distance'}))
 
     }
@@ -163,7 +288,7 @@
 
     }
 
-    function stop_start(){
+    function engine_stop(){
 
        d3.json('/api/cmd/control_ecu_engine').post(
             JSON.stringify({'cmd': 'stop'}))
@@ -178,7 +303,6 @@
     }
 
     function rpm_down(){
-
        d3.json('/api/cmd/control_ecu_engine').post(
             JSON.stringify({'cmd': 'rpmdw'}))
 
@@ -447,13 +571,74 @@
             JSON.stringify({'cmd': 'status'}),
             function(error, result) {
               if (result !== undefined) {
-                gauges["gp"].redraw(JSON.parse(result.response).rpm);
+                var rpm = JSON.parse(result.response).rpm;
+                gauges["gp"].redraw(rpm);
+
+                if  (rpm < 100 || rpm > 4500){
+                    draw_back(img_back_1);
+                }else if (rpm > 200 && rpm < 2000){
+                    draw_back(img_back_2);
+                }else{
+                    draw_back(img_back_3);
+                }
               } else {
                 console.error(error);
               }
             }
             );
     }
+
+
+    function updateLock() {
+        d3.json('/api/cmd/control_ecu_doors').post(
+            JSON.stringify({'cmd': 'status'}),
+            function(error, result) {
+              if (result !== undefined) {
+                var Right = JSON.parse(result.response).status.Right;
+                var Left = JSON.parse(result.response).status.Left;
+
+                if  (Right == "Locked"){
+                     draw_up(img_up_1);
+                }else {
+                     draw_up(img_up_2);
+                }
+
+                if  (Left == "Locked"){
+                     draw_down(img_down_1);
+                }else {
+                     draw_down(img_down_2);
+                }
+
+              } else {
+                console.error(error);
+              }
+            }
+            );
+    }
+
+
+    function updateLight() {
+        d3.json('/api/cmd/control_ecu_lights').post(
+            JSON.stringify({'cmd': 'status'}),
+            function(error, result) {
+              if (result !== undefined) {
+                var Right = JSON.parse(result.response).status.Right;
+                var Left = JSON.parse(result.response).status.Left;
+                if  (Right == "Lights OFF"){
+                     draw_front(img_front_1);
+                }else if (Right == "LIGHTS ON") {
+                     draw_front(img_front_2);
+                } else {
+                     draw_front(img_front_3);
+                }
+
+              } else {
+                console.error(error);
+              }
+            }
+            );
+    }
+
 
         function updateData(){
 
@@ -462,6 +647,8 @@
     function initialize() {
         createGauges();
         setInterval(updateGauges, 200);
+        setInterval(updateLock, 500);
+        setInterval(updateLight, 500);
     }
 
 

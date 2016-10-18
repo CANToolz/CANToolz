@@ -666,7 +666,7 @@ class mod_stat(CANModule):
     def do_clean(self, def_in):
         self.all_frames = [{'name':'start_buffer','buf':Replay()}]
         self.dump_stat = Replay()
-        self._train_buffer = None
+        self._train_buffer = -1
         self._index = 0
         self.data_set = {}
         self._cmdList['act'][4] = False
@@ -1020,13 +1020,11 @@ class mod_stat(CANModule):
             return "Not trained yet..."
         elif self._train_buffer == _index:
             return "Why?"
+        if _index > self._index:
+            return "Wrong buffer!"
 
-        temp_buf = Replay()
-        if _index == -1:
-            for buf in self.all_frames:
-                temp_buf = temp_buf + buf['buf']
-        else:
-            temp_buf = self.all_frames[_index]['buf']
+        temp_buf = self.all_frames[_index]['buf']
+
 
         self.data_set.update({_index:{}})
 
