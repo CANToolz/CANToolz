@@ -16,7 +16,7 @@ load_modules = {
 
     'hw_TCP2CAN':    {'port': 1111, 'mode': 'client', 'address':'127.0.0.1', 'debug':3},
     'hw_TCP2CAN~1':    {'port': 1112, 'mode': 'client','address':'127.0.0.1', 'debug':3},
-
+    'gen_fuzz':{},
 
     'mod_stat':{},
     'mod_stat~2': {}
@@ -58,6 +58,10 @@ actions = [
          'action': 'write',
          'pipe': 3}},
 
+    {'gen_fuzz':{
+        'id':[0x81],'data':[0,0],'index':[0,1],'delay':0.01
+
+    }},
 
       {'uds_engine_auth_baypass':   {
          'action': 'write',
