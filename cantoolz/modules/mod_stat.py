@@ -99,8 +99,9 @@ class mod_stat(CANModule):
         self._cmdList['bits'] = ["Meta-data: bits fields description", 1, "<ID>, <LEN>, <LAST BIT INDEX>:<DESCRIPTION>[,...]", self.do_add_meta_bit_data, True]
         self._cmdList['l'] = ["Load meta-data", 1, "<filename>", self.do_load_meta, True]
         self._cmdList['z'] = ["Save meta-data", 1, "<filename>", self.do_save_meta, True]
-        self._cmdList['r'] = ["Dump all buffers in replay format", 1, " <filename>, [index]", self.do_dump_replay, True]
-        self._cmdList['d'] = ["Dump STAT (all buffers) in CSV format", 1, " <filename>, [index]", self.do_dump_csv, True]
+        self._cmdList['r'] = ["Dump buffer (if index is empty then all) in replay format", 1, " <filename>, [index]", self.do_dump_replay, True]
+        self._cmdList['d2'] = ["Dump buffer (if index is empty then all) in CSV format", 1, " <filename>, [index]", self.do_dump_csv2, True]
+        self._cmdList['d'] = ["Dump STATS for buffer (if index is empty then all) in CSV format", 1, " <filename>, [index]", self.do_dump_csv, True]
         self._cmdList['g'] = ["Get DELAY value for gen_ping/gen_fuzz (EXPERIMENTAL)",1,"<Bus SPEED in Kb/s>", self.get_delay, True]
 
 
@@ -168,6 +169,8 @@ class mod_stat(CANModule):
     def get_meta_bits(self, fid, len):
         return self.meta_data.get('bits', {}).get((fid, len), None)
 
+    def get_meta_all_bits(self):
+        return self.meta_data.get('bits', {})
 
     def do_load_meta(self, def_in, filename):
         try:
@@ -503,6 +506,78 @@ class mod_stat(CANModule):
             return str(e)
         return "Saved into " + name.strip()
 
+    def esacpe_csv(self, _string):
+        return '"'+_string.replace('"', '""')+'"'
+
+    def do_dump_csv2(self, def_in, name):
+        inp = name.split(",")
+        if len(inp) == 2:
+            name = inp[0].strip()
+            idx1 = int(inp[1])
+        else:
+            name = inp[0].strip()
+            idx1 = -1
+
+        temp_buf = Replay()
+        if idx1 == -1:
+            for buf in self.all_frames:
+                temp_buf = temp_buf + buf['buf']
+        else:
+            temp_buf = self.all_frames[idx1]['buf']
+
+        self._bodyList = self.create_short_table(temp_buf)
+        #if 1==1:
+        try:
+            descr = ""
+            bitzx = self.get_meta_all_bits()
+            for (fid,flen), body in bitzx.items():
+                for bt in body:
+                    descr += "," + str(fid) + "_" + list(list(bt.values())[0].values())[0]
+
+            _name = open(name.strip(), 'w')
+            _name.write("TIME,BUS,ID,LENGTH,DATA_BYTE1,DATA_BYTE2,DATA_BYTE3,DATA_BYTE4,DATA_BYTE5,DATA_BYTE6,DATA_BYTE7,DATA_BYTE8,ASCII,COMMENT" + descr + "\n")
+
+            for times, msg in temp_buf._stream:
+                if not msg.debugData and msg.CANData:
+
+
+                    data = msg.CANFrame.frame_data[:msg.CANFrame.frame_length] + ([0] * (8 - msg.CANFrame.frame_length))
+
+                    data_ascii = self.esacpe_csv(self.ret_ascii(msg.CANFrame.frame_raw_data)) if self.is_ascii(msg.CANFrame.frame_raw_data) else "  "
+
+                    format_ = self.get_meta_bits(msg.CANFrame.frame_id,msg.CANFrame.frame_length)
+
+                    filds = ""
+                    if  format_:
+                        idx_0 = 0
+                        for  bitz in format_:
+                            fmt = list(bitz.keys())[0]
+                            idx = list(list(bitz.values())[0].keys())[0]
+                            filds += "," + self.get_data_in_format(msg.CANFrame.frame_raw_data, idx_0, idx, fmt)
+                            idx_0 = idx
+
+                    _name.write(
+                        str(round(times, 4)) + ',' +
+                        str(msg.bus) + ',' +
+                        str(msg.CANFrame.frame_id) + ',' +
+                        str(msg.CANFrame.frame_length) + ',' +
+                        str(data[0]) + ',' +
+                        str(data[1]) + ',' +
+                        str(data[2]) + ',' +
+                        str(data[3]) + ',' +
+                        str(data[4]) + ',' +
+                        str(data[5]) + ',' +
+                        str(data[6]) + ',' +
+                        str(data[7]) + ',' +
+                        data_ascii + ',' +
+                        self.get_meta_descr(msg.CANFrame.frame_id, msg.CANFrame.frame_raw_data) + filds + "\n"
+                    )
+
+            _name.close()
+        except Exception as e:
+            self.dprint(2, "can't open log")
+            return str(e)
+        return "Saved into " + name.strip()
 
     def do_dump_csv(self, def_in, name):
         inp = name.split(",")
@@ -530,12 +605,12 @@ class mod_stat(CANModule):
                     format_ = self.get_meta_bits(fid,lenX)
                     if not format_:
                         if self.is_ascii(msg):
-                            data_ascii = self.ret_ascii(msg)
+                            data_ascii = self.esacpe_csv(self.ret_ascii(msg))
                         else:
                             data_ascii = "  "
                         _name.write(
                         str(bus) + "," + hex(fid) + "," + str(lenX) + "," + self.get_hex(msg) + ',' + data_ascii + ',' +\
-                        "\"" + self.get_meta_descr(fid, msg) + "\"" + ',' + str(cnt) + "\n"
+                        "\"" + self.esacpe_csv(self.get_meta_descr(fid, msg)) + "\"" + ',' + str(cnt) + "\n"
                         )
                     else:
                         idx_0 = 0
@@ -545,9 +620,10 @@ class mod_stat(CANModule):
                             idx = list(list(bitz.values())[0].keys())[0]
                             descr = list(list(bitz.values())[0].values())[0]
                             msg_s += descr + ": " + self.get_data_in_format(msg, idx_0, idx, fmt) + " "
+                            idx_0 = idx
                         _name.write(
                         str(bus) + "," + hex(fid) + "," + str(lenX) + "," + msg_s + ',' + " " + ',' +\
-                        "\"" + self.get_meta_descr(fid, msg) + "\"" + ',' + str(cnt) + "\n"
+                        "\"" + self.esacpe_csv(self.get_meta_descr(fid, msg)) + "\"" + ',' + str(cnt) + "\n"
                         )
             _name.close()
         except Exception as e:
@@ -653,6 +729,7 @@ class mod_stat(CANModule):
                         idx = list(list(bitz.values())[0].keys())[0]
                         descr = list(list(bitz.values())[0].values())[0]
                         msg_s += descr + ": " + self.get_data_in_format(msg, idx_0, idx, fmt) + " "
+                        idx_0 = idx
                     rows.append([str(bus),hex(fid), str(lenX), msg_s, " ", self.get_meta_descr(fid, msg), str(cnt)])
 
         cols = list(zip(*rows))
@@ -694,22 +771,25 @@ class mod_stat(CANModule):
         return can_msg
 
     def get_data_in_format(self, data, idx_1: int, idx_2: int, format: str):
-        bin_data = ''
-        for byte in data:
-            bin_data += bin(byte)[2:].zfill(8)
-
-        selected_value = int(bin_data[idx_1:idx_2], 2)
-
+        #bin_data = ''
+        #for byte in data:
+        #    bin_data += bin(byte)[2:].zfill(8)
+        #print(idx_1)
+        #print(idx_2)
+        #print(bitstring.BitArray((b'\x00' * (8-len(data))) + data)[idx_1:idx_2])
+        selected_value_hex = bitstring.BitArray('0b' + ('0' * ((4 - ( (idx_2-idx_1) %4 ))%4)) + bitstring.BitArray(data)[idx_1:idx_2].bin)
+        selected_value_bin = bitstring.BitArray('0b' + bitstring.BitArray(data)[idx_1:idx_2].bin)
+        #print((bitstring.BitArray( b'\x00' * (4 - ( (idx_2-idx_1) %4 ))) + bitstring.BitArray( (b'\x00' * (8-len(data))) + data)).bin)
         if format.strip() in ["bin", "b","binary"]:
-            return bin(selected_value)[2:]
+            return selected_value_bin.bin
         elif format.strip() in ["hex", "h"]:
-            return hex(selected_value)[2:]
+            return selected_value_hex.hex
         elif format.strip() in ["int","i"]:
-            return str(selected_value)
+            return str(selected_value_hex.int)
         elif format.strip() in ["ascii","a"]:
-            return self.ret_ascii(bytes.fromhex((hex(selected_value)[2:])))
+            return self.ret_ascii(selected_value_bin.bytes)
         else:
-            return hex(selected_value)[2:]
+            return selected_value_hex.hex
 
     def show_fields_ecu(self, zd, ecu_id):
 

@@ -210,7 +210,6 @@ class CANSploit:
         mod = parts[-1].split(".")[0]
 
         config = __import__(mod)
-
         for module, init_params in config.load_modules.items():
             self.init_module(module, init_params)
 

@@ -247,12 +247,20 @@ class UserInterface:
         parser.add_option("--gui", "-g", action="store", dest="GUI", type="string",
                           help="GUI mode, c - console or w - web")
 
+        parser.add_option("--port", "-p", action="store", dest="PORT", type="int",
+                          help="port for WEB server")
+
         [options, args] = parser.parse_args()  # TODO need args?
 
         if options.DEBUG:
             self.DEBUG = options.DEBUG
         else:
             self.DEBUG = 0
+
+        if options.PORT:
+            self.PORT = options.PORT
+        else:
+            self.PORT = 4444
 
         if options.CONFIG:
             self.CONFIG = options.CONFIG
@@ -273,15 +281,14 @@ class UserInterface:
             print((self.CANEngine.ascii_logo_c))
             self.console_loop()
         elif self.GUI[0] == "w":
-            self.web_loop()
+            self.web_loop(self.PORT)
         else:
             print("No such GUI...")
 
     def loop_exit(self):
         exit()
 
-    def web_loop(self):
-        port = 4444
+    def web_loop(self, port =  4444):
         print((self.CANEngine.ascii_logo_c))
         WebConsole.can_engine = self.CANEngine
         server = ThreadingSimpleServer(('', port), WebConsole)

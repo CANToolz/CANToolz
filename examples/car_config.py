@@ -1,18 +1,20 @@
 load_modules = {
     ########### Attacker
 
-    'uds_engine_auth_baypass': {
-         'id_command': 0x71
-    },
+    #'uds_engine_auth_baypass': {
+    #     'id_command': 0x71
+    #},
 
-    'gen_ping' :    {},
+    #'gen_ping' :    {},
 
     ########### CONTROLS
-    'uds_tester_ecu_engine':{
-        'id_uds': 0x701,
-        'uds_shift': 0x08,
-        'uds_key':''
-    },
+    #'uds_tester_ecu_engine':{
+    #    'id_uds': 0x701,
+    #    'uds_shift': 0x08,
+    #    'uds_key':''
+    #},
+    'hw_TCP2CAN':    {'port': 1111, 'mode': 'server', 'address':'127.0.0.1', 'debug':3},
+    'hw_TCP2CAN~1':    {'port': 1112, 'mode': 'server','address':'127.0.0.1', 'debug':3},
 
     'control_ecu_doors': {
             'id_report': {0x91:'Left', 0x92:'Right'},
@@ -71,7 +73,7 @@ load_modules = {
                     0x111,
                     0x112
                     ],
-
+                'Engine': [0x71]
                 },
 
             'Engine': {
@@ -190,23 +192,24 @@ load_modules = {
         'reports_delay': 0.2
 
     },
-    'mod_stat':{}
+    'mod_stat':{},
+    'mod_stat~2': {}
 }
 
 
 actions = [
 
-    {'uds_engine_auth_baypass':   {
-         'action': 'write',
-         'pipe': 'Engine'}},
+    #{'uds_engine_auth_baypass':   {
+    #     'action': 'write',
+    #     'pipe': 'Engine'}},
 
-     {'gen_ping':    {                    # Generate UDS requests
-        'pipe': 'OBD2',
-        'delay': 0.06,
-        'range': [1, 2047],           # ID range (from 1790 to 1794)
-        'services':[{'service': 0x27, 'sub': 0x01}],
-        'mode':'UDS'}
-    },
+    # {'gen_ping':    {                    # Generate UDS requests
+    #    'pipe': 'OBD2',
+    #    'delay': 0.06,
+    #    'range': [1, 2047],           # ID range (from 1790 to 1794)
+    #    'services':[{'service': 0x27, 'sub': 0x01}],
+    #    'mode':'UDS'}
+    #},
 
      {'ecu_light~1':   {
          'action': 'write',
@@ -232,9 +235,9 @@ actions = [
          'action': 'write',
          'pipe': 'Engine'}},
 
-    {'uds_tester_ecu_engine': {
-         'action': 'write',
-         'pipe': 'OBD2'}},
+    #{'uds_tester_ecu_engine': {
+    #     'action': 'write',
+    #     'pipe': 'OBD2'}},
 
     {'control_ecu_doors': {
          'action': 'write',
@@ -244,7 +247,11 @@ actions = [
      'action': 'write',
          'pipe': 'Cabin'}},
 
-    {'mod_stat':    {'pipe': 'Cabin', 'no_read': True}},
+    {'hw_TCP2CAN':  {'pipe': 'OBD2','action':'read'}},
+    {'hw_TCP2CAN~1':  {'pipe': 'Cabin','action':'read'}},
+
+    #{'mod_stat':    {'pipe': 'Cabin', 'no_read': True}},
+    #{'mod_stat~2':    {'pipe': 'OBD2', 'no_read': True}},
 
                 {'ecu_switch':   {
                      'action': 'read',
@@ -270,15 +277,17 @@ actions = [
                      'action': 'write',
                      'pipe': 'Engine'}},
 
-    {'mod_stat':    {'pipe': 'Cabin', 'no_write': True}},
+
+    #{'uds_tester_ecu_engine': {
+    #     'action': 'read',
+    #     'pipe': 'OBD2'}},
+
+
+
 
     {'control_ecu_engine': {
          'action': 'read',
          'pipe': 'Engine'}},
-
-    {'uds_tester_ecu_engine': {
-         'action': 'read',
-         'pipe': 'OBD2'}},
 
     {'control_ecu_doors': {
          'action': 'read',
@@ -308,6 +317,12 @@ actions = [
 
     {'ecu_engine':   {
          'action': 'read',
-         'pipe': 'Engine'}}
+         'pipe': 'Engine'}},
+
+     {'mod_stat':    {'pipe': 'Cabin', 'no_write': True}},
+    {'mod_stat~2':    {'pipe': 'OBD2', 'no_write': True}},
+
+   {'hw_TCP2CAN':  {'pipe': 'OBD2','action':'write'}},
+    {'hw_TCP2CAN~1':  {'pipe': 'Cabin','action':'write'}}
 
     ]

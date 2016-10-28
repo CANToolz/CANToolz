@@ -14,9 +14,9 @@ class CANMessage:
     OverloadFrame = 4
 
     def __init__(self, fid, length, data, extended, type):  # Init EMPTY message
-        self.frame_id = int(fid)  # Message ID
-        self.frame_length = int(length)  # DATA length
-        self.frame_data = list(data)[0:int(length)]  # DATA
+        self.frame_id = min( 0x1FFFFFFF, int(fid))  # Message ID
+        self.frame_length = min(8, int(length))  # DATA length
+        self.frame_data = list(data)[0:self.frame_length]  # DATA
         self.frame_ext = bool(extended)  # 29 bit message ID - boolean flag
 
         self.frame_type = type
@@ -66,7 +66,7 @@ class CANMessage:
             length = 8
         if 0 <= fid <= 0x7FF:
             extended = False
-        elif 0x7FF < fid < 0x1FFFFFFF:
+        elif 0x7FF < fid <= 0x1FFFFFFF:
             extended = True
         else:
             fid = 0

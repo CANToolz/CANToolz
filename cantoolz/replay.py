@@ -130,7 +130,14 @@ class Replay:
     def __add__(self, other):
         newRep = Replay()
         newRep._size = len(self) + len(other)
-        newRep._stream = self._stream + other.stream
+        new = copy.deepcopy(other)
+        if (len(self)) > 0:
+            last_time = self.get_message(len(self)-1)[0]
+        else:
+            last_time = 0
+        for each in new._stream:
+            each[0] += last_time
+        newRep._stream = self._stream + new._stream
 
         return newRep
 
@@ -186,6 +193,7 @@ class Replay:
         for times, msg in self._stream:
             if msg.CANData and msg.CANFrame.frame_id == idf:
                 self._stream[i][1].CANData = False
+                self._size -= 1
             i += 1
     def search_messages_by_id(self, idf):
         i = 0

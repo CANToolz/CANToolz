@@ -4,6 +4,28 @@ import time
 import codecs
 import re
 
+class TCP2CAN(unittest.TestCase):
+    def tearDown(self):
+        self.CANEngine.stop_loop()
+        self.CANEngine = None
+        print("stopped")
+
+    def test_server(self):
+        self.CANEngine = CANSploit()
+        self.CANEngine.load_config("tests/test_13.py")
+        self.CANEngine.start_loop()
+        time.sleep(1)
+        self.CANEngine.call_module(3, "r ")
+        time.sleep(1)
+        ret = self.CANEngine.call_module(6, "S ")
+        print(ret)
+        self.assertTrue(0 < ret.find("index: 0 sniffed: 12"), "Should be be 12 packets")
+        self.CANEngine.call_module(8, "r ")
+        time.sleep(1)
+        ret = self.CANEngine.call_module(1, "S ")
+        print(ret)
+        self.assertTrue(0 < ret.find("index: 0 sniffed: 24"), "Should be be 12 packets")
+
 class TimeStampz(unittest.TestCase):
     def tearDown(self):
         self.CANEngine.stop_loop()
@@ -105,9 +127,9 @@ class ModMetaFields(unittest.TestCase):
         self.CANEngine.call_module(mod_stat, "bits 1,8,  hex:16:COUNTER, ascii:56:TEXT")
         ret1 = self.CANEngine.call_module(mod_stat, "p 0")
         print(ret1)
-        self.assertTrue(0 <= ret1.find('Default    0x1    8         COUNTER: 1122 TEXT: ."3DUfw'), "Should be found")
-        self.assertTrue(0 <= ret1.find('Default    0x1    8         COUNTER: 3322 TEXT: 3"3DUfw'), "Should be found")
-        self.assertTrue(0 <= ret1.find('Default    0x1    8         COUNTER: 3322 TEXT: 3"3DUfw'), "Should be found")
+        self.assertTrue(0 <= ret1.find('Default    0x1    8         COUNTER: 1122 TEXT: 3DUfw'), "Should be found")
+        self.assertTrue(0 <= ret1.find('Default    0x1    8         COUNTER: 3322 TEXT: 3DUfw'), "Should be found")
+        self.assertTrue(0 <= ret1.find('Default    0x1    8         COUNTER: 3322 TEXT: 3DUfw'), "Should be found")
 
 class ModStatFields(unittest.TestCase):
     def tearDown(self):
@@ -133,14 +155,14 @@ class ModStatFields(unittest.TestCase):
         self.assertTrue(0 <= ret1.find("ECU: 0x2     Length: 2     FIELDS DETECTED: 2"), "Should be found")
         self.assertTrue(0 <= ret1.find("ECU: 0x1     Length: 7     FIELDS DETECTED: 2"), "Should be found")
         self.assertTrue(0 <= ret1.find("ECU: 0x1     Length: 8     FIELDS DETECTED: 3"), "Should be found")
-
+        print(ret2)
         self.assertTrue(0 <= ret2.find("1111    0"), "Should be found")
         self.assertTrue(0 <= ret2.find("1110    0"), "Should be found")
 
         ret2 = self.CANEngine.call_module(mod_stat, "fields 2, bin")
-
-        self.assertTrue(0 <= ret2.find("1000100010001    0"), "Should be found")
-        self.assertTrue(0 <= ret2.find("1000100010000    1"), "Should be found")
+        print(ret2)
+        self.assertTrue(0 <= ret2.find("1000100010001    000"), "Should be found")
+        self.assertTrue(0 <= ret2.find("1000100010000    001"), "Should be found")
 
         ret2 = self.CANEngine.call_module(mod_stat, "fields 1, int")
 
