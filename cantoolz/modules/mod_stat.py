@@ -70,7 +70,7 @@ class mod_stat(CANModule):
 
         self._cmdList['p'] = ["Print current table",1, "[index]", self.do_print, True]
 
-        self._cmdList['a'] = ["Analyses of captured traffic", 1, "<UDS|ISO|FRAG|ALL(defaut)>,[buffer index]", self.do_anal, True]
+        self._cmdList['a'] = ["Analysis of captured traffic", 1, "<UDS|ISO|FRAG|ALL(defaut)>,[buffer index]", self.do_anal, True]
         self._cmdList['u'] = ["    - UDS shift value",1,"[shift value]", self.change_shift, True]
 
         self._cmdList['D'] = ["Switch sniffing to a new buffer", 1, "[name]", self.new_diff, True]
@@ -96,7 +96,7 @@ class mod_stat(CANModule):
         self._cmdList['c'] = ["Clean table, remove buffers", 0, "", self.do_clean, True]
 
         self._cmdList['i'] = ["Meta-data: add description for frames", 1, "<ID>, <data regex ASCII HEX>, <description>", self.do_add_meta_descr_data, True]
-        self._cmdList['bits'] = ["Meta-data: bits fields description", 1, "<ID>, <LEN>, <LAST BIT INDEX>:<DESCRIPTION>[,...]", self.do_add_meta_bit_data, True]
+        self._cmdList['bits'] = ["Meta-data: bits fields description", 1, "<ID>, <LEN>, <TYPE>:<LAST BIT INDEX>:<DESCRIPTION>[,...]", self.do_add_meta_bit_data, True]
         self._cmdList['l'] = ["Load meta-data", 1, "<filename>", self.do_load_meta, True]
         self._cmdList['z'] = ["Save meta-data", 1, "<filename>", self.do_save_meta, True]
         self._cmdList['r'] = ["Dump buffer (if index is empty then all) in replay format", 1, " <filename>, [index]", self.do_dump_replay, True]
