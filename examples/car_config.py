@@ -1,20 +1,30 @@
 load_modules = {
-    ########### Attacker
-
-    #'uds_engine_auth_baypass': {
-    #     'id_command': 0x71
-    #},
-
-    #'gen_ping' :    {},
-
-    ########### CONTROLS
-    #'uds_tester_ecu_engine':{
-    #    'id_uds': 0x701,
-    #    'uds_shift': 0x08,
-    #    'uds_key':''
-    #},
     'hw_TCP2CAN':    {'port': 1111, 'mode': 'server', 'address':'127.0.0.1', 'debug':3},
     'hw_TCP2CAN~1':    {'port': 1112, 'mode': 'server','address':'127.0.0.1', 'debug':3},
+
+    'anti_theft_1':{
+
+        'filter': [0x71],
+        'commands': {
+                '0x101:1:01':'one',
+                '0x101:1:02':'two',
+                '0x101:1:00':'three'
+            },
+        'pass_seq':['one','one','two','one','three','two','three'] # Passcode sequence
+
+    },
+
+    'anti_theft_2':{
+        'stop_engine': '0x71:1:00',
+        'filter': [0x71],
+        'commands': {
+                '0x101:1:01':'one',
+                '0x101:1:02':'two',
+                '0x101:1:00':'three'
+            },
+        'pass_seq':['one','one','two','one','three','two','three'] # Passcode sequence
+
+    },
 
     'control_ecu_doors': {
             'id_report': {0x91:'Left', 0x92:'Right'},
@@ -73,7 +83,7 @@ load_modules = {
                     0x111,
                     0x112
                     ],
-                'Engine': [0x71]
+                'Engine': [0x71,0x101]
                 },
 
             'Engine': {
@@ -85,6 +95,7 @@ load_modules = {
                     ],
 
                 'Cabin':[
+                    0x71,
                     0x79,
                     0x811
                     ]
@@ -199,18 +210,6 @@ load_modules = {
 
 actions = [
 
-    #{'uds_engine_auth_baypass':   {
-    #     'action': 'write',
-    #     'pipe': 'Engine'}},
-
-    # {'gen_ping':    {                    # Generate UDS requests
-    #    'pipe': 'OBD2',
-    #    'delay': 0.06,
-    #    'range': [1, 2047],           # ID range (from 1790 to 1794)
-    #    'services':[{'service': 0x27, 'sub': 0x01}],
-    #    'mode':'UDS'}
-    #},
-
      {'ecu_light~1':   {
          'action': 'write',
          'pipe': 'Cabin'}},
@@ -235,10 +234,6 @@ actions = [
          'action': 'write',
          'pipe': 'Engine'}},
 
-    #{'uds_tester_ecu_engine': {
-    #     'action': 'write',
-    #     'pipe': 'OBD2'}},
-
     {'control_ecu_doors': {
          'action': 'write',
          'pipe': 'Cabin'}},
@@ -247,12 +242,11 @@ actions = [
      'action': 'write',
          'pipe': 'Cabin'}},
 
-    {'hw_TCP2CAN':  {'pipe': 'OBD2','action':'read'}},
+            #{'anti_theft_2': {'pipe':'Cabin','action':'write'}},
+
+    {'hw_TCP2CAN':  {'pipe': 'OBD2','action':'read'}},  # read from TCP
     {'hw_TCP2CAN~1':  {'pipe': 'Cabin','action':'read'}},
 
-    #{'mod_stat':    {'pipe': 'Cabin', 'no_read': True}},
-    #{'mod_stat~2':    {'pipe': 'OBD2', 'no_read': True}},
-
                 {'ecu_switch':   {
                      'action': 'read',
                      'pipe': 'OBD2'}},
@@ -278,12 +272,10 @@ actions = [
                      'pipe': 'Engine'}},
 
 
-    #{'uds_tester_ecu_engine': {
-    #     'action': 'read',
-    #     'pipe': 'OBD2'}},
+    {'hw_TCP2CAN':  {'pipe': 'OBD2','action':'write'}},  # Write to TCP
+    {'hw_TCP2CAN~1':  {'pipe': 'Cabin','action':'write'}},
 
-
-
+            #{'anti_theft_2': {'pipe':'Cabin','action':'read'}},
 
     {'control_ecu_engine': {
          'action': 'read',
@@ -315,14 +307,13 @@ actions = [
          'action': 'read',
          'pipe': 'Cabin'}},
 
+        {'anti_theft_1': {'pipe':'Engine', 'action':'read'}},
+        {'anti_theft_1': {'pipe':'Engine', 'action':'write'}}, # MITM
+
     {'ecu_engine':   {
          'action': 'read',
          'pipe': 'Engine'}},
 
-     {'mod_stat':    {'pipe': 'Cabin', 'no_write': True}},
-    {'mod_stat~2':    {'pipe': 'OBD2', 'no_write': True}},
 
-   {'hw_TCP2CAN':  {'pipe': 'OBD2','action':'write'}},
-    {'hw_TCP2CAN~1':  {'pipe': 'Cabin','action':'write'}}
 
     ]
