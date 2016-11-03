@@ -3,19 +3,23 @@ import pip
 import sys
 
 if len(sys.argv) >= 2 and sys.argv[1] == 'install':
+    #pip.main(['install', 'neurolab'])
     pip.main(['install', 'pyserial'])
     pip.main(['install', 'numpy'])
     pip.main(['install', 'mido'])
+    #pip.main(['install', 'scipy'])
+    #pip.main(['install', 'pybrain'])
+    pip.main(['install', 'bitstring'])
 
 
 setup(
     name='CANToolz',
-    version='3.4.2',
+    version='3.5.1',
     author='Alexey Sintsov',
     install_requires=[
         'pyserial',
         'mido',
-        'numpy'
+        'numpy','bitstring'
     ],
     author_email='alex.sintsov@gmail.com',
     packages=['cantoolz', 'cantoolz.stream', 'cantoolz.utils', 'cantoolz.modules'],

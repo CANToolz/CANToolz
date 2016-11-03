@@ -1,5 +1,6 @@
 from cantoolz.can import *
 from cantoolz.module import *
+import copy
 
 
 class hw_fakeIO(CANModule):
@@ -21,18 +22,18 @@ class hw_fakeIO(CANModule):
     """
 
     version = 1.0
-    CANList = None
     _bus = 30
 
     def do_start(self, params):
-        self.CANList = None
+        self.CANList = []
 
     def do_stop(self, params):  # disable reading
-        self.CANList = None
+        self.CANList = []
 
     def do_init(self, params):  # Get device and open serial port
         self._cmdList['t'] = ["Send direct command to the device, like 13:8:1122334455667788", 1, " <cmd> ",
                               self.dev_write, True]
+        self.CANList = []
         return 1
 
     def dev_write(self, def_in, line):
@@ -40,7 +41,7 @@ class hw_fakeIO(CANModule):
         fid = line.split(":")[0]
         length = line.split(":")[1]
         data = line.split(":")[2]
-        self.CANList = CANMessage.init_data(int(fid), int(length), bytes.fromhex(data)[:8])
+        self.CANList.append(CANMessage.init_data(int(fid), int(length), bytes.fromhex(data)[:int(length)]))
         return ""
 
     def do_effect(self, can_msg, args):  # read full packet from serial port
@@ -52,17 +53,16 @@ class hw_fakeIO(CANModule):
             self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
         return can_msg
 
-    def do_read(self, can_msg):
-        if self.CANList:
+    def do_write(self, can_msg):
+        if len(self.CANList) > 0:
             can_msg.CANData = True
-            can_msg.CANFrame = self.CANList
+            can_msg.CANFrame = self.CANList.pop(0)
             can_msg.bus = self._bus
-            self.CANList = None
             self.dprint(2, "Got message!")
         return can_msg
 
-    def do_write(self, can_msg):
+    def do_read(self, can_msg):
         if can_msg.CANData:
-            self.CANList = can_msg.CANFrame
+            self.CANList.append(copy.deepcopy(can_msg.CANFrame))
             self.dprint(2, "Wrote message!")
         return can_msg

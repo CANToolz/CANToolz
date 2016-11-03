@@ -81,12 +81,13 @@ class hw_CANSocket(CANModule):
                 can_frame = self.socket.recv(16)
                 self.dprint(2, "READ: " + self.get_hex(can_frame))
                 if len(can_frame) == 16:
-                    can_msg.CANData = True
+
                     idf = struct.unpack("I", can_frame[0:4])[0]
                     if idf & 0x80000000:
                         idf &= 0x7FFFFFFF
                     can_msg.CANFrame = CANMessage.init_data(idf, can_frame[4], can_frame[8:8+can_frame[4]])
                     can_msg.bus = self._bus
+                    can_msg.CANData = True
             except:
                 return can_msg
         return can_msg

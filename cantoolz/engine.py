@@ -132,7 +132,7 @@ class CANSploit:
         if not self._stop.is_set() and not self.do_stop_e.is_set():
             self.do_stop_e.set()
             while self.do_stop_e.is_set():
-                time.sleep(0.0000001)
+                time.sleep(0.01)
 
         self._stop.set()
         return 1
@@ -210,7 +210,6 @@ class CANSploit:
         mod = parts[-1].split(".")[0]
 
         config = __import__(mod)
-
         for module, init_params in config.load_modules.items():
             self.init_module(module, init_params)
 

@@ -26,7 +26,7 @@ class gen_replay(CANModule):
     _replay = False
     _sniff = False
 
-    def get_status(self, def_in, i = 0):
+    def get_status(self, def_in):
         return "Current status: " + str(self._active) + "\nSniff mode: " + str(self._sniff) +\
                "\nReplay mode: " + str(self._replay) +"\nFrames in memory: " + str(len(self.CANList)) +\
                "\nFrames in queue: " + str(self._num2 - self._num1)

@@ -99,11 +99,5 @@ class CANModule:
     def do_start(self, params):  # Start activity of this module
         return 0
 
-    def do_read(self, params):
-        return 0
-
-    def do_write(self, params):
-        return 0
-
     def do_exit(self, params):
         return 0

@@ -179,7 +179,7 @@ class UDSMessage:
         elif uds_type == 3:  # Maybe error
             return self.add_raw_response(_input_message)
         elif uds_type == 4:  # Response without sub-function
-            sts = self.sessions[_input_message.message_id - self.shift][_input_message.message_data[0]-0x40][_input_message.message_data[1] + 0x1ff]['status']
+            sts = self.sessions[_input_message.message_id - self.shift][_input_message.message_data[0]-0x40][0x1ff]['status']
             if sts == 0:  # Ok, now we have Response... looks like
                 return self.add_raw_response(_input_message)
         elif uds_type == 0:  # New service request                                       # New Service request and new ID
@@ -192,7 +192,7 @@ class UDSMessage:
         if not _data:
             _data = []
 
-        if not _subcommand:
+        if _subcommand == None or _subcommand < 0:
             _subcommand = []
         else:
             _subcommand = [_subcommand]
@@ -207,6 +207,7 @@ class UDSMessage:
             if _input_message.message_data[0] not in self.sessions[_input_message.message_id]:
                 self.sessions[_input_message.message_id][_input_message.message_data[0]] = collections.OrderedDict()
             non_sub = 0x1ff
+
             if len(_input_message.message_data) > 1:
                 non_sub = _input_message.message_data[1]
 
@@ -221,7 +222,7 @@ class UDSMessage:
 
             if non_sub < 0x1ff:
 
-                self.sessions[_input_message.message_id][_input_message.message_data[0]][non_sub + 0x1ff] = {
+                self.sessions[_input_message.message_id][_input_message.message_data[0]][0x1ff] = {
                             #'sub': _input_message.message_data[1] if len(_input_message.message_data) > 1 else None,
                             'data': _input_message.message_data[1:],
                             'response': {
@@ -258,10 +259,10 @@ class UDSMessage:
                         self.sessions[response_id][x][y]['response']['error'] = self.error_responses.get(_input_message.message_data[2], "UNK ERROR")
 
                         if y < 0x1ff:
-                            self.sessions[response_id][x][y + 0x1ff]['response']['id'] = _input_message.message_id
-                            self.sessions[response_id][x][y + 0x1ff]['response']['data'] = None
-                            self.sessions[response_id][x][y + 0x1ff]['status'] = 2
-                            self.sessions[response_id][x][y + 0x1ff]['response']['error'] = self.error_responses.get(_input_message.message_data[2], "UNK ERROR")
+                            self.sessions[response_id][x][0x1ff]['response']['id'] = _input_message.message_id
+                            self.sessions[response_id][x][0x1ff]['response']['data'] = None
+                            self.sessions[response_id][x][0x1ff]['status'] = 2
+                            self.sessions[response_id][x][0x1ff]['response']['error'] = self.error_responses.get(_input_message.message_data[2], "UNK ERROR")
                         return True
                 # Response
                 elif response_byte in self.sessions[response_id] and sub_command in self.sessions[response_id][response_byte]:
@@ -269,11 +270,11 @@ class UDSMessage:
                     #self.sessions[response_id][response_byte]['response']['sub'] =
                     self.sessions[response_id][response_byte][sub_command]['response']['data'] = _input_message.message_data[2:]
                     self.sessions[response_id][response_byte][sub_command]['status'] = 1
-                    self.sessions[response_id][response_byte][sub_command + 0x1ff]['status'] = 3
+                    self.sessions[response_id][response_byte][0x1ff]['status'] = 3
                     return True
                 elif  response_byte in self.sessions[response_id] and sub_command not in self.sessions[response_id][response_byte]:
                     for sub, req in self.sessions[response_id][response_byte].items():
-                        if sub >= 0x1ff and req['status'] == 0:
+                        if sub == 0x1ff and req['status'] == 0:
                             req['response']['id'] = _input_message.message_id
                             #self.sessions[response_id][response_byte]['response']['sub'] =
                             req['response']['data'] = _input_message.message_data[1:]

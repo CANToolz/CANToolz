@@ -10,9 +10,9 @@ load_modules = {
 # Scenario
 
 actions = [
-    {'hw_fakeIO'     : {'action': 'read', 'pipe': 2}},
+    {'hw_fakeIO'     : {'action': 'write', 'pipe': 2}},
     {'mod_stat'      : {'pipe': 1}},
     {'mod_firewall'     : {'pipe': 2}},
-    {'hw_fakeIO~1'   : {'action': 'write', 'pipe': 2}}
+    {'hw_fakeIO~1'   : {'action': 'read', 'pipe': 2}}
 
 ]

@@ -1,5 +1,6 @@
 import struct
-import collections
+import bitstring
+from cantoolz.module import CANModule
 
 '''
 Generic class for CAN message
@@ -13,9 +14,9 @@ class CANMessage:
     OverloadFrame = 4
 
     def __init__(self, fid, length, data, extended, type):  # Init EMPTY message
-        self.frame_id = int(fid)  # Message ID
-        self.frame_length = int(length)  # DATA length
-        self.frame_data = list(data)  # DATA
+        self.frame_id = min( 0x1FFFFFFF, int(fid))  # Message ID
+        self.frame_length = min(8, int(length))  # DATA length
+        self.frame_data = list(data)[0:self.frame_length]  # DATA
         self.frame_ext = bool(extended)  # 29 bit message ID - boolean flag
 
         self.frame_type = type
@@ -31,6 +32,17 @@ class CANMessage:
 
     def __str__(self):
         return hex(self.frame_id)
+
+    def get_bits(self):
+        fill  = 8 - self.frame_length
+        bits_array = '0b'
+        bits_array += '0' * fill * 8
+        for byte in self.frame_data:
+            bits_array+= bin(byte)[2:].zfill(8)
+        return bitstring.BitArray(bits_array, length=64)
+
+    def get_text(self):
+        return hex(self.frame_id) + ":" + str(self.frame_length) + ":" + CANModule.get_hex(self.frame_raw_data)
 
     @property
     def frame_raw_id(self):
@@ -54,7 +66,7 @@ class CANMessage:
             length = 8
         if 0 <= fid <= 0x7FF:
             extended = False
-        elif 0x7FF < fid < 0x1FFFFFFF:
+        elif 0x7FF < fid <= 0x1FFFFFFF:
             extended = True
         else:
             fid = 0

@@ -4,6 +4,28 @@ import time
 import codecs
 import re
 
+class TCP2CAN(unittest.TestCase):
+    def tearDown(self):
+        self.CANEngine.stop_loop()
+        self.CANEngine = None
+        print("stopped")
+
+    def test_server(self):
+        self.CANEngine = CANSploit()
+        self.CANEngine.load_config("tests/test_13.py")
+        self.CANEngine.start_loop()
+        time.sleep(1)
+        self.CANEngine.call_module(3, "r ")
+        time.sleep(1)
+        ret = self.CANEngine.call_module(6, "S ")
+        print(ret)
+        self.assertTrue(0 < ret.find("index: 0 sniffed: 12"), "Should be be 12 packets")
+        self.CANEngine.call_module(8, "r ")
+        time.sleep(1)
+        ret = self.CANEngine.call_module(1, "S ")
+        print(ret)
+        self.assertTrue(0 < ret.find("index: 0 sniffed: 24"), "Should be be 12 packets")
+
 class TimeStampz(unittest.TestCase):
     def tearDown(self):
         self.CANEngine.stop_loop()
@@ -105,9 +127,9 @@ class ModMetaFields(unittest.TestCase):
         self.CANEngine.call_module(mod_stat, "bits 1,8,  hex:16:COUNTER, ascii:56:TEXT")
         ret1 = self.CANEngine.call_module(mod_stat, "p 0")
         print(ret1)
-        self.assertTrue(0 <= ret1.find('Default    0x1    8         COUNTER: 1122 TEXT: ."3DUfw'), "Should be found")
-        self.assertTrue(0 <= ret1.find('Default    0x1    8         COUNTER: 3322 TEXT: 3"3DUfw'), "Should be found")
-        self.assertTrue(0 <= ret1.find('Default    0x1    8         COUNTER: 3322 TEXT: 3"3DUfw'), "Should be found")
+        self.assertTrue(0 <= ret1.find('Default    0x1    8         COUNTER: 1122 TEXT: 3DUfw'), "Should be found")
+        self.assertTrue(0 <= ret1.find('Default    0x1    8         COUNTER: 3322 TEXT: 3DUfw'), "Should be found")
+        self.assertTrue(0 <= ret1.find('Default    0x1    8         COUNTER: 3322 TEXT: 3DUfw'), "Should be found")
 
 class ModStatFields(unittest.TestCase):
     def tearDown(self):
@@ -133,14 +155,14 @@ class ModStatFields(unittest.TestCase):
         self.assertTrue(0 <= ret1.find("ECU: 0x2     Length: 2     FIELDS DETECTED: 2"), "Should be found")
         self.assertTrue(0 <= ret1.find("ECU: 0x1     Length: 7     FIELDS DETECTED: 2"), "Should be found")
         self.assertTrue(0 <= ret1.find("ECU: 0x1     Length: 8     FIELDS DETECTED: 3"), "Should be found")
-
+        print(ret2)
         self.assertTrue(0 <= ret2.find("1111    0"), "Should be found")
         self.assertTrue(0 <= ret2.find("1110    0"), "Should be found")
 
         ret2 = self.CANEngine.call_module(mod_stat, "fields 2, bin")
-
-        self.assertTrue(0 <= ret2.find("1000100010001    0"), "Should be found")
-        self.assertTrue(0 <= ret2.find("1000100010000    1"), "Should be found")
+        print(ret2)
+        self.assertTrue(0 <= ret2.find("1000100010001    000"), "Should be found")
+        self.assertTrue(0 <= ret2.find("1000100010000    001"), "Should be found")
 
         ret2 = self.CANEngine.call_module(mod_stat, "fields 1, int")
 
@@ -485,31 +507,32 @@ class ModFuzzTests(unittest.TestCase):
     def test_fuzz_can(self):
         self.CANEngine = CANSploit()
         self.CANEngine.load_config("tests/test_6.py")
-        self.CANEngine.edit_module(0, {'id': [111], 'data': [0,1], 'delay': 0})
+        self.CANEngine.edit_module(0, {'id': [111], 'data': [0,1], 'bytes': (0,4), 'delay': 0})
         self.CANEngine.start_loop()
         time.sleep(1)
         self.CANEngine.call_module(0, "s")
         time.sleep(3)
         ret = self.CANEngine.call_module(3, "p")
-        # print ret
+        print(ret)
         index = 3
         _bodyList = self.CANEngine._enabledList[index][1]._bodyList
-        self.assertTrue( 511 == len(_bodyList[111]),"511 uiniq packets, should be sent")
+        self.assertTrue( 16 == len(_bodyList[111]),"16 uiniq packets, should be sent")
 
     def test_fuzz_iso(self):
         self.CANEngine = CANSploit()
         self.CANEngine.load_config("tests/test_6.py")
         self.CANEngine.edit_module(0, {'id': [[111,112]], 'data': [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18],\
-                                       'delay': 0,'index':[5,16],'mode':'ISO'})
+                                       'delay': 0,'index':[5,18],'bytes': (0,4),'mode':'ISO'})
         self.CANEngine.start_loop()
         time.sleep(1)
         self.CANEngine.call_module(0, "s")
         time.sleep(3)
         ret = self.CANEngine.call_module(3, "p")
-        # print ret
+        print(ret)
         index = 3
         _bodyList = self.CANEngine._enabledList[index][1]._bodyList
-        self.assertTrue(513 == len(_bodyList[111]),"513 uiniq packets, should be sent")
+        self.assertTrue(9 == len(_bodyList[111]),"9 uiniq packets, should be sent")
+
 
 class ModUdsTests(unittest.TestCase):
     def tearDown(self):
@@ -780,32 +803,33 @@ class ModFirewallTests(unittest.TestCase):
         self.CANEngine.call_module(0, "t 4:6:010203060505")  # pass
         time.sleep(1)
         mod = self.CANEngine._enabledList[index][1].CANList
-        self.assertFalse(mod is None, "We should find message in PIPE")
-        self.assertTrue(mod.frame_id == 4, "We should be able to find ID 4")
-        self.CANEngine._enabledList[index][1].CANList = None
+        self.assertFalse(len(mod) == 0, "We should find message in PIPE")
+        self.assertTrue(mod[-1].frame_id == 4, "We should be able to find ID 4")
+
+        self.CANEngine._enabledList[index][1].CANList = []
 
         self.CANEngine.call_module(0, "t 4:5:0102030605")  # blocked
 
         mod = self.CANEngine._enabledList[index][1].CANList
-        self.assertTrue(mod is None, "We should NOT find message in PIPE")
+        self.assertTrue(len(mod) == 0, "We should NOT find message in PIPE")
         #self.assertFalse(mod.frame_id == 4, "We should be able to find ID 4")
-        self.CANEngine._enabledList[index][1].CANList = None
+        self.CANEngine._enabledList[index][1].CANList = []
 
         self.CANEngine.edit_module(2, {'pipe': 2, 'hex_white_body': ['0102030605']})
 
         self.CANEngine.call_module(0, "t 4:5:0102030605")  # pass
         time.sleep(1)
         mod = self.CANEngine._enabledList[index][1].CANList
-        self.assertFalse(mod is None, "We should find message in PIPE")
-        self.assertTrue(mod.frame_id == 4, "We should be able to find ID 4")
-        self.CANEngine._enabledList[index][1].CANList = None
+        self.assertFalse(len(mod) == 0, "We should find message in PIPE")
+        self.assertTrue(mod[-1].frame_id == 4, "We should be able to find ID 4")
+        self.CANEngine._enabledList[index][1].CANList = []
 
         self.CANEngine.call_module(0, "t 4:6:010203060505")  # blocked
 
         mod = self.CANEngine._enabledList[index][1].CANList
-        self.assertTrue(mod is None, "We should NOT find message in PIPE")
+        self.assertTrue(len(mod) == 0, "We should NOT find message in PIPE")
         #self.assertFalse(mod.frame_id == 4, "We should be able to find ID 4")
-        self.CANEngine._enabledList[index][1].CANList = None
+        self.CANEngine._enabledList[index][1].CANList = []
 
     def test_blockedBody(self):
         self.CANEngine = CANSploit()
@@ -817,32 +841,32 @@ class ModFirewallTests(unittest.TestCase):
         self.CANEngine.call_module(0, "t 4:6:010203060505")  # pass
         time.sleep(1)
         mod = self.CANEngine._enabledList[index][1].CANList
-        self.assertFalse(mod is None, "We should find message in PIPE")
-        self.assertTrue(mod.frame_id == 4, "We should be able to find ID 4")
-        self.CANEngine._enabledList[index][1].CANList = None
+        self.assertFalse(len(mod) == 0, "We should find message in PIPE")
+        self.assertTrue(mod[-1].frame_id == 4, "We should be able to find ID 4")
+        self.CANEngine._enabledList[index][1].CANList = []
 
         self.CANEngine.call_module(0, "t 4:5:0102030605")  # blocked
 
         mod = self.CANEngine._enabledList[index][1].CANList
-        self.assertTrue(mod is None, "We should NOT find message in PIPE")
+        self.assertTrue(len(mod) == 0, "We should NOT find message in PIPE")
         #self.assertFalse(mod.frame_id == 4, "We should be able to find ID 4")
-        self.CANEngine._enabledList[index][1].CANList = None
+        self.CANEngine._enabledList[index][1].CANList = []
 
         self.CANEngine.edit_module(2, {'pipe': 2, 'white_body': [[1, 2, 3, 6, 5]]})
 
         self.CANEngine.call_module(0, "t 4:5:0102030605")  # pass
         time.sleep(1)
         mod = self.CANEngine._enabledList[index][1].CANList
-        self.assertFalse(mod is None, "We should find message in PIPE")
-        self.assertTrue(mod.frame_id == 4, "We should be able to find ID 4")
-        self.CANEngine._enabledList[index][1].CANList = None
+        self.assertFalse(len(mod) == 0, "We should find message in PIPE")
+        self.assertTrue(mod[-1].frame_id == 4, "We should be able to find ID 4")
+        self.CANEngine._enabledList[index][1].CANList = []
 
         self.CANEngine.call_module(0, "t 4:6:010203060505")  # blocked
 
         mod = self.CANEngine._enabledList[index][1].CANList
-        self.assertTrue(mod is None, "We should NOT find message in PIPE")
+        self.assertTrue(len(mod) == 0, "We should NOT find message in PIPE")
         #self.assertFalse(mod.frame_id == 4, "We should be able to find ID 4")
-        self.CANEngine._enabledList[index][1].CANList = None
+        self.CANEngine._enabledList[index][1].CANList = []
 
     def test_blockedID(self):
         self.CANEngine = CANSploit()
@@ -854,39 +878,38 @@ class ModFirewallTests(unittest.TestCase):
         self.CANEngine.call_module(0, "t 4:4:11223344")  # pass
         time.sleep(1)
         mod = self.CANEngine._enabledList[index][1].CANList
-        self.assertFalse(mod is None, "We should find message in PIPE")
-        self.assertTrue(mod.frame_id == 4, "We should be able to find ID 4")
-        self.CANEngine._enabledList[index][1].CANList = None
+        self.assertFalse(len(mod) == 0, "We should find message in PIPE")
+        self.assertTrue(mod[-1].frame_id == 4, "We should be able to find ID 4")
+        self.CANEngine._enabledList[index][1].CANList = []
 
         self.CANEngine.call_module(0, "t 1:4:11223344")
         time.sleep(1)
         mod = self.CANEngine._enabledList[index][1].CANList
-        self.assertFalse(mod, "Message number 1 should not pass")
-        self.CANEngine._enabledList[index][1].CANList = None
+        self.assertFalse(len(mod) > 0, "Message number 1 should not pass")
+        self.CANEngine._enabledList[index][1].CANList = []
 
         self.CANEngine.call_module(0, "t 7:4:11223344")  # pass
         time.sleep(1)
         mod = self.CANEngine._enabledList[index][1].CANList
-        self.assertTrue(mod.frame_id == 7, "We should be able to find ID 7")
-        self.CANEngine._enabledList[index][1].CANList = None
+        self.assertTrue(mod[-1].frame_id == 7, "We should be able to find ID 7")
+        self.CANEngine._enabledList[index][1].CANList = []
 
         self.CANEngine.call_module(0, "t 1:4:11223344")
         time.sleep(1)
         mod = self.CANEngine._enabledList[index][1].CANList
-        self.assertFalse(mod, "Message number 1 should not pass")
-        self.CANEngine._enabledList[index][1].CANList = None
-
+        self.assertFalse(len(mod) > 0, "Message number 1 should not pass")
+        self.CANEngine._enabledList[index][1].CANList = []
         self.CANEngine.call_module(0, "t 1:8:1122334411223344")
         time.sleep(1)
         mod = self.CANEngine._enabledList[index][1].CANList
-        self.assertFalse(mod, "Message number 1 should not pass")
-        self.CANEngine._enabledList[index][1].CANList = None
+        self.assertFalse(len(mod) > 0, "Message number 1 should not pass")
+        self.CANEngine._enabledList[index][1].CANList = []
 
         self.CANEngine.call_module(0, "t 4:4:11223344")  # pass
         time.sleep(1)
         mod = self.CANEngine._enabledList[index][1].CANList
-        self.assertTrue(mod.frame_id == 4, "We should be able to find ID 4")
-        self.CANEngine._enabledList[index][1].CANList = None
+        self.assertTrue(mod[-1].frame_id == 4, "We should be able to find ID 4")
+        self.CANEngine._enabledList[index][1].CANList = []
 
 if __name__ == '__main__':
     sys.path.append('./modules')
