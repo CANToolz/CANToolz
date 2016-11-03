@@ -765,6 +765,7 @@ class mod_stat(CANModule):
             if  self._stat_resend:
                 can_msg.CANData = True
                 can_msg.CANFrame = copy.deepcopy(self._stat_resend)
+                can_msg.bus = self._bus
                 self._stat_resend = None
             self._action.clear()
 
