@@ -48,9 +48,10 @@ class ecu_door(CANModule):
                     if can_msg.CANFrame.frame_length == len_cmd and can_msg.CANFrame.frame_raw_data[0:len_cmd] == bytes.fromhex(value):
                             if cmd == 'lock':
                                self._params['status'] = 'Locked'
+                               self._last_sent -=  self._params.get('reports_delay',1.0)
                             if cmd == 'unlock':
                                self._params['status'] = 'Unlocked'
-
+                               self._last_sent -=  self._params.get('reports_delay',1.0)
 
         elif  args['action']=='write' and not can_msg.CANData and self._params['status'] != 'Turned off':               # Write
             if (time.clock() - self._last_sent) >= self._params.get('reports_delay',1.0):

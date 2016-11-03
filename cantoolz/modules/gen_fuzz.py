@@ -17,8 +17,12 @@ class gen_fuzz(CANModule):
       'data'   - default data
       'delay'  - delay between frames (0 by default)
       'index'  - [1,4] - list of bytes (indexes) that should be fuzzed
+      'bytes'  - bytes that will be used for fuzzing. By default all 256. If list provided, then only bytes form that list will be used.
+                 If Tuple - then range
       
-      Example: {'id':[111,113],'data':[0,0,0,0,0,0,0,0],'delay':0}
+      Examples:
+        {'id':[111,113],'data':[0,0,0,0,0,0,0,0],'delay':0, 'bytes': (0,255)}
+        {'id':[111,113],'data':[0,0,0,0,0,0,0,0],'delay':0, 'bytes': [0x1,0x255]}
 
     """
 
@@ -36,6 +40,22 @@ class gen_fuzz(CANModule):
     def get_status(self, def_in = 0):
         return "Current status: " + str(self._active) + "\nFrames in queue: " + str(len(self.queue_messages))
 
+    def fuzz(self,fuzz_list, idf,data,bytes_to_fuzz,level,iso_mode):
+         messages = []
+         x_data = []+ data
+         for byte in fuzz_list:
+            x_data[bytes_to_fuzz[level]] = byte
+            if level != 0:
+                messages.extend(self.fuzz(fuzz_list, idf, x_data, bytes_to_fuzz, level-1, iso_mode))
+            else:
+                if iso_mode == 1:
+                    iso_list = ISOTPMessage.generate_can(idf, x_data)
+                    iso_list.reverse()
+                    messages.extend(iso_list)
+                else:
+                    messages.append(CANMessage.init_data(idf, len(x_data), x_data[:8]))
+         return messages
+
     def do_start(self, args):
         self._i = 0
         self.last = time.clock()
@@ -49,21 +69,24 @@ class gen_fuzz(CANModule):
                     x = [z]
                 else:
                     break
-                for i in x:
-                    _body = list(args.get('data', []))
-                    _i = 0
-                    while _i < len(_body):
-                        if _i in args.get('index', list(range(0, len(_body)))):
-                            for byte in range(0, 256):
-                                _body2 = list(args.get('data', []))
-                                _body2[_i] = byte
-                                if iso_mode == 1:
-                                    iso_list = ISOTPMessage.generate_can(i, _body2)
-                                    iso_list.reverse()
-                                    self.queue_messages.extend(iso_list)
-                                else:
-                                    self.queue_messages.append(CANMessage.init_data(i, len(_body2), _body2[:8]))
-                        _i += 1
+                for i in x: # FOR ID
+                    bytes_to_fuzz = args.get('index',[])
+                    bytez_for_fuzz = args.get('bytes',None)
+
+                    if not bytez_for_fuzz:
+                        fuzz_list = range(0, 256)
+                    elif isinstance(bytez_for_fuzz,list):
+                        fuzz_list = bytez_for_fuzz
+                    elif isinstance(bytez_for_fuzz,tuple):
+                        fuzz_list = range(bytez_for_fuzz[0],bytez_for_fuzz[1])
+                    else:
+                        fuzz_list = range(0, 256)
+
+                    levels = len(bytes_to_fuzz)-1
+                    _body2 = list(args.get('data', []))
+
+                    self.queue_messages.extend(self.fuzz(fuzz_list, i,_body2,bytes_to_fuzz,levels,iso_mode))
+
         self._full = len(self.queue_messages)
         self._last = 0
 

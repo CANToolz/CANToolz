@@ -31,7 +31,7 @@ load_modules = {
             'id_command': 0x81,
             'commands': {
                 'lock':'1000',
-                'unlock':'10ff',
+                'unlock':'1002',
                 'init': '00ff',
             },
 
@@ -127,7 +127,7 @@ load_modules = {
                 'DISTANCE LIGHTS ON': 'ff0202',
                 'Lights OFF': '000000',
             },
-            'reports_delay': 1.4
+            'reports_delay': 0.4
 
     },
 
@@ -146,7 +146,7 @@ load_modules = {
                 'DISTANCE LIGHTS ON': 'ff0202',
                 'Lights OFF': '000000',
             },
-            'reports_delay': 1.4
+            'reports_delay': 0.4
 
     },
 
@@ -156,7 +156,7 @@ load_modules = {
             'id_command': 0x81,
             'commands': {
                 'lock':'1000',
-                'unlock':'10ff',
+                'unlock':'1002',
                 'init': '00ff',
             },
 
@@ -164,7 +164,7 @@ load_modules = {
                 'Locked': '2000',
                 'Unlocked': '20ff'
             },
-            'reports_delay': 0.9
+            'reports_delay': 0.5
         },
     'ecu_door~2':    {
 
@@ -172,7 +172,7 @@ load_modules = {
             'id_command': 0x81,
             'commands': {
                 'lock':'1000',
-                'unlock':'10ff',
+                'unlock':'1002',
                 'init': '00ff',
             },
 
@@ -180,7 +180,7 @@ load_modules = {
                 'Locked': '2000',
                 'Unlocked': '20ff'
             },
-            'reports_delay': 0.9
+            'reports_delay': 0.5
         },
 
     'ecu_engine':    {
@@ -307,8 +307,8 @@ actions = [
          'action': 'read',
          'pipe': 'Cabin'}},
 
-        {'anti_theft_1': {'pipe':'Engine', 'action':'read'}},
-        {'anti_theft_1': {'pipe':'Engine', 'action':'write'}}, # MITM
+       # {'anti_theft_1': {'pipe':'Engine', 'action':'read'}},
+       # {'anti_theft_1': {'pipe':'Engine', 'action':'write'}}, # MITM
 
     {'ecu_engine':   {
          'action': 'read',

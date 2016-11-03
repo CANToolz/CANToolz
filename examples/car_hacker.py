@@ -33,7 +33,7 @@ actions = [
     {'gen_ping':    {                    # Generate UDS requests
         'pipe': 3,
         'delay': 0.06,
-        'range': [1, 2047],           # ID range (from 1790 to 1794)
+        'range': [1700, 1800],           # ID range (from 1790 to 1794)
         'services':[{'service': 0x27, 'sub': 0x01}],
         'mode':'UDS'}
     },
@@ -59,7 +59,7 @@ actions = [
          'pipe': 3}},
 
     {'gen_fuzz':{
-        'id':[0x81],'data':[0,0],'index':[0,1],'delay':0.01
+        'id':[0x81],'data':[0,0],'index':[0,1],'delay':0.07,'pipe':4,'bytes':(0,0x20)
 
     }},
 
