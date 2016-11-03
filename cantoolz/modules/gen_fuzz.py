@@ -70,20 +70,22 @@ class gen_fuzz(CANModule):
                 else:
                     break
                 for i in x: # FOR ID
-                    bytes_to_fuzz = args.get('index',[])
+                    _body2 = list(args.get('data', []))
+
+                    bytes_to_fuzz = args.get('index',range(0,len(_body2)))
                     bytez_for_fuzz = args.get('bytes',None)
 
                     if not bytez_for_fuzz:
-                        fuzz_list = range(0, 256)
+                        fuzz_list = range(0, 255)
                     elif isinstance(bytez_for_fuzz,list):
                         fuzz_list = bytez_for_fuzz
                     elif isinstance(bytez_for_fuzz,tuple):
                         fuzz_list = range(bytez_for_fuzz[0],bytez_for_fuzz[1])
                     else:
-                        fuzz_list = range(0, 256)
+                        fuzz_list = range(0, 255)
 
                     levels = len(bytes_to_fuzz)-1
-                    _body2 = list(args.get('data', []))
+
 
                     self.queue_messages.extend(self.fuzz(fuzz_list, i,_body2,bytes_to_fuzz,levels,iso_mode))
 
