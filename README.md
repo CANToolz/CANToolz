@@ -34,6 +34,7 @@ CANToolz can work with CAN network by using next hardware:
     python 3.4
       pip install pyserial
       pip install numpy
+      pip install bitstring
     
     for MIDI_to_CAN
       pip install mido
@@ -46,11 +47,26 @@ CANToolz can work with CAN network by using next hardware:
     sudo python cantoolz.py -g w -c examples/can_sniff.py 
 
 Then use browser and connect to http://localhost:4444
-  
+
+### VIRCar starting:
+
+1) Run VIRCAR 'python3 cantoolz.py -g w -p 5555 -c examples/car_config.py'
+
+2) go to localhost:5555/index.html and press START
+
+3) go to localhost:5555/vircar.html and this is your VIRcar!
+
+4) Run CANTOOLZ 'python3 cantoolz.py -g w -c examples/car_hacker.py'
+
+5) go to localhosy:4444/index.html -- now ou connected to VIRcar with car_hacking config. TCP2CAN - uses as hardware and coonected to OBD2 and CABIN buses of VIRCAR.
+
+
 ## Modules
 
 - hw_CANBusTriple  - IO module for CANBus Triple HW
-- hw_USBtin        - IO module forUSBtin
+- hw_USBtin        - IO module for USBtin
+- hw_CANSocket     - IO module for CANSocket (Linux only)
+- hw_TCP2CAN       - client/server IO component for tunnelinc raw CAN traffic over TCP
 - mod_firewall     - module for blocking CAN message by ID
 - mod_fuzz1        - Simple 'Proxy' fuzzer  (1 byte) Can be combined with gen_ping/gen_replay
 - mod_printMessage - printing CAN messages
