@@ -1,3 +1,6 @@
+## Version 3.5-2
+ - mod_stat fixes
+ 
 ## Version 3.5-0
  - **CANBusTriple** change: now you need provide in 'bus' parameter to which BUS of CBT you want to work (read/write). It gives more flexibility
  - Inspired by @_db5 and his cool vircar I have decide to create an analog but on CANToolz engine. Now you can emulate a car. You build car from ECU modules and CONTROL modules. ECU modules could be connected via virtual CAN Switch.
