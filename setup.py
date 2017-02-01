@@ -14,7 +14,7 @@ if len(sys.argv) >= 2 and sys.argv[1] == 'install':
 
 setup(
     name='CANToolz',
-    version='3.5.1',
+    version='3.5.2',
     author='Alexey Sintsov',
     install_requires=[
         'pyserial',

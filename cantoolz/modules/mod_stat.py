@@ -1358,30 +1358,30 @@ class mod_stat(CANModule):
                         key = test_frame.get_text()
                         idg = test_frame.frame_id
                         self.new_diff(0, "STAT_CHECK_ACT_" + key)
-                        self.dprint(1, " Send test frame: " + key)
+                        self.dprint(1, " Sending test frame: " + key)
                         tmp_w = weigths.get(key, 0)
-                        print(1)
+                        #print(1)
                         while self._action.is_set():
                             time.sleep(0.01)
-                            print(2)
+                            #print(2)
                         self._action.set()
                         self._stat_resend = test_frame
                         self._action.clear()
-                        print(3)
+                        #print(3)
                         while 1:
                             time.sleep(1)
-                            print(4)
+                            #print(4)
                             if not self._action.is_set():
                                 self._action.set()
-                                print(self._stat_resend)
+                                #print(self._stat_resend)
                                 if self._stat_resend is None:
                                     self._action.clear()
                                     self.dprint(1, " Test frame has been sent: " + test_frame.get_text())
                                     time.sleep(waiting_time)
-                                    print(5)
+                                    #print(5)
                                     break
                                 self._action.clear()
-                            print(6)
+                            #print(6)
                         self.dprint(1, " Check changes... ")
                         self._active = False
 
@@ -1399,10 +1399,18 @@ class mod_stat(CANModule):
                             if idg != idf:
                                 looking_bits = orig_bits ^ self.data_set[self._rep_index][idf]['diff']
                                 self.dprint(1, "DIFF BIT ("+hex(idf)+"): " + looking_bits.bin)
-                                for bit in buf1x:
-                                    self.dprint(1, "\nCOMPARE with " + bit.bin + " = " + (looking_bits & bit).bin )
-                                    if (looking_bits & bit).int != 0:
-                                        tmp_w +=1
+                                last_b =  orig_bits
+                                chg_b = bitstring.BitArray( b'\x00' * 8)
+                                itr = 0
+                                if len(buf1x) > 1:
+                                    for bit in buf1x:
+                                        chg_b |= bit ^ last_b
+                                        last_b = bit
+                                        itr += 1
+                                        self.dprint(1, "\nCOMPARE with " + bit.bin + " = " + (looking_bits & chg_b).bin )
+                                        if (looking_bits & chg_b).int != 0 and itr > 1:
+                                            self.dprint(1, "BINGO")
+                                            tmp_w +=1
 
                         weigths[key] = tmp_w
                         self._active = True
