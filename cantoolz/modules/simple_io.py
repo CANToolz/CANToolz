@@ -24,9 +24,9 @@ class simple_io(CANModule):
     def do_init(self, params):
         self.can_buffer_read = []
         self.can_buffer_write = []
-        self._cmdList['c'] = ["Clean buffers", 0, "", self.do_start, True]
-        self._cmdList['r'] = ["Read message", 0, "", self.cmd_read, True]
-        self._cmdList['w'] = ["Write message", 1, "[0x]ID[:len]:HEX_DATA", self.cmd_write, True]
+        self._cmdList['c'] = Command("Clean buffers", 0, "", self.do_start, True)
+        self._cmdList['r'] = Command("Read message", 0, "", self.cmd_read, True)
+        self._cmdList['w'] = Command("Write message", 1, "[0x]ID[:len]:HEX_DATA", self.cmd_write, True)
 
     def get_status(self, def_in = 0):
         return "Current status: " + str(self._active) + "\nFrames to read: " + str(len(self.can_buffer_read)) + "\nFrames to write: " + str(len(self.can_buffer_write))
