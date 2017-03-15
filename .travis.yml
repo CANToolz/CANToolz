@@ -1,0 +1,13 @@
+language: python
+python:
+    - "3.5"
+
+install:
+    - pip install pyserial numpy bitstring mido
+
+script:
+    - python unit_tests.py
+
+notifications:
+    email: false
+

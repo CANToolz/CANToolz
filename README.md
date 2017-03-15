@@ -58,7 +58,7 @@ Then use browser and connect to http://localhost:4444
 
 4) Run CANTOOLZ 'python3 cantoolz.py -g w -c examples/car_hacker.py'
 
-5) go to localhosy:4444/index.html -- now ou connected to VIRcar with car_hacking config. TCP2CAN - uses as hardware and coonected to OBD2 and CABIN buses of VIRCAR.
+5) go to localhosy:4444/index.html -- now you are connected to VIRcar with car_hack config. TCP2CAN - used as I/O hardware and coonected to OBD2 and CABIN buses of VIRCAR.
 
 
 ## Modules
