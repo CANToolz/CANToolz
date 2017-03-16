@@ -32,9 +32,9 @@ class control_ecu_doors(CANModule):
         self._status2 = params
         self.frames = []
         self._doors = {}
-        self._cmdList['status'] = ["Get doors status", 0, "", self.control_get_status, True]
-        self._cmdList['central_lock'] = ["Lock doors", 0, "", self.control_lock, True]
-        self._cmdList['central_unlock'] = ["Unlock doors", 0, "", self.control_unlock, True]
+        self._cmdList['status'] = Command("Get doors status", 0, "", self.control_get_status, True)
+        self._cmdList['central_lock'] = Command("Lock doors", 0, "", self.control_lock, True)
+        self._cmdList['central_unlock'] = Command("Unlock doors", 0, "", self.control_unlock, True)
 
     def control_lock(self, flag):
         self.frames.append(CANMessage(self._status2['id_command'],int(len(self._status2['commands']['lock'])/2),bytes.fromhex(self._status2['commands']['lock']),False, CANMessage.DataFrame))

@@ -22,9 +22,9 @@ class uds_engine_auth_baypass(CANModule):
         self.frames = []
 
 
-        self._cmdList['set_key'] = ["Set new key  (17 hex bytes)", 1, "<key>", self.set_key, True]
-        self._cmdList['set_vin'] = ["Set VIN", 1, "<VIN>", self.set_vin, True]
-        self._cmdList['exploit'] = ["Exploit", 0, "", self.exploit, True]
+        self._cmdList['set_key'] = Command("Set new key  (17 hex bytes)", 1, "<key>", self.set_key, True)
+        self._cmdList['set_vin'] = Command("Set VIN", 1, "<VIN>", self.set_vin, True)
+        self._cmdList['exploit'] = Command("Exploit", 0, "", self.exploit, True)
 
     def exploit(self, arg):
         i = 0

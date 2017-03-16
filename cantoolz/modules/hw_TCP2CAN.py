@@ -280,8 +280,8 @@ class hw_TCP2CAN(CANModule):
             self.server =  None
 
     def do_init(self, params):  # Get device and open serial port
-        self._cmdList['t'] = ["Send direct command to the device, like 13:8:1122334455667788", 1, " <cmd> ",
-                              self.dev_write, True]
+        self._cmdList['t'] = Command("Send direct command to the device, like 13:8:1122334455667788", 1, " <cmd> ",
+                              self.dev_write, True)
 
         self.mode = params.get('mode', None)
         self.server = None

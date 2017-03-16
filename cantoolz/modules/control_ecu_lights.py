@@ -33,10 +33,10 @@ class control_ecu_lights(CANModule):
         self._status2 = params
         self.frames = []
         self._doors = {}
-        self._cmdList['status'] = ["Get lights status", 0, "", self.control_get_status, True]
-        self._cmdList['off'] = ["Lights OFF", 0, "", self.lights_off, True]
-        self._cmdList['on'] = ["Lights ON", 0, "", self.lights_on, True]
-        self._cmdList['distance'] = ["Disatnace lights on", 0, "", self.dlights_on, True]
+        self._cmdList['status'] = Command("Get lights status", 0, "", self.control_get_status, True)
+        self._cmdList['off'] = Command("Lights OFF", 0, "", self.lights_off, True)
+        self._cmdList['on'] = Command("Lights ON", 0, "", self.lights_on, True)
+        self._cmdList['distance'] = Command("Disatnace lights on", 0, "", self.dlights_on, True)
 
     def lights_off(self, flag):
         self.frames.append(CANMessage(self._status2['id_command'],int(len(self._status2['commands']['off'])/2),bytes.fromhex(self._status2['commands']['off']),False, CANMessage.DataFrame))
