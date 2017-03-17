@@ -5,6 +5,7 @@ Generic class for modules
 import threading
 import collections
 import codecs
+import traceback
 
 
 class Command(object):
@@ -61,6 +62,7 @@ class CANModule:
         self._cmdList['S'] = Command('Current status', 0, '', self.get_status, True)
         self._cmdList['s'] = Command('Stop/Activate current module', 0, '', self.do_activate, True)
         self._status = 0
+        self._error_text = ""
         self.do_init(params)
 
     @staticmethod
@@ -126,10 +128,15 @@ class CANModule:
         if in_cmd in self._cmdList:
             cmd = self._cmdList[in_cmd]
             if cmd.is_enabled:
-                if parameters:
-                    ret = cmd.callback(cmd.index, parameters)
-                else:
-                    ret = cmd.callback(cmd.index)
+                try:
+                    if parameters:
+                        ret = cmd.callback(cmd.index, parameters)
+                    else:
+                        ret = cmd.callback(cmd.index)
+                except Exception as e:
+                    #self.set_error_text("ERROR: " + str(e))
+                    ret = "ERROR: " + str(e)
+                    traceback.print_exc()
             else:
                 ret = 'Error: command is disabled!'
         self.thr_block.set()
@@ -159,13 +166,26 @@ class CANModule:
     def get_status_bar(self):
         """Get the status of the module.
 
-        :returns: int -- Status of the module.
+        :returns: dict -- 'bar': Progress abr of the module. 'text': Current text for errors and notifications
         """
         self.thr_block.wait(timeout=self._timeout)
         self.thr_block.clear()
         status = int(self._status)
+        error_text = ""
+        if self._error_text != "":
+            error_text = self._error_text
+            self._error_text = ""
         self.thr_block.set()
-        return status
+
+        return {'bar': status,'text': error_text}
+
+    def set_error_text(self, text):
+        """Function to set current notification or error
+
+        :returns: int -- Status of init.
+        """
+        print("!!! "+text)
+        self._error_text = self.__class__.name + ": " + text
 
     def do_init(self, params):
         """Function to perform calculations before doing any actual work.

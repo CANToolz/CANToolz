@@ -61,7 +61,7 @@ function stepModule(step, callback) {
  * @param {Scenario} scenario
  */
 function redrawStatus(status) {
-  if (status !== undefined) {
+  if (status !== undefined && status != null) {
     d3.select('.loop-action')
       .classed('btn-success', !status.status)
       .classed('btn-danger', status.status)
@@ -73,6 +73,15 @@ function redrawStatus(status) {
       btns = status.progress[name].buttons;
       redrawProgressBar(bar);
       redrawButtons(btns)
+    }
+
+    for (data in status.progress){
+      err_text = status.progress[data]['text'];
+      if (err_text!="")
+      {
+        //New notification
+        d3.select('.output').insert('pre', ':first-child').text(err_text);
+      }
     }
   }
 

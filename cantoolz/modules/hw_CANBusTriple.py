@@ -234,6 +234,7 @@ class hw_CANBusTriple(CANModule):
             self.do_write(can_msg, args)
         else:
             self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
+            self.set_error_text('Command ' + args['action'] + ' not implemented 8(')
         return can_msg
 
     def do_read(self, can_msg, args):

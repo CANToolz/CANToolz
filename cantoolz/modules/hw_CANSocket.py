@@ -35,16 +35,23 @@ class hw_CANSocket(CANModule):
 
     def dev_write(self, def_in, data):
         self.dprint(1, "CMD: " + data)
+        ret = "Sent!"
         if self._run:
-            idf, dataf = data.strip().split('#')
-            dataf = bytes.fromhex(dataf)
-            idf = int(idf, 16)
-            lenf = min(8, len(dataf))
-            message = CANSploitMessage()
-            message.CANData = True
-            message.CANFrame = CANMessage.init_data(idf, lenf, dataf[0:lenf])
-            self.do_write(message)
-        return ""
+            try:
+                idf, dataf = data.strip().split('#')
+                dataf = bytes.fromhex(dataf)
+                idf = int(idf, 16)
+                lenf = min(8, len(dataf))
+                message = CANSploitMessage()
+                message.CANData = True
+                message.CANFrame = CANMessage.init_data(idf, lenf, dataf[0:lenf])
+                self.do_write(message)
+            except Exception as e:
+                traceback.print_exc()
+                ret = str(e)
+        else:
+            ret = "Module is not active!"
+        return ret
 
     def do_start(self, params):
         if self.device and not self._run:
@@ -56,6 +63,8 @@ class hw_CANSocket(CANModule):
             except Exception as e:
                 self._run = False
                 self.dprint(0, "ERROR: " + str(e))
+                self.set_error_text("ERROR: " + str(e))
+                traceback.print_exc()
 
     def do_stop(self, params):
         if self.device and self._run:
@@ -65,6 +74,8 @@ class hw_CANSocket(CANModule):
             except Exception as e:
                 self._run = False
                 self.dprint(0, "ERROR: " + str(e))
+                self.set_error_text("ERROR: " + str(e))
+                traceback.print_exc()
 
     def do_effect(self, can_msg, args):  # read full packet from serial port
         if args.get('action') == 'read':

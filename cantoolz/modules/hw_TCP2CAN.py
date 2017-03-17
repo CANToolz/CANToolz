@@ -31,7 +31,8 @@ class CustomTCPClient():
                 #print()
 
                 if inc_header[0:2] != b'c\x02':
-                    print("HEADER ERROR")
+                    self.selfx.dprint(0,"HEADER ERROR")
+                    self.selfx.set_error_text('HEADER ERROR')
                     continue
                 else:
                     ready = struct.unpack("!H", inc_header[2:4])[0]
@@ -50,7 +51,8 @@ class CustomTCPClient():
                             #print(str(ready) + " ~ " +str(packet))
                             #print("---")
                             if packet[0:3] != b'ct\x03':
-                                print('CLIENT GOT INCORRECT DATA')
+                                self.selfx.dprint(0,'CLIENT GOT INCORRECT DATA')
+                                self.selfx.set_error_text('CLIENT GOT INCORRECT DATA')
                                 break
                             else:
                                 fid = struct.unpack("!I", packet[3:7])[0]
@@ -91,8 +93,10 @@ class CustomTCPClient():
 
                 self._access_out.clear()
 
-            except:
-                print("TCPClient: recv response error")
+            except Exception as e:
+                #print('TCPClient: recv response error')
+                self.selfx.set_error_text('TCPClient: recv response error:' + str(e))
+                traceback.print_exc()
 
     def write_can(self, can_frame):
         while self._access_out.is_set():
@@ -153,6 +157,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
     def handle(self):
         # self.request is the TCP socket connected to the client
         print("TCP2CAN connected to " + str(self.server.prt))
+        self.server.selfx.set_error_text("TCP2CAN connected to " + str(self.server.prt))
 
         self.server._access_in.clear()
         self.server._access_out.clear()
@@ -201,6 +206,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                             packet = inc_data[idx:idx + 16]
                             if packet[0:3] != b'ct\x05':
                                 print('SERVER GOT INCORRECT DATA')
+                                self.server.selfx.set_error_text('SERVER GOT INCORRECT DATA')
                                 break
                             else:
                                 fid = struct.unpack("!I", packet[3:7])[0]
@@ -252,6 +258,7 @@ class hw_TCP2CAN(CANModule):
 
         if self.server is None:
             self.dprint(2,'Started mode as ' + str(self.mode))
+            self.set_error_text('Started mode as ' + str(self.mode))
             if self.mode == 'server':
                 self.server = CustomTCPServer((self.HOST, self.PORT), ThreadedTCPRequestHandler)
                 self.server.prt = self.PORT
@@ -264,11 +271,14 @@ class hw_TCP2CAN(CANModule):
             else:
                 self.server = CustomTCPClient((self.HOST, self.PORT))
 
+            self.server.selfx = self
+
 
 
     def do_stop_x(self):  # disable reading
         if self.server is not None:
             self.dprint(2,'Stoped mode as ' + str(self.mode))
+            self.set_error_text('Stoped mode as ' + str(self.mode))
             if self.mode == 'server':
                 self.server.server_close()
                 self.server.shutdown()
@@ -303,7 +313,7 @@ class hw_TCP2CAN(CANModule):
         length = line.split(":")[1]
         data = line.split(":")[2]
         self.server.write_can(CANMessage.init_data(int(fid), int(length), bytes.fromhex(data)[:int(length)]))
-        return ""
+        return "Sent!"
 
     def do_effect(self, can_msg, args):  # read full packet from serial port
         if args.get('action') == 'read':
@@ -312,6 +322,7 @@ class hw_TCP2CAN(CANModule):
             self.do_write(can_msg)
         else:
             self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
+            self.set_error_text('Command ' + args['action'] + ' not implemented 8(')
         return can_msg
 
     def do_write(self, can_msg):

@@ -191,7 +191,8 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
                         btns = {}
                         for key, cmd in module._cmdList.items():
                             btns[key] = cmd.is_enabled
-                        modz3[name] = {"bar": module.get_status_bar(), "status": module.is_active, "buttons":btns}
+                        sts = module.get_status_bar()
+                        modz3[name] = {"bar": sts['bar'],"text": sts['text'], "status": module.is_active, "buttons":btns}
                     body = json.dumps({"status": modz, "progress": modz3})
                     resp_code = 200
                 except Exception as e:

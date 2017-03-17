@@ -237,9 +237,12 @@ class hw_USBtin(CANModule):
                     self.dev_write(int(def_in) + 1,  data)
                 except Exception as e2:
                     self.dev_write(0, "USBTIn ERROR: can't reopen - \n\t" + str(e1) + "\n\t" + str(e2))
+                    self.set_error_text("USBTIn ERROR: can't reopen - \n\t" + str(e1) + "\n\t" + str(e2))
+                    traceback.print_exc()
 
             else:
                 self.dev_write(0, "USBTIn ERROR")
+                self.set_error_text('USBTIn ERROR I/O')
         return ""
 
     def do_effect(self, can_msg, args):  # read full packet from serial port
@@ -253,6 +256,8 @@ class hw_USBtin(CANModule):
             self.do_write(can_msg)
         else:
             self.dprint(1, 'Command ' + args.get('action', 'NONE') + ' not implemented 8(')
+            self.set_error_text('Command ' + args.get('action', 'NONE') + ' not implemented 8(')
+
 
 
         """

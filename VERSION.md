@@ -1,3 +1,10 @@
+## Version 3.5-6
+ - Contribution by @DePierre (Tao Sauvage)
+     - https://github.com/eik00d/CANToolz/issues/84
+     - https://github.com/eik00d/CANToolz/issues/83
+     - https://github.com/eik00d/CANToolz/pull/86
+     - https://github.com/eik00d/CANToolz/pull/85
+ 
 ## Version 3.5-2
  - mod_stat fixes
  
