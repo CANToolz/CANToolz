@@ -219,8 +219,8 @@ class hw_CANBusTriple(CANModule):
         self.dprint(1, "CANBus Triple device detected, version: " + self.read_json(self.get_info())['version'])
 
 
-        self._cmdList['t'] = ["Send direct command to the device, like 02010011112233440000000008", 1, " <cmd> ",
-                              self.dev_write, True]
+        self._cmdList['t'] = Command("Send direct command to the device, like 02010011112233440000000008", 1, " <cmd> ",
+                              self.dev_write, True)
 
     def dev_write(self, def_in, data):
         self.dprint(1, "CMD: " + data)
@@ -234,6 +234,7 @@ class hw_CANBusTriple(CANModule):
             self.do_write(can_msg, args)
         else:
             self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
+            self.set_error_text('Command ' + args['action'] + ' not implemented 8(')
         return can_msg
 
     def do_read(self, can_msg, args):

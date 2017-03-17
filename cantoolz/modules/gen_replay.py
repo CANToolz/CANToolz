@@ -54,12 +54,12 @@ class gen_replay(CANModule):
         if 'load_from' in params:
             self.cmd_load(0, params['load_from'])
 
-        self._cmdList['g'] = ["Enable/Disable sniff mode to collect packets", 0, "", self.sniff_mode, True]
-        self._cmdList['p'] = ["Print count of loaded packets", 0, "", self.cnt_print, True]
-        self._cmdList['l'] = ["Load packets from file", 1, " <file> ", self.cmd_load, True]
-        self._cmdList['r'] = ["Replay range from loaded, from number X to number Y", 1, " <X>-<Y> ", self.replay_mode, True]
-        self._cmdList['d'] = ["Save range of loaded packets, from X to Y", 1, " <X>-<Y>, <filename>",self.save_dump, True]
-        self._cmdList['c'] = ["Clean loaded table", 0, "", self.clean_table, True]
+        self._cmdList['g'] = Command("Enable/Disable sniff mode to collect packets", 0, "", self.sniff_mode, True)
+        self._cmdList['p'] = Command("Print count of loaded packets", 0, "", self.cnt_print, True)
+        self._cmdList['l'] = Command("Load packets from file", 1, " <file> ", self.cmd_load, True)
+        self._cmdList['r'] = Command("Replay range from loaded, from number X to number Y", 1, " <X>-<Y> ", self.replay_mode, True)
+        self._cmdList['d'] = Command("Save range of loaded packets, from X to Y", 1, " <X>-<Y>, <filename>",self.save_dump, True)
+        self._cmdList['c'] = Command("Clean loaded table", 0, "", self.clean_table, True)
 
 
     def clean_table(self, def_in):
@@ -90,12 +90,12 @@ class gen_replay(CANModule):
 
         if self._sniff:
             self._sniff = False
-            self._cmdList['r'][4] = True
-            self._cmdList['d'][4] = True
+            self._cmdList['r'].is_enabled = True
+            self._cmdList['d'].is_enabled = True
         else:
             self._sniff = True
-            self._cmdList['r'][4] = False
-            self._cmdList['d'][4] = False
+            self._cmdList['r'].is_enabled = False
+            self._cmdList['d'].is_enabled = False
             self.CANList.restart_time()
         return str(self._sniff)
 
@@ -112,7 +112,7 @@ class gen_replay(CANModule):
                 self._replay = True
                 self._full = self._num2 - self._num1
                 self._last = 0
-                self._cmdList['g'][4] =  False
+                self._cmdList['g'].is_enabled =  False
                 self.CANList.set_index(self._num1)
 
 
@@ -143,10 +143,10 @@ class gen_replay(CANModule):
                 self._status = self._last/(self._full/100.0)
             except Exception as e:
                 self._replay = False
-                self._cmdList['g'][4] = True
+                self._cmdList['g'].is_enabled = True
                 self.CANList.reset()
             if self._num1 == self._num2:
                 self._replay = False
-                self._cmdList['g'][4] = True
+                self._cmdList['g'].is_enabled = True
                 self.CANList.reset()
         return can_msg

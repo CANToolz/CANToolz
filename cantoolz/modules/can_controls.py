@@ -53,7 +53,7 @@ class can_controls(CANModule):
                     cmd_list.remove(cmd)
             else:
                 cmd = cmd_list.pop()
-            self._cmdList[cmd] = ["Action: " + list([x for x in list(command.keys()) if  x not in ["cmd"]])[0],0,'', self.send_command, True, index]
+            self._cmdList[cmd] = Command('Action: ' + list([x for x in list(command.keys()) if  x not in ['cmd']])[0], 0, '', self.send_command, True, index)
             index += 1
         index = 0
         for status in self._statuses:
@@ -63,7 +63,7 @@ class can_controls(CANModule):
                     cmd_list.remove(cmd)
             else:
                 cmd = cmd_list.pop()
-            self._cmdList[cmd] = ["Status: " + list([x for x in list(status.keys()) if  x not in ["id_list_can_toolz_system","cmd","current_status"]])[0],0,'', self.get_statuses, True, index]
+            self._cmdList[cmd] = Command("Status: " + list([x for x in list(status.keys()) if  x not in ["id_list_can_toolz_system","cmd","current_status"]])[0],0,'', self.get_statuses, True, index)
             index += 1
             fid_list = []
             for name, data in status.items():

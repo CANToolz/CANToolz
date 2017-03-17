@@ -105,6 +105,7 @@ class gen_ping(CANModule):
         else:
             self.dprint(1, "No range specified")
             self._active = False
+            self.set_error_text("ERROR: No range specified")
         self._full = len(self.queue_messages)
         self._last = 0
 

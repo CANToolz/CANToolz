@@ -158,8 +158,8 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
                 try:
                     help_list = self.can_engine.get_modules_list()[self.can_engine.find_module(str(path_parts[3]))][1]._cmdList
                     response_help = collections.OrderedDict()
-                    for cmd, body in help_list.items():
-                        response_help[cmd] = {'descr': body[0], 'descr_param': body[2], 'param_count': body[1]}
+                    for key, cmd in help_list.items():
+                        response_help[key] = {'descr': cmd.description, 'descr_param': cmd.desc_params, 'param_count': cmd.num_params}
                     body = json.dumps(response_help, ensure_ascii=False)
                     resp_code = 200
                 except Exception as e:
@@ -189,9 +189,10 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
                     modz3 = {}
                     for name, module, params in modz2:
                         btns = {}
-                        for btn, bdy in module._cmdList.items():
-                            btns[btn] = bdy[4]
-                        modz3[name] = {"bar": module.get_status_bar(), "status": module.is_active, "buttons":btns}
+                        for key, cmd in module._cmdList.items():
+                            btns[key] = cmd.is_enabled
+                        sts = module.get_status_bar()
+                        modz3[name] = {"bar": sts['bar'],"text": sts['text'], "status": module.is_active, "buttons":btns}
                     body = json.dumps({"status": modz, "progress": modz3})
                     resp_code = 200
                 except Exception as e:
@@ -390,8 +391,8 @@ class UserInterface:
                         mod  = self.CANEngine.get_modules_list()[module][1]
                         print(("\nModule " + mod.__class__.__name__ + ": " + mod.name + "\n" + mod.help + \
                             "\n\nConsole commands:\n"))
-                        for cmd, dat in mod._cmdList.items():
-                            print(("\t" + cmd + " " + dat[2] + "\t\t - " + dat[0] + "\n"))
+                        for key, cmd in mod._cmdList.items():
+                            print(("\t" + key + " " + cmd.desc_params + "\t\t - " + cmd.description + "\n"))
                     except Exception as e:
                         print(("Help error: " + str(e)))
                 else:
