@@ -154,6 +154,7 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
                 except Exception as e:
                     resp_code = 500
                     body = "{ \"error\": "+json.dumps(str(e))+"}"
+                    traceback.print_exc()
             elif cmd == "help" and path_parts[3]:
                 try:
                     help_list = self.can_engine.get_modules_list()[self.can_engine.find_module(str(path_parts[3]))][1]._cmdList
@@ -165,6 +166,7 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
                 except Exception as e:
                     resp_code = 500
                     body = "{ \"error\": "+json.dumps(str(e))+"}"
+                    traceback.print_exc()
             elif cmd == "start":
                 try:
                     modz = self.can_engine.start_loop()
@@ -173,6 +175,7 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
                 except Exception as e:
                     resp_code = 500
                     body = "{ \"error\": "+json.dumps(str(e))+"}"
+                    traceback.print_exc()
 
             elif cmd == "stop":
                 try:
@@ -182,6 +185,7 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
                 except Exception as e:
                     resp_code = 500
                     body = "{ \"error\": "+json.dumps(str(e))+"}"
+                    traceback.print_exc()
             elif cmd == "status":
                 try:
                     modz = self.can_engine.status_loop
@@ -198,6 +202,7 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
                 except Exception as e:
                     resp_code = 500
                     body = "{ \"error\": "+json.dumps(str(e))+"}"
+                    traceback.print_exc()
 
         else:  # Static content request
             if self.path == "/":
