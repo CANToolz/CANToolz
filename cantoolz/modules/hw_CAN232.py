@@ -147,16 +147,16 @@ class hw_CAN232(CANModule):
 
     def do_write(self, can, params):
         """Write to the hardware."""
-        if can.CANFrame.can_type == CANMessage.DataFrame:
+        if can.CANFrame.frame_type == CANMessage.DataFrame:
             if not can.CANFrame.frame_ext:  # 11bit frame
-                self._C232.transmit(self.get_hex(can.CANFrame.frame_raw_data).encode('ISO-8859-1'), mode=can232.CAN_STANDARD)
+                self._C232.transmit(can.CANFrame.to_hex(), mode=can232.CAN_STANDARD)
             else:  # 29bit frame
-                self._C232.transmit(self.get_hex(can.CANFrame.frame_raw_data).encode('ISO-8859-1'), mode=can232.CAN_EXTENDED)
-        elif can.CANFrame.can_type == CANMessage.RemoteFrame:
+                self._C232.transmit(can.CANFrame.to_hex(), mode=can232.CAN_EXTENDED)
+        elif can.CANFrame.frame_type == CANMessage.RemoteFrame:
             if not can.CANFrame.frame_ext:  # 11bit RTR frame
-                self._C232.transmit(self.get_hex(can.CANFrame.frame_raw_data).encode('ISO-8859-1'), mode=can232.CAN_RTR_STANDARD)
+                self._C232.transmit(can.CANFrame.to_hex(), mode=can232.CAN_RTR_STANDARD)
             else:  # 29bit RTR frame
-                self._C232.transmit(self.get_hex(can.CANFrame.frame_raw_data).encode('ISO-8859-1'), mode=can232.CAN_RTR_EXTENDED)
+                self._C232.transmit(can.CANFrame.to_hex(), mode=can232.CAN_RTR_EXTENDED)
         return can
 
     def do_effect(self, can, params):
