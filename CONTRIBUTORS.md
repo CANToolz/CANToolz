@@ -1,6 +1,7 @@
-### Developers
+### Developers and code contributors
 * Alexey Sintsov
 * Sergey Kononenko 
+* Tao Sauvage
 
 ### Designers
 * Svetlana Sintsova 

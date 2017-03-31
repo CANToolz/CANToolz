@@ -3,7 +3,7 @@ import unittest
 import time
 import codecs
 import re
-
+"""
 class TCP2CAN(unittest.TestCase):
     def tearDown(self):
         self.CANEngine.stop_loop()
@@ -71,13 +71,13 @@ class TimeStampz(unittest.TestCase):
         self.assertTrue(13.99 < time2-time1 < 15.99, "Should be around 14 seconds")
         st = self.CANEngine.call_module(1, "S")
         self.assertTrue(0 <= st.find("Sniffed frames (overall): 11"), "Should be be 11 packets")
-
+"""
 class ModGenPingEX(unittest.TestCase):
     def tearDown(self):
         self.CANEngine.stop_loop()
         self.CANEngine = None
         print("stopped")
-
+    """
     def test_ping_uds(self):
         self.CANEngine = CANSploit()
         self.CANEngine.load_config("tests/test_5.py")
@@ -105,7 +105,29 @@ class ModGenPingEX(unittest.TestCase):
         self.assertTrue(0 <= ret1.find('020203'), "Should be found")
         self.assertTrue(0 <= ret1.find('020102'), "Should be found")
         self.assertTrue(0 <= ret1.find('020101'), "Should be found")
+    """
+    # https://github.com/eik00d/CANToolz/issues/93 by @DePierre
+    def test_ping_uds_none_crash(self):
+        self.CANEngine = CANSploit()
+        self.CANEngine.load_config("tests/test_5.py")
+        self.CANEngine.edit_module(2, {'pipe': 2,
+            'services': [
+                {"service":1,"sub":None}
+            ],
+            'mode':'UDS',
+            'range':[1,2] })
+        time.sleep(1)
 
+        self.CANEngine.start_loop()
+        time.sleep(1)
+        self.CANEngine.call_module(2, "s")
+        time.sleep(1)
+        mod_stat = 3
+        ret1 = self.CANEngine.call_module(mod_stat, "p 0")
+        print(ret1)
+        self.assertTrue(0 <= ret1.find('0x1'), "Should be found")
+        self.assertTrue(0 <= ret1.find('0101'), "Should be found")
+"""
 class ModMetaFields(unittest.TestCase):
     def tearDown(self):
         self.CANEngine.stop_loop()
@@ -910,7 +932,7 @@ class ModFirewallTests(unittest.TestCase):
         mod = self.CANEngine._enabledList[index][1].CANList
         self.assertTrue(mod[-1].frame_id == 4, "We should be able to find ID 4")
         self.CANEngine._enabledList[index][1].CANList = []
-
+"""
 if __name__ == '__main__':
     sys.path.append('./modules')
     from cantoolz.engine import *

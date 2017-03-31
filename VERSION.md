@@ -1,3 +1,23 @@
+## Version 3.6-0
+ 
+ - Contribution by @DePierre (Tao Sauvage)
+     
+     Bugs fixed:
+     
+     - https://github.com/eik00d/CANToolz/issues/93
+     - https://github.com/eik00d/CANToolz/issues/91
+     
+     Features:
+    
+     - https://github.com/eik00d/CANToolz/pull/92  
+     Verbose console (error traces added)
+     
+     - https://github.com/eik00d/CANToolz/pull/90  
+     Default webserver is now localhost, listening interface is now could be provided as a parameter (--host)
+    
+     - https://github.com/eik00d/CANToolz/pull/89  
+     New generic module supporting CAN232/CANUSB/LAWICEL protocol
+     
 ## Version 3.5-6
  - Contribution by @DePierre (Tao Sauvage)
      - https://github.com/eik00d/CANToolz/issues/84
