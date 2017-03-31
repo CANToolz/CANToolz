@@ -87,7 +87,7 @@ class gen_ping(CANModule):
                                 x1 = 16 if sub.split("-")[0].strip()[0:2] == "0x" else 10
                                 x2 = 16 if sub.split("-")[1].strip()[0:2] == "0x" else 10
                                 sub = range(int(sub.split("-")[0], x1), int(sub.split("-")[1], x2))
-                            elif type(sub) != type(list): # https://github.com/eik00d/CANToolz/issues/93 by @DePierre
+                            elif type(sub) != type(list()): # https://github.com/eik00d/CANToolz/issues/93 by @DePierre
                                 sub = [None]
 
                             serv = service['service']
