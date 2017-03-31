@@ -247,7 +247,7 @@ class UserInterface:
                           help="load config from file")
         parser.add_option("--gui", "-g", action="store", dest="GUI", type="string",
                           help="GUI mode, c - console or w - web")
-
+        parser.add_option('--host', dest='HOST', type='string', help='host for the WEB server')
         parser.add_option("--port", "-p", action="store", dest="PORT", type="int",
                           help="port for WEB server")
 
@@ -257,6 +257,11 @@ class UserInterface:
             self.DEBUG = options.DEBUG
         else:
             self.DEBUG = 0
+
+        if options.HOST:
+            self.HOST = options.HOST
+        else:
+            self.HOST = '127.0.0.1'
 
         if options.PORT:
             self.PORT = options.PORT
@@ -282,18 +287,18 @@ class UserInterface:
             print((self.CANEngine.ascii_logo_c))
             self.console_loop()
         elif self.GUI[0] == "w":
-            self.web_loop(self.PORT)
+            self.web_loop(host=self.HOST, port=self.PORT)
         else:
             print("No such GUI...")
 
     def loop_exit(self):
         exit()
 
-    def web_loop(self, port =  4444):
+    def web_loop(self, host='127.0.0.1', port=4444):
         print((self.CANEngine.ascii_logo_c))
         WebConsole.can_engine = self.CANEngine
-        server = ThreadingSimpleServer(('', port), WebConsole)
-        print(("CANtoolz WEB started at port: ", port))
+        server = ThreadingSimpleServer((host, port), WebConsole)
+        print('CANtoolz WEB started and bound to: http://{0}:{1}'.format(host, port))
         print("\tTo exit CTRL-C...")
         try:
             sys.stdout.flush()
