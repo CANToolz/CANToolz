@@ -28,6 +28,7 @@ CANToolz can work with CAN network by using next hardware:
 
 1. [USBtin](http://www.fischl.de/usbtin/)
 2. [CANBus Triple](https://canb.us/)
+3. [Seeed CAN-BUS Shield 1.2](https://www.seeedstudio.com/CAN-BUS-Shield-V1.2-p-2256.html)
 
 
 ## Dependencies
