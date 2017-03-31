@@ -1,4 +1,5 @@
 import struct
+import binascii
 import bitstring
 from cantoolz.module import CANModule
 
@@ -59,6 +60,15 @@ class CANMessage:
     def frame_raw_data(self):
         return bytes(self.frame_data)
 
+    def to_hex(self):
+        """CAN frame in HEX format ready to be sent (include ID, length and data)"""
+        if not self.frame_ext:
+            id = binascii.hexlify(struct.pack('!H', self.frame_id))[1:].zfill(3)
+        else:
+            id = binascii.hexlify(struct.pack('!I', self.frame_id)).zfill(8)
+        length = binascii.hexlify(struct.pack('!B', self.frame_length))[1:].zfill(1)
+        data = binascii.hexlify(bytes(self.frame_data)).zfill(self.frame_length * 2)
+        return id + length + data
 
     @classmethod
     def init_data(self, fid, length, data):  # Init
