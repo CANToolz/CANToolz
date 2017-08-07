@@ -109,7 +109,7 @@ With best regards:
 Alexey Sintsov   (@asintsov)
 alex.sintsov@gmail.com
 
-[DC#7812: DEFCON-RUSSIA](http://defcon-russia.ru)
+
 
 
 
