@@ -1,3 +1,6 @@
+### Maintainer
+* Tao Sauvage
+
 ### Developers and code contributors
 * Alexey Sintsov
 * Sergey Kononenko 
