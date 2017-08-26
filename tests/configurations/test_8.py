@@ -2,7 +2,7 @@ load_modules = {
     'hw_USBtin':    {'port':'loop', 'debug':1, 'speed':500},  # IO hardware module
 
     'gen_ping':   {'debug': 1},
-    'gen_replay'   : {'load_from': 'tests/test_responses2.save'}, # Module for sniff and replay
+    'gen_replay'   : {'load_from': 'tests/data/test_responses2.save'}, # Module for sniff and replay
     'mod_stat':    {}                                         # Stats
 }
 

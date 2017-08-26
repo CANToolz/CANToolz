@@ -2,8 +2,8 @@ import collections
 #  Load modules
 load_modules = collections.OrderedDict()
 
-load_modules['gen_replay']  = {'load_from': 'tests/replay.save','debug':2,'bus':'allowed'}
-load_modules['gen_replay~2'] = {'load_from': 'tests/replay.save','debug':2,'bus':'allowed'}
+load_modules['gen_replay']  = {'load_from': 'tests/data/replay.save','debug':2,'bus':'allowed'}
+load_modules['gen_replay~2'] = {'load_from': 'tests/data/replay.save','debug':2,'bus':'allowed'}
 load_modules['mod_stat'] =  {'debug': 2}
 load_modules['mod_stat~1'] =    {'debug': 2}
 load_modules['mod_firewall'] =      {'debug': 2}

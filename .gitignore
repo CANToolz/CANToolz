@@ -1,28 +1,66 @@
-.idea/workspace.xml
-.idea/vcs.xml
-.idea/.name
-.idea/misc.xml
-.idea/CANSploit.iml
-.idea/inspectionProfiles/Project_Default.xml
-.idea/inspectionProfiles/profiles_settings.xml
-.idea/encodings.xml
-.idea/modules.xml
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+env/
+bin/
 build/
-.git/
-*.pyc
-*.py.bak
-cantoolz/modules/emu_honda_civic_4d_2012.py
-cantoolz/modules/honda_civic_4d_2012.py
-tests/meta.txt
-CANToolz.egg-info
-dist
-examples/MIDI_to_CAN_example/CANToolz_config/track.mp3
-examples/can_phdays_bmw.py
-/LOCK_ACTION.dump.txt
-/NOISE.dump.txt
-act_lock
-shum_short1
-/cantoolz/modules/mod_stat - Copy.py
-dumps
-bh_dumps
-.idea
+develop-eggs/
+dist/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+
+# Translations
+*.mo
+
+# Mr Developer
+.mr.developer.cfg
+.project
+.pydevproject
+
+# Rope
+.ropeproject
+
+# Django stuff:
+*.log
+*.pot
+
+# Sphinx documentation
+docs/_build/
+
+# ctags
+tags
+
+# Virtualenv folders
+venv/
+venv2/
+
+# IDEA
+.idea/
+
+# Misc/unit tests
+tests/data/*
