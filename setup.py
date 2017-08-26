@@ -1,32 +1,24 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+__author__ = 'Alexey Sintsov'
+
 from setuptools import setup
-import pip
-import sys
-
-if len(sys.argv) >= 2 and sys.argv[1] == 'install':
-    #pip.main(['install', 'neurolab'])
-    pip.main(['install', 'pyserial'])
-    pip.main(['install', 'numpy'])
-    pip.main(['install', 'mido'])
-    #pip.main(['install', 'scipy'])
-    #pip.main(['install', 'pybrain'])
-    pip.main(['install', 'bitstring'])
-
 
 setup(
     name='CANToolz',
     version='3.6.0',
+    description='Framework for black-box Controller Area Network (CAN) bus analysis.',
     author='Alexey Sintsov',
+    author_email='alex.sintsov@gmail.com',
+    license='Apache 2.0',
+    keywords='framework black-box CAN analysis security',
+    packages=['cantoolz', 'cantoolz.stream', 'cantoolz.utils', 'cantoolz.modules'],
+    url='https://github.com/CANToolz/CANToolz',
     install_requires=[
         'pyserial',
         'mido',
-        'numpy','bitstring'
+        'numpy',
+        'bitstring'
     ],
-    author_email='alex.sintsov@gmail.com',
-    packages=['cantoolz', 'cantoolz.stream', 'cantoolz.utils', 'cantoolz.modules'],
-    scripts=[],
-    url='https://github.com/eik00d/CANToolz',
-    license='Apache 2.0',
-    description='Framework and library for black-box analysis and reverse engineering of Controller Area Network (CAN)'
-
-
 )

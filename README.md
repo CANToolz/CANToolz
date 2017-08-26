@@ -44,19 +44,9 @@ CANToolz supports the following hardware to communicate with CAN bus:
 
 More hardware could be supported. Feel free to [open a request](https://github.com/CANToolz/CANToolz/issues).
 
-## Dependencies
-
-    python 3.4
-      pip install pyserial
-      pip install numpy
-      pip install bitstring
-
-    for MIDI_to_CAN
-      pip install mido
-
 ## Install
 
-Using manual installation:
+Using manual installation (installing missing dependencies as well):
 
 ```bash
 python setup.py install
