@@ -22,11 +22,9 @@ The framework is really module-oriented, where one could use one, two, a couple 
 to create more sophisticated simulation scenarios to work with CAN bus.
 
 > "I don't get why everyone releases new "car hacking tools" all the time. @nudehaberdasher and I released ours in 2013
-> and they work fine."
-> - (c) Charlie Miller (@0xcharlie)
+> and they work fine." - (c) Charlie Miller (@0xcharlie)
 
-> "Looking for our car hacking tools / data / scripts? http://illmatics.com/content.zip"
-> - (c) Chris Valasek @nudehaberdasher
+> "Looking for our car hacking tools / data / scripts? http://illmatics.com/content.zip" - (c) Chris Valasek @nudehaberdasher
 
 More details and use-case examples available on:
 
@@ -58,15 +56,15 @@ More hardware could be supported. Feel free to [open a request](https://github.c
 
 Using manual installation:
 
-    ```bash
-    python setup.py install
-    ```
+```bash
+python setup.py install
+```
 
 Once the installation is completed, quick start with:
 
-    ```bash
-    python cantoolz.py -g w -c examples/can_sniff.py
-    ```
+```bash
+python cantoolz.py -g w -c examples/can_sniff.py
+```
 
 Then go to CANToolz's web interface at http://localhost:4444
 
