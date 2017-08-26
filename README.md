@@ -1,6 +1,8 @@
 # CANToolz
 ### a.k.a. YACHT (Yet Another Car Hacking Tool)
 
+[![Build Status](https://travis-ci.org/CANToolz/CANToolz.svg?branch=master)](https://travis-ci.org/CANToolz/CANToolz)
+
 CANToolz is a framework for analysing CAN networks and devices. It provides multiple modules that can be chained using
 CANToolz's `pipe` system and used by security researchers, automotive/OEM security testers in black-box analysis.
 
