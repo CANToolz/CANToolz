@@ -15,12 +15,13 @@ Just want to have a good tool and people around.
 
 Another thing: this is module based engine, so you can use it as part of your testing processes or include into more difficult scenarios/software where you need to work with CAN bus.
 
-"I don't get why everyone releases new "car hacking tools" all the time.  @nudehaberdasher and I released ours in 2013 and they work fine." (c) Charlie Miller (‏@0xcharlie)
+"I don't get why everyone releases new "car hacking tools" all the time.  @nudehaberdasher and I released ours in 2013 and they work fine." (c) Charlie Miller (@0xcharlie)
 
-"Looking for our car hacking tools / data / scripts? http://illmatics.com/content.zip " (c) Chris Valasek ‏@nudehaberdasher
+"Looking for our car hacking tools / data / scripts? http://illmatics.com/content.zip " (c) Chris Valasek @nudehaberdasher
 
-More details and use-case published in the [blog](http://asintsov.blogspot.de/)
-See wiki (currently in dev.): [WIKI](https://github.com/eik00d/CANToolz/wiki)
+More details and use-case published in the [blog](http://asintsov.blogspot.de/) and [Telegram group](https://t.me/CANToolz).
+See wiki (currently in dev.): [WIKI](https://github.com/CANToolz/CANToolz/wiki).
+
 
 ## Using a Hardware
 
