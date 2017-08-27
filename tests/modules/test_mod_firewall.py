@@ -82,7 +82,7 @@ class TestModFirewall(unittest.TestCase):
         self.assertTrue(len(mod) == 0, "We should NOT find message in PIPE")
         self.CANEngine._enabledList[index][1].CANList = []
 
-    def test_blockedID(self):
+    def test_blocked_id(self):
         self.CANEngine = CANSploit()
         self.CANEngine.load_config('tests/configurations/conf_mod_stat.py')
         self.CANEngine.edit_module(2, {'pipe': 2, 'black_list': [1, 2, 3, 6, 5]})

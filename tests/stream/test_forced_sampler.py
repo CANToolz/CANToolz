@@ -3,7 +3,7 @@ import unittest
 from cantoolz.stream.forced_sampler import ForcedSampler
 
 
-class ForcedSamplerTest(unittest.TestCase):
+class TestForcedSampler(unittest.TestCase):
 
     def testProcess(self):
         sampler = ForcedSampler(1, lambda x: x)
