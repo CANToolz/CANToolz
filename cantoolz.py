@@ -34,6 +34,7 @@
 ######################################################
 """
 
+import os
 import re
 import sys
 import ast
@@ -207,37 +208,43 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
                     resp_code = 500
                     body = "{ \"error\": " + json.dumps(str(e)) + "}"
                     traceback.print_exc()
-
         else:  # Static content request
             if self.path == "/":
                 self.path = "/index.html"
 
-            content = self.root + self.path
-            try:
-                with open(content, "rb") as ins:
-                    for line in ins:
-                        body += line.decode("ISO-8859-1")
-
-                ext = self.path.split(".")[-1]
-
-                if ext == 'html':
-                    cont_type = 'text/html'
-                elif ext == 'js':
-                    cont_type = 'text/javascript'
-                elif ext == 'css':
-                    cont_type = 'text/css'
-                elif ext == 'png':
-                    cont_type = 'image/png'
-                else:
-                    cont_type = 'text/plain'
-
-                resp_code = 200
-
-            except Exception as e:  # Error... almost not found, but can be other...
-                # 404 not right then, but who cares?
-                resp_code = 404
+            path = self.root + self.path
+            norm_path = os.path.normpath(path)
+            if norm_path != path:  # LFI prevention (See: https://github.com/CANToolz/CANToolz/issues/12)
+                resp_code = 500
                 cont_type = 'text/plain'
-                body = str(e)
+                body = 'Invalid path.'
+            else:
+                content = path
+                try:
+                    with open(content, "rb") as ins:
+                        for line in ins:
+                            body += line.decode("ISO-8859-1")
+
+                    ext = self.path.split(".")[-1]
+
+                    if ext == 'html':
+                        cont_type = 'text/html'
+                    elif ext == 'js':
+                        cont_type = 'text/javascript'
+                    elif ext == 'css':
+                        cont_type = 'text/css'
+                    elif ext == 'png':
+                        cont_type = 'image/png'
+                    else:
+                        cont_type = 'text/plain'
+
+                    resp_code = 200
+
+                except Exception as e:  # Error... almost not found, but can be other...
+                    # 404 not right then, but who cares?
+                    resp_code = 404
+                    cont_type = 'text/plain'
+                    body = str(e)
 
         self.send_response(resp_code)
         self.send_header('X-Clacks-Overhead', 'GNU Terry Pratchett')
