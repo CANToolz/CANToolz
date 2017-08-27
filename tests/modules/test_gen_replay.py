@@ -205,3 +205,51 @@ class TestGenReplay(unittest.TestCase):
         self.assertTrue(0 <= ret.find("ID: 0x701 Service: 0x2f Sub: 0x3 (Input Output Control By Identifier)"), "Text should be found in response")
         self.assertTrue(0 <= ret.find("ID: 0x6ff Service: 0x1 Sub: 0xd (Req Current Powertrain)"), "Text should be found in response")
 
+    def test_replay_timestamp(self):
+        self.CANEngine = CANSploit()
+        self.CANEngine.load_config('tests/configurations/conf_gen_replay_timestamp.py')
+        self.CANEngine.start_loop()
+        time.sleep(1)
+        # Get number of loaded CAN packets from gen_replay.
+        num = self.CANEngine.call_module(0, 'p')
+        self.assertTrue(0 <= num.find("Loaded packets: 11"), "Should be 11 packets")
+        time1 = time.clock()
+        # Replay loaded CAN packets with gen_replay.
+        self.CANEngine.call_module(0, 'r')
+        while self.CANEngine._enabledList[0][1]._status < 100.0:
+            continue
+        # Print table of CAN messages sniffed by mod_stat.
+        ret = self.CANEngine.call_module(1, 'p')
+        print(ret)
+        time2 = time.clock()
+        print("TIME: " + str(time2 - time1))
+        # Get current status of mod_stat
+        st = self.CANEngine.call_module(1, 'S')
+        print(st)
+        self.assertTrue(0 <= st.find("Sniffed frames (overall): 11"), "Should be 11 packets")
+        # Dump CAN packets sniffed by mod_stat to file.
+        self.CANEngine.call_module(1, 'r tests/data/format.dump')
+        self.assertTrue(13.99 < time2 - time1 < 15.99, "Should be around 14 seconds")
+
+    def test_replay_timestamp2(self):
+        self.CANEngine = CANSploit()
+        self.CANEngine.load_config('tests/configurations/conf_gen_replay_timestamp2.py')
+        self.CANEngine.start_loop()
+        time.sleep(1)
+        # Get number of loaded CAN packets from gen_replay.
+        num = self.CANEngine.call_module(0, 'p')
+        self.assertTrue(0 <= num.find("Loaded packets: 11"), "Should be 11 packets")
+        time1 = time.clock()
+        # Replay loaded CAN packets with gen_replay.
+        self.CANEngine.call_module(0, 'r')
+        while self.CANEngine._enabledList[0][1]._status < 100.0:
+            continue
+        # Print table of CAN messages sniffed by mod_stat.
+        ret = self.CANEngine.call_module(1, 'p')
+        print(ret)
+        time2 = time.clock()
+        print("TIME: " + str(time2 - time1))
+        self.assertTrue(13.99 < time2 - time1 < 15.99, "Should be around 14 seconds")
+        # Get current status of mod_stat
+        st = self.CANEngine.call_module(1, 'S')
+        self.assertTrue(0 <= st.find("Sniffed frames (overall): 11"), "Should be 11 packets")
