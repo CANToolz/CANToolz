@@ -253,3 +253,26 @@ class TestGenReplay(unittest.TestCase):
         # Get current status of mod_stat
         st = self.CANEngine.call_module(1, 'S')
         self.assertTrue(0 <= st.find("Sniffed frames (overall): 11"), "Should be 11 packets")
+
+    def test_replay_meta_add(self):
+        self.CANEngine = CANSploit()
+        self.CANEngine.load_config("tests/configurations/conf_gen_replay_uds.py")
+        self.CANEngine.start_loop()
+        time.sleep(1)
+        # Load file to gen_replay buffer.
+        self.CANEngine.call_module(0, 'l tests/data/replay.save')
+        # Replay loaded frames from gen_replay.
+        self.CANEngine.call_module(0, 'r 0-21')
+        time.sleep(2)
+        mod_stat = 1
+        # Analyse UDS traffic with mod_stat.
+        ret = self.CANEngine.call_module(mod_stat, 'a')
+        print(ret)
+
+        idx2 = ret.find("ID 0x7a6b and length 28")
+        idx3 = ret.find("ID 0x7a6a and length 14")
+        idx = ret.find("ID 0x7a6c and length 6")
+
+        self.assertTrue(0 <= idx2, "Comment 'ID 31339' should be found ")
+        self.assertTrue(0 <= idx3, "Comment 'ID 31338' should  be found ")
+        self.assertFalse(0 <= idx, "Comment 'ID 31338' should NOT be found 3 times")
