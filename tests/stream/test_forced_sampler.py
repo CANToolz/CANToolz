@@ -5,7 +5,7 @@ from cantoolz.stream.forced_sampler import ForcedSampler
 
 class TestForcedSampler(unittest.TestCase):
 
-    def testProcess(self):
+    def test_process(self):
         sampler = ForcedSampler(1, lambda x: x)
 
         effects_count = 0
@@ -32,7 +32,7 @@ class TestForcedSampler(unittest.TestCase):
 
         self.assertEqual(effects_count, 4)
 
-    def testBind(self):
+    def test_bind(self):
         sampler = ForcedSampler(2, lambda x, y: (x, y))
 
         list(sampler('2'))
