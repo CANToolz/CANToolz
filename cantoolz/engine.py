@@ -1,5 +1,8 @@
+import os
 import sys
+import imp
 import time
+import logging
 import threading
 
 # from cantoolz.can import *
@@ -190,14 +193,36 @@ class CANSploit:
         # Load and init new module form lib
 
     def init_module(self, mod, params):
-        namespace = {}
-        self._modules.append(__import__("cantoolz.modules." + mod.split("~")[0], globals(), locals(), [mod.split("~")[0]]))
-        namespace['mod'] = self._modules[-1]
-        namespace['params'] = params
-        exec('cls = mod.' + mod.split("~")[0] + '(params)', namespace)  # init module
-        self._type[mod] = namespace['cls']
+        """Dynamically initialize a module.
 
-        # Load all modules and params form config file
+        Dynamically find and load the module from `modules/`. If the module is not found under `modules/z, then it
+        recursively looks inside the subdirectories under `modules/`.
+
+        .. note::
+
+            The module must contain a class with the same name as the module itself. For instance, module `my_Module`
+            must contain a class named `my_Module`
+
+        :param str mod: Name of the module to dynamically load.
+        :param list params: Parameters to pass to the module class when instanciating the module class.
+
+        """
+        mod_name = mod.split('~')[0]
+        try:
+            loaded_module = imp.load_module(mod_name, *imp.find_module(mod_name, path=['cantoolz/modules']))
+        except ImportError:
+            for subdir in os.listdir('cantoolz/modules'):
+                if os.path.isdir(os.path.join(os.path.abspath('cantoolz/modules'), subdir)):
+                    try:
+                        loaded_module = imp.load_module(mod_name, *imp.find_module(mod_name, path=['cantoolz/modules/{}'.format(subdir)]))
+                        logging.info('Loaded {} from subdirectory {}'.format(mod_name, subdir))
+                        break
+                    except ImportError:
+                        continue
+            else:  # No module found anywhere under modules/*
+                logging.error('Could not find {}, even in subdirectories...'.format(mod_name))
+        # Dynamically instanciate the module class.
+        self._type[mod] = getattr(loaded_module, mod_name)(params)
 
     def load_config(self, fullpath):  # Load config from file
         fullpath = fullpath.replace('\\', '/')
