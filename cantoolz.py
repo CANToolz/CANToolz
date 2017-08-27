@@ -1,13 +1,14 @@
-from optparse import OptionParser
-from cantoolz.engine import *
-import collections
 import re
-import http.server
-import socketserver
-import http.server
-import json
 import ast
+import json
 import traceback
+import http.server
+import collections
+import socketserver
+
+from argparse import ArgumentParser
+
+from cantoolz.engine import *
 
 ######################################################
 #                                                    # 
@@ -244,19 +245,18 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
 # Console calss
 class UserInterface:
     def __init__(self):
-        usage = "%prog [options] for more help: %prog -h"
-        parser = OptionParser(usage)
+        parser = ArgumentParser(usage='%(prog)s [options]')
 
-        parser.add_option("--debug", "-d", action="store", dest="DEBUG", type="int", help="Debug level")
-        parser.add_option("--config", "-c", action="store", dest="CONFIG", type="string",
-                          help="load config from file")
-        parser.add_option("--gui", "-g", action="store", dest="GUI", type="string",
-                          help="GUI mode, c - console or w - web")
-        parser.add_option('--host', dest='HOST', type='string', help='host for the WEB server')
-        parser.add_option("--port", "-p", action="store", dest="PORT", type="int",
-                          help="port for WEB server")
+        parser.add_argument('--debug', '-d', action='store', dest='DEBUG', type=int, help='Debug level')
+        parser.add_argument('--config', '-c', action='store', dest='CONFIG', type=str,
+                            help='Load config from file')
+        parser.add_argument('--gui', '-g', action='store', dest='GUI', type=str,
+                            help='GUI mode, c - console or w - web')
+        parser.add_argument('--host', dest='HOST', type=str, help='Host for the web interface')
+        parser.add_argument('--port', '-p', action='store', dest='PORT', type=int,
+                            help='Port for web interface')
 
-        [options, args] = parser.parse_args()  # TODO need args?
+        options = parser.parse_args()
 
         if options.DEBUG:
             self.DEBUG = options.DEBUG
