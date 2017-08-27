@@ -87,4 +87,3 @@ class TestGenPing(unittest.TestCase):
             "24a1a2a3a4a5a6a7" == (codecs.encode((list(_bodyList[543001].keys())[4][1]), 'hex_codec')).decode("ISO-8859-1"),
             "Last packet of sec should be like that"
         )
-
