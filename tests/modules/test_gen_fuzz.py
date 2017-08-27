@@ -1,18 +1,11 @@
 import time
-import unittest
 
-from cantoolz.engine import CANSploit
+from ..utils import TestCANToolz
 
 
-class TestGenFuzz(unittest.TestCase):
-
-    def tearDown(self):
-        self.CANEngine.stop_loop()
-        self.CANEngine = None
-        print("stopped")
+class TestGenFuzz(TestCANToolz):
 
     def test_fuzz_can(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config("tests/configurations/conf_gen_fuzz.py")
         self.CANEngine.edit_module(0, {'id': [111], 'data': [0, 1], 'bytes': (0, 4), 'delay': 0})
         self.CANEngine.start_loop()
@@ -28,7 +21,6 @@ class TestGenFuzz(unittest.TestCase):
         self.assertTrue(16 == len(_bodyList[111]), "16 unique packets should be sent")
 
     def test_fuzz_iso(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config("tests/configurations/conf_gen_fuzz.py")
         self.CANEngine.edit_module(
             0,

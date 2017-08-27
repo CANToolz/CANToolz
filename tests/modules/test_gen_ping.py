@@ -1,17 +1,12 @@
 import time
 import codecs
-import unittest
 
-from cantoolz.engine import CANSploit
+from ..utils import TestCANToolz
 
 
-class TestGenPing(unittest.TestCase):
-
-    def tearDown(self):
-        self.CANEngine.stop_loop()
+class TestGenPing(TestCANToolz):
 
     def test_iso_anal(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config("tests/configurations/conf_gen_ping.py")
         self.CANEngine.edit_module(0, {
             'pipe': 2,
@@ -41,7 +36,6 @@ class TestGenPing(unittest.TestCase):
         self.assertFalse(ret.find("ID: 0x8491a") > 0, "Should not be found 543002")
 
     def test_empty_config(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config("tests/configurations/conf_gen_ping.py")
         self.CANEngine.edit_module(0, {
             'pipe': 2,
@@ -57,7 +51,6 @@ class TestGenPing(unittest.TestCase):
         self.assertTrue(len(_bodyList) == 0, "Should be empty list")
 
     def test_ping(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config("tests/configurations/conf_gen_ping.py")
         self.CANEngine.edit_module(0, {
             'pipe': 2,
@@ -89,7 +82,6 @@ class TestGenPing(unittest.TestCase):
         )
 
     def test_ping_uds(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config('tests/configurations/conf_gen_replay_uds.py')
         self.CANEngine.edit_module(
             2,
@@ -124,7 +116,6 @@ class TestGenPing(unittest.TestCase):
 
     # https://github.com/eik00d/CANToolz/issues/93 by @DePierre
     def test_ping_uds_none_crash(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config('tests/configurations/conf_gen_replay_uds.py')
         self.CANEngine.edit_module(
             2,

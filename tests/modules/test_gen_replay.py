@@ -1,18 +1,11 @@
 import time
-import unittest
 
-from cantoolz.engine import CANSploit
+from ..utils import TestCANToolz
 
 
-class TestGenReplay(unittest.TestCase):
-
-    def tearDown(self):
-        self.CANEngine.stop_loop()
-        self.CANEngine = None
-        print("stopped")
+class TestGenReplay(TestCANToolz):
 
     def test_replay(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config("tests/configurations/conf_gen_replay.py")
         self.CANEngine.start_loop()
         time.sleep(2)
@@ -65,7 +58,6 @@ class TestGenReplay(unittest.TestCase):
         self.assertTrue(len(_bodyList) == 3, "Should be 3 groups found")
 
     def test_replay2(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config('tests/configurations/conf_gen_replay2.py')
         self.CANEngine.start_loop()
         # Get number of loaded packets by gen_replay.
@@ -107,7 +99,6 @@ class TestGenReplay(unittest.TestCase):
         self.assertTrue(0 <= ret.find("Loaded packets: 2"), "Should be 2 packets")
 
     def test_replay_uds(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config('tests/configurations/conf_gen_replay_uds.py')
         self.CANEngine.start_loop()
         time.sleep(1)
@@ -159,7 +150,6 @@ class TestGenReplay(unittest.TestCase):
         self.assertTrue(0 <= ret.find("ID: 0x6ff Service: 0x1 Sub: 0xd (Req Current Powertrain)"), "Text should be found in response")
 
     def test_replay_uds_padding(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config('tests/configurations/conf_gen_replay_uds_padding.py')
         self.CANEngine.start_loop()
         time.sleep(1)
@@ -206,7 +196,6 @@ class TestGenReplay(unittest.TestCase):
         self.assertTrue(0 <= ret.find("ID: 0x6ff Service: 0x1 Sub: 0xd (Req Current Powertrain)"), "Text should be found in response")
 
     def test_replay_timestamp(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config('tests/configurations/conf_gen_replay_timestamp.py')
         self.CANEngine.start_loop()
         time.sleep(1)
@@ -232,7 +221,6 @@ class TestGenReplay(unittest.TestCase):
         self.assertTrue(13.99 < time2 - time1 < 15.99, "Should be around 14 seconds")
 
     def test_replay_timestamp2(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config('tests/configurations/conf_gen_replay_timestamp2.py')
         self.CANEngine.start_loop()
         time.sleep(1)
@@ -255,7 +243,6 @@ class TestGenReplay(unittest.TestCase):
         self.assertTrue(0 <= st.find("Sniffed frames (overall): 11"), "Should be 11 packets")
 
     def test_replay_meta_add(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config("tests/configurations/conf_gen_replay_uds.py")
         self.CANEngine.start_loop()
         time.sleep(1)

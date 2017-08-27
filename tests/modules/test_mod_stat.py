@@ -1,18 +1,11 @@
 import time
-import unittest
 
-from cantoolz.engine import CANSploit
+from ..utils import TestCANToolz
 
 
-class TestModStat(unittest.TestCase):
-
-    def tearDown(self):
-        self.CANEngine.stop_loop()
-        self.CANEngine = None
-        print('stopped')
+class TestModStat(TestCANToolz):
 
     def test_mod_stat(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config('tests/configurations/conf_mod_stat.py')
         self.CANEngine.edit_module(1, {'pipe': 2})
         time.sleep(1)
@@ -53,7 +46,6 @@ class TestModStat(unittest.TestCase):
         self.assertTrue(2 in _bodyList, "We should be able to find ID 2")
 
     def test_mod_stat_diff(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config('tests/configurations/conf_gen_replay_uds.py')
         self.CANEngine.start_loop()
         time.sleep(1)
@@ -147,7 +139,6 @@ class TestModStat(unittest.TestCase):
         self.assertFalse(0 <= ret.find("2246313039313439"), "Should not be empty diff")
 
     def test_mod_stat_fields(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config('tests/configurations/conf_gen_replay_uds.py')
         self.CANEngine.start_loop()
         time.sleep(1)
@@ -189,7 +180,6 @@ class TestModStat(unittest.TestCase):
         self.assertTrue(0 <= ret2.find("17895697    17895697"), "Should be found")
 
     def test_mod_stat_meta_add(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config('tests/configurations/conf_gen_replay_uds.py')
         self.CANEngine.start_loop()
         time.sleep(1)
@@ -216,7 +206,6 @@ class TestModStat(unittest.TestCase):
         self.assertFalse(0 <= ret.find("TEST 1801"), "Comment 'TEST 1801' should NOT be found 1 times")
 
     def test_mod_stat_meta_load(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config('tests/configurations/conf_gen_replay_uds.py')
         self.CANEngine.start_loop()
         time.sleep(1)

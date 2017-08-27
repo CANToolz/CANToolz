@@ -1,18 +1,11 @@
 import time
-import unittest
 
-from cantoolz.engine import CANSploit
+from ..utils import TestCANToolz
 
 
-class TestSimpleIO(unittest.TestCase):
-
-    def tearDown(self):
-        self.CANEngine.stop_loop()
-        self.CANEngine = None
-        print("stopped")
+class TestSimpleIO(TestCANToolz):
 
     def test_send_recieve(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config('tests/configurations/conf_simple_io.py')
         self.CANEngine.start_loop()
         mod_stat = self.CANEngine.find_module('mod_stat')

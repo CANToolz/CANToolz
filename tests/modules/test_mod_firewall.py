@@ -1,18 +1,11 @@
 import time
-import unittest
 
-from cantoolz.engine import CANSploit
+from ..utils import TestCANToolz
 
 
-class TestModFirewall(unittest.TestCase):
-
-    def tearDown(self):
-        self.CANEngine.stop_loop()
-        self.CANEngine = None
-        print("stopped")
+class TestModFirewall(TestCANToolz):
 
     def test_blocked_body_hex(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config('tests/configurations/conf_mod_stat.py')
         self.CANEngine.edit_module(2, {'pipe': 2, 'hex_black_body': ['0102030605']})
         self.CANEngine.start_loop()
@@ -48,7 +41,6 @@ class TestModFirewall(unittest.TestCase):
         self.CANEngine._enabledList[index][1].CANList = []
 
     def test_blocked_body(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config('tests/configurations/conf_mod_stat.py')
         self.CANEngine.edit_module(2, {'pipe': 2, 'black_body': [[1, 2, 3, 6, 5]]})
         self.CANEngine.start_loop()
@@ -83,7 +75,6 @@ class TestModFirewall(unittest.TestCase):
         self.CANEngine._enabledList[index][1].CANList = []
 
     def test_blocked_id(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config('tests/configurations/conf_mod_stat.py')
         self.CANEngine.edit_module(2, {'pipe': 2, 'black_list': [1, 2, 3, 6, 5]})
         self.CANEngine.start_loop()

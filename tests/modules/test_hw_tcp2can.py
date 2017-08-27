@@ -1,18 +1,11 @@
 import time
-import unittest
 
-from cantoolz.engine import CANSploit
+from ..utils import TestCANToolz
 
 
-class TCP2CAN(unittest.TestCase):
-
-    def tearDown(self):
-        self.CANEngine.stop_loop()
-        self.CANEngine = None
-        print("stopped")
+class TestTCP2CAN(TestCANToolz):
 
     def test_server(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config("tests/configurations/conf_hw_tcp2can.py")
         self.CANEngine.start_loop()
         time.sleep(1)

@@ -1,18 +1,11 @@
 import time
-import unittest
 
-from cantoolz.engine import CANSploit
+from ..utils import TestCANToolz
 
 
-class ModUsbTin(unittest.TestCase):
-
-    def tearDown(self):
-        self.CANEngine.stop_loop()
-        self.CANEngine = None
-        print("stopped")
+class TestUSBtin(TestCANToolz):
 
     def test_usbtin(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config("tests/configurations/conf_hw_usbtin.py")
         self.CANEngine.start_loop()
         time.sleep(1)

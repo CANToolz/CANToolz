@@ -1,18 +1,11 @@
 import time
-import unittest
 
-from cantoolz.engine import CANSploit
+from ..utils import TestCANToolz
 
 
-class TestCanControls(unittest.TestCase):
-
-    def tearDown(self):
-        self.CANEngine.stop_loop()
-        self.CANEngine = None
-        print('stopped')
+class TestCanControls(TestCANToolz):
 
     def test_ecu_commands_and_firewall(self):
-        self.CANEngine = CANSploit()
         self.CANEngine.load_config('tests/configurations/conf_can_controls.py')
         self.CANEngine.start_loop()
         time.sleep(1)
