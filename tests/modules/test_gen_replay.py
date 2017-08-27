@@ -11,6 +11,101 @@ class TestGenReplay(unittest.TestCase):
         self.CANEngine = None
         print("stopped")
 
+    def test_replay(self):
+        self.CANEngine = CANSploit()
+        self.CANEngine.load_config("tests/configurations/conf_gen_replay.py")
+        self.CANEngine.start_loop()
+        time.sleep(2)
+        # Disable mod_stat module.
+        self.CANEngine.call_module(2, 's')
+        # Get number of loaded packets by gen_replay.
+        num = self.CANEngine.call_module(1, 'p')
+        self.assertTrue(0 <= num.find("Loaded packets: 0"), "Should be 0 packets")
+        time.sleep(3)
+        # Enable sniffing for gen_replay to capture new packets.
+        self.CANEngine.call_module(1, 'g')
+        # Generate a few packets on the bus.
+        self.CANEngine.call_module(0, 't 4:8:1122334411111111')
+        time.sleep(1)
+        self.CANEngine.call_module(0, 't 4:8:1122334411111111')
+        time.sleep(1)
+        self.CANEngine.call_module(0, 't 666:8:1122334411111111')
+        time.sleep(1)
+        self.CANEngine.call_module(0, 't 5:8:1122334411111111')
+        time.sleep(3)
+        # Get number of loaded packets by gen_replay.
+        num = self.CANEngine.call_module(1, 'p')
+        self.assertTrue(0 <= num.find("Loaded packets: 4"), "Should be 4 packets")
+
+        # Enable sniffing for gen_replay to capture new packets.
+        self.CANEngine.call_module(1, 'g')
+        # Save range of capture packets.
+        ret = self.CANEngine.call_module(1, 'd 0-4')
+        time.sleep(1)
+        print(ret)
+        # Enable mod_stat module.
+        self.CANEngine.call_module(2, 's')
+        time.sleep(1)
+        # Replay a range of CAN messages.
+        self.CANEngine.call_module(1, 'r 0-4')
+        time.sleep(5)
+        # Clear gen_replay table.
+        self.CANEngine.call_module(1, 'c')
+        time.sleep(1)
+        # Print count of loaded packets.
+        num = self.CANEngine.call_module(1, 'p')
+        time.sleep(1)
+        self.assertTrue(0 <= num.find("Loaded packets: 0"), "Should be 0 packets")
+        index = 2
+        # Get table of CAN messages sniffed by mod_stats
+        ret = self.CANEngine.call_module(2, 'p')
+        _bodyList = self.CANEngine._enabledList[index][1]._bodyList
+        print(ret)
+        time.sleep(1)
+        self.assertTrue(len(_bodyList) == 3, "Should be 3 groups found")
+
+    def test_replay2(self):
+        self.CANEngine = CANSploit()
+        self.CANEngine.load_config('tests/configurations/conf_gen_replay2.py')
+        self.CANEngine.start_loop()
+        # Get number of loaded packets by gen_replay.
+        num = self.CANEngine.call_module(1, 'p')
+        time.sleep(1)
+        self.assertTrue(0 <= num.find("Loaded packets: 4"), "Should be 4 packets")
+        index = 2
+        # Get table of CAN messages sniffed by mod_stats
+        self.CANEngine.call_module(2, 'p')
+        _bodyList = self.CANEngine._enabledList[index][1]._bodyList
+        self.assertTrue(len(_bodyList) == 0, "Should be 0 packets sent")
+        # Replay a range of CAN messages.
+        self.CANEngine.call_module(1, 'r 2-4')
+        time.sleep(3)
+        # Get table of CAN messages sniffed by mod_stats
+        ret = self.CANEngine.call_module(2, 'p')
+        print(ret)
+        _bodyList = self.CANEngine._enabledList[index][1]._bodyList
+
+        self.assertTrue(2 == len(_bodyList), "Should be 2 packets sent")
+        self.assertTrue(666 in _bodyList, "ID 666 should be dound")
+        self.assertTrue(5 in _bodyList, "ID 5 should be found")
+        self.assertFalse(4 in _bodyList, "ID 4 should not be found ")
+        # Dump mod_stat buffer to file.
+        self.CANEngine.call_module(2, 'r tests/data/new.save')
+        # Load file to gen_replay buffer.
+        self.CANEngine.call_module(1, 'l tests/data/new.save')
+        # Get number of loaded packets by gen_replay.
+        ret = self.CANEngine.call_module(1, 'p')
+        print(ret)
+        self.assertTrue(0 <= ret.find("Loaded packets: 6"), "Should be 26 packets")
+        # Clear gen_replay table.
+        self.CANEngine.call_module(1, 'c')
+        # Load file to gen_replay buffer.
+        self.CANEngine.call_module(1, 'l tests/data/new.save')
+        # Get number of loaded packets by gen_replay.
+        ret = self.CANEngine.call_module(1, 'p')
+        print(ret)
+        self.assertTrue(0 <= ret.find("Loaded packets: 2"), "Should be 2 packets")
+
     def test_replay_uds(self):
         self.CANEngine = CANSploit()
         self.CANEngine.load_config('tests/configurations/conf_gen_replay_uds.py')
