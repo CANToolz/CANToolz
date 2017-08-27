@@ -1,5 +1,5 @@
 # Load needed modules
-load_modules = {
+modules = {
     'hw_USBtin':    {'port':'loop', 'debug':1, 'speed':500},                # IO hardware module connected to first BUS (IVI)
     'hw_USBtin~2':  {'port':'loop', 'debug':1, 'speed':500, 'bus': 62 },    # IO hardware module (connected to OBD2)
     'gen_ping' :    {},                                                     # Generator/Ping

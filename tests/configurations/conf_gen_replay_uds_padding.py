@@ -1,5 +1,5 @@
 # Test scenario/configuration
-load_modules = {
+modules = {
     'hw_USBtin': {'port': 'loop', 'debug': 1, 'speed': 500},
     'gen_ping': {'debug': 1},
     'gen_replay': {'load_from': 'tests/data/test_responses2.save'},

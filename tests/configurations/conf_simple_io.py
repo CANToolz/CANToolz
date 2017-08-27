@@ -1,5 +1,5 @@
 # Test scenario/configuration
-load_modules = {
+modules = {
     'hw_USBtin': {'port': 'loop', 'debug': 2, 'speed': 500},
     'simple_io': {'bus': 'TEST_1'},
     'mod_firewall': {},

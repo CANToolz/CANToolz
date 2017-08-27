@@ -1,5 +1,5 @@
 # Test scenario/configuration
-load_modules = {
+modules = {
     'hw_fakeIO': {'debug': 2, 'bus': 31},
     'hw_fakeIO~1': {'debug': 2, 'bus': 32},
     'mod_firewall': {'debug': 2},

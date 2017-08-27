@@ -1,5 +1,5 @@
 # Test scenario/configuration
-load_modules = {
+modules = {
     'gen_fuzz': {},
     'pipe_switch': {},
     'mod_stat': {}}

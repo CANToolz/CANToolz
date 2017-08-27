@@ -235,7 +235,12 @@ class CANSploit:
         mod = parts[-1].split(".")[0]
 
         config = __import__(mod)
-        for module, init_params in config.load_modules.items():
+        if hasattr(config, 'modules'):
+            modules = config.modules.items()
+        elif hasattr(config, 'load_modules'):
+            logging.warning('The configuration `load_modules` has been deprecated in favor of `modules`.')
+            modules = config.load_modules.items()
+        for module, init_params in modules:
             self.init_module(module, init_params)
 
         for action in config.actions:

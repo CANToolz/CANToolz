@@ -1,5 +1,5 @@
 # Test scenario/configuration
-load_modules = {
+modules = {
     'hw_fakeIO': {'bus': 31},
     'gen_replay': {'debug': 2, 'save_to': 'tests/data/dump.save'},
     'mod_stat': {'debug': 2}}

@@ -4,7 +4,7 @@
 #
 
 # Load needed modules
-load_modules = {
+modules = {
     'hw_USBtin':    {'port': 'auto', 'debug': 1, 'speed': 500},                # IO hardware module
     'gen_ping' :    {},                                                     # Generator/Ping
     'mod_stat':     {}                                                      # Mod stat to see results

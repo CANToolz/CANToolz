@@ -1,5 +1,5 @@
 # Test scenario/configuration
-load_modules = {
+modules = {
     'hw_fakeIO': {'bus': 31},
     'gen_ping': {'debug': 2, 'bus': 32},
     'gen_ping~1': {'debug': 2},

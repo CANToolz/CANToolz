@@ -1,4 +1,4 @@
-load_modules = {
+modules = {
     ########### Attacker
 
     'uds_engine_auth_baypass': {

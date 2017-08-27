@@ -1,5 +1,5 @@
 
-load_modules = {
+modules = {
     'hw_CANBusTriple':    {
         'port':'auto',
         'debug': 2,

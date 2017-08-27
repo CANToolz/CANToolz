@@ -1,4 +1,4 @@
-load_modules = {
+modules = {
     'hw_USBtin':    {'port':'auto', 'debug':2, 'speed':500},  # IO hardware module
 
     'ecu_controls':

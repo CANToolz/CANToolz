@@ -1,5 +1,5 @@
 
-load_modules = {
+modules = {
     'hw_TCP2CAN':    {'port': 1111, 'mode': 'client', 'address':'127.0.0.1', 'debug':3},                # IO hardware module
     'hw_USBtin':    {'port':'auto', 'debug':1, 'speed':500},
     'mod_stat':    {}

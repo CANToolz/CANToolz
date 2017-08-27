@@ -1,4 +1,4 @@
-load_modules = {
+modules = {
     'hw_USBtin':    {'port':'auto', 'speed':500},  # IO hardware module                           # Module for sniff and replay
     'mod_stat':    {"bus":'mod_stat','debug':2},'mod_stat~2':    {"bus":'mod_stat'},
     'mod_firewall': {}, 'mod_fuzz1':{'debug':2},

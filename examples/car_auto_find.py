@@ -1,5 +1,5 @@
 
-load_modules = {
+modules = {
     'hw_TCP2CAN':    {'port': 1112, 'mode': 'client', 'address':'127.0.0.1', 'debug':3},                # IO hardware module
     'mod_firewall':    {},
     'mod_stat':    {'bus':'statcheck'}
