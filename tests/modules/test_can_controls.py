@@ -4,7 +4,7 @@ import unittest
 from cantoolz.engine import CANSploit
 
 
-class EcuControl(unittest.TestCase):
+class TestCanControls(unittest.TestCase):
 
     def tearDown(self):
         self.CANEngine.stop_loop()
