@@ -1,3 +1,9 @@
+## Version 3.6.1
+
+### FIX
+
+- *Security* Fix Local File Inclusion vulnerability in the web UI (https://github.com/CANToolz/CANToolz/issues/12)
+
 ## Version 3.6-0
  
  - Contribution by @DePierre (Tao Sauvage)
