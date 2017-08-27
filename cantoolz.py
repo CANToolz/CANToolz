@@ -37,217 +37,11 @@
 import re
 import sys
 import ast
-import json
-import traceback
-import http.server
-import collections
-import socketserver
 
 from argparse import ArgumentParser
 
 from cantoolz.engine import CANSploit
-
-
-class ThreadingSimpleServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
-    daemon_threads = True
-    # much faster rebinding
-    allow_reuse_address = True
-    pass
-
-
-# WEB class
-class WebConsole(http.server.SimpleHTTPRequestHandler):
-    root = "web"
-    can_engine = None
-
-    def __init__(self, request, client_address, server):
-
-        self.server = server
-        self.protocol_version = 'HTTP/1.1'
-        print(("[*] HTTPD: Received connection from %s" % (client_address[0])))
-        http.server.SimpleHTTPRequestHandler.__init__(self, request, client_address, server)
-
-    def do_POST(self):
-        resp_code = 500
-        cont_type = 'text/plain'
-        body = ""
-
-        path_parts = self.path.split("/")
-
-        if path_parts[1] == "api" and self.can_engine:
-            cont_type = "application/json"
-            cmd = path_parts[2]
-
-            content_size = int(self.headers['Content-Length'])
-            post_data = self.rfile.read(content_size).decode("ISO-8859-1")
-
-            if cmd == "edit" and path_parts[3]:
-                try:
-                    paramz = json.loads(post_data)
-                    if self.can_engine.edit_module(int(path_parts[3]), paramz) >= 0:
-                        print(path_parts[3])
-                        mode = 1 if self.can_engine.get_modules_list()[int(path_parts[3])][1].is_active else 0
-                        print(mode)
-                        if mode == 1:
-                            self.can_engine.get_modules_list()[int(path_parts[3])][1].do_activate(0, 0)
-                        if not self.can_engine._stop.is_set():
-                            self.can_engine.get_modules_list()[int(path_parts[3])][1].do_stop(paramz)
-                            self.can_engine.get_modules_list()[int(path_parts[3])][1].do_start(paramz)
-                        if mode == 1:
-                            self.can_engine.get_modules_list()[int(path_parts[3])][1].do_activate(0, 1)
-
-                        new_params = self.can_engine.get_module_params(int(path_parts[3]))
-                        body = json.dumps(new_params, ensure_ascii=False)
-                        resp_code = 200
-                    else:
-                        body = "{ \"error\": \"module not found!\"}"
-                        resp_code = 404
-                except Exception as e:
-                    resp_code = 500
-                    body = "{ \"error\": " + json.dumps(str(e)) + "}"
-                    traceback.print_exc()
-
-            elif cmd == "cmd" and path_parts[3]:
-                try:
-                    paramz = json.loads(post_data).get("cmd")
-                    text = self.can_engine.call_module(self.can_engine.find_module(str(path_parts[3])), str(paramz))
-                    body = json.dumps({"response": str(text)})
-                    resp_code = 200
-                except Exception as e:
-                    resp_code = 500
-                    body = "{ \"error\": " + json.dumps(str(e)) + "}"
-                    traceback.print_exc()
-
-        self.send_response(resp_code)
-        self.send_header('X-Clacks-Overhead', 'GNU Terry Pratchett')
-        self.send_header('Content-Type', cont_type)
-        self.send_header('Connection', 'closed')
-        self.send_header('Content-Length', len(body))
-        self.end_headers()
-        self.wfile.write(body.encode("ISO-8859-1"))
-
-        return
-
-    def do_OPTIONS(self):
-        self.send_response(200)
-        self.send_header('X-Clacks-Overhead', 'GNU Terry Pratchett')
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Connection', 'closed')
-        self.end_headers()
-
-    def do_GET(self):
-        resp_code = 500
-        cont_type = 'text/plain'
-        body = ""
-
-        path_parts = self.path.split("/")
-
-        if path_parts[1] == "api" and self.can_engine:  # API Request
-            cont_type = "application/json"
-            cmd = path_parts[2]
-            if cmd == "get_conf":
-                response = {"queue": []}
-                modz = self.can_engine.get_modules_list()
-                try:
-                    for name, module, params in modz:
-                        response['queue'].append({'name': name, "params": params})
-
-                    body = json.dumps(response, ensure_ascii=False)
-                    resp_code = 200
-                except Exception as e:
-                    resp_code = 500
-                    body = "{ \"error\": " + json.dumps(str(e)) + "}"
-                    traceback.print_exc()
-            elif cmd == "help" and path_parts[3]:
-                try:
-                    help_list = self.can_engine.get_modules_list()[self.can_engine.find_module(str(path_parts[3]))][1]._cmdList
-                    response_help = collections.OrderedDict()
-                    for key, cmd in help_list.items():
-                        response_help[key] = {'descr': cmd.description, 'descr_param': cmd.desc_params, 'param_count': cmd.num_params}
-                    body = json.dumps(response_help, ensure_ascii=False)
-                    resp_code = 200
-                except Exception as e:
-                    resp_code = 500
-                    body = "{ \"error\": " + json.dumps(str(e)) + "}"
-                    traceback.print_exc()
-            elif cmd == "start":
-                try:
-                    modz = self.can_engine.start_loop()
-                    body = json.dumps({"status": modz})
-                    resp_code = 200
-                except Exception as e:
-                    resp_code = 500
-                    body = "{ \"error\": " + json.dumps(str(e)) + "}"
-                    traceback.print_exc()
-
-            elif cmd == "stop":
-                try:
-                    modz = self.can_engine.stop_loop()
-                    body = json.dumps({"status": modz})
-                    resp_code = 200
-                except Exception as e:
-                    resp_code = 500
-                    body = "{ \"error\": " + json.dumps(str(e)) + "}"
-                    traceback.print_exc()
-            elif cmd == "status":
-                try:
-                    modz = self.can_engine.status_loop
-                    modz2 = self.can_engine.get_modules_list()
-                    modz3 = {}
-                    for name, module, params in modz2:
-                        btns = {}
-                        for key, cmd in module._cmdList.items():
-                            btns[key] = cmd.is_enabled
-                        sts = module.get_status_bar()
-                        modz3[name] = {
-                            "bar": sts['bar'], "text": sts['text'], "status": module.is_active, "buttons": btns}
-                    body = json.dumps({"status": modz, "progress": modz3})
-                    resp_code = 200
-                except Exception as e:
-                    resp_code = 500
-                    body = "{ \"error\": " + json.dumps(str(e)) + "}"
-                    traceback.print_exc()
-
-        else:  # Static content request
-            if self.path == "/":
-                self.path = "/index.html"
-
-            content = self.root + self.path
-            try:
-                with open(content, "rb") as ins:
-                    for line in ins:
-                        body += line.decode("ISO-8859-1")
-
-                ext = self.path.split(".")[-1]
-
-                if ext == 'html':
-                    cont_type = 'text/html'
-                elif ext == 'js':
-                    cont_type = 'text/javascript'
-                elif ext == 'css':
-                    cont_type = 'text/css'
-                elif ext == 'png':
-                    cont_type = 'image/png'
-                else:
-                    cont_type = 'text/plain'
-
-                resp_code = 200
-
-            except Exception as e:  # Error... almost not found, but can be other...
-                # 404 not right then, but who cares?
-                resp_code = 404
-                cont_type = 'text/plain'
-                body = str(e)
-
-        self.send_response(resp_code)
-        self.send_header('X-Clacks-Overhead', 'GNU Terry Pratchett')
-        self.send_header('Content-Type', cont_type)
-        self.send_header('Connection', 'closed')
-        self.send_header('Content-Length', len(body))
-        self.end_headers()
-        self.wfile.write(body.encode("ISO-8859-1"))
-
-        return
+from cantoolz.webui.api import app
 
 
 # Console calss
@@ -309,16 +103,12 @@ class UserInterface:
 
     def web_loop(self, host='127.0.0.1', port=4444):
         print((self.CANEngine.ascii_logo_c))
-        WebConsole.can_engine = self.CANEngine
-        server = ThreadingSimpleServer((host, port), WebConsole)
         print('CANtoolz WEB started and bound to: http://{0}:{1}'.format(host, port))
         print("\tTo exit CTRL-C...")
+        app.can_engine = self.CANEngine
         try:
-            sys.stdout.flush()
-            server.serve_forever()
+            app.run(host=host, port=port)
         except KeyboardInterrupt:
-            server.shutdown()
-            server.server_close()
             print("Please wait... (do not press ctr-c again!)")
             self.CANEngine.stop_loop()
             self.CANEngine.engine_exit()
