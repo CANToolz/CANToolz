@@ -1,14 +1,16 @@
-from cantoolz.module import *
-from cantoolz.replay import *
 import time
-import codecs
+
+from cantoolz.replay import Replay
+from cantoolz.module import CANModule, Command
+
 
 class gen_replay(CANModule):
+
     name = "Replay module"
     help = """
-    
+
     This module doing replay of captured packets. 
-    
+
     Init parameters:
         load_from  - load packets from file (optional)
         save_to    - save to file (mod_replay.save by default)
@@ -28,13 +30,13 @@ class gen_replay(CANModule):
 
     def get_status(self, def_in):
         return "Current status: " + str(self._active) + "\nSniff mode: " + str(self._sniff) +\
-               "\nReplay mode: " + str(self._replay) +"\nFrames in memory: " + str(len(self.CANList)) +\
+               "\nReplay mode: " + str(self._replay) + "\nFrames in memory: " + str(len(self.CANList)) +\
                "\nFrames in queue: " + str(self._num2 - self._num1)
 
     def cmd_load(self, def_in, name):
         try:
-                self.CANList.parse_file(name, self._bus)
-                self.dprint(1, "Loaded " + str(len(self.CANList)) + " frames")
+            self.CANList.parse_file(name, self._bus)
+            self.dprint(1, "Loaded " + str(len(self.CANList)) + " frames")
         except Exception as e:
             self.dprint(2, "can't open files with CAN messages: " + str(e))
         return "Loaded: " + str(len(self.CANList))
@@ -58,9 +60,8 @@ class gen_replay(CANModule):
         self._cmdList['p'] = Command("Print count of loaded packets", 0, "", self.cnt_print, True)
         self._cmdList['l'] = Command("Load packets from file", 1, " <file> ", self.cmd_load, True)
         self._cmdList['r'] = Command("Replay range from loaded, from number X to number Y", 1, " <X>-<Y> ", self.replay_mode, True)
-        self._cmdList['d'] = Command("Save range of loaded packets, from X to Y", 1, " <X>-<Y>, <filename>",self.save_dump, True)
+        self._cmdList['d'] = Command("Save range of loaded packets, from X to Y", 1, " <X>-<Y>, <filename>", self.save_dump, True)
         self._cmdList['c'] = Command("Clean loaded table", 0, "", self.clean_table, True)
-
 
     def clean_table(self, def_in):
         self.CANList = Replay()
@@ -99,11 +100,11 @@ class gen_replay(CANModule):
             self.CANList.restart_time()
         return str(self._sniff)
 
-    def replay_mode(self, def_in, indexes = None):
+    def replay_mode(self, def_in, indexes=None):
         self._replay = False
         self._sniff = False
         if not indexes:
-            indexes = "0-"+str(len(self.CANList))
+            indexes = "0-" + str(len(self.CANList))
         try:
             self._num1 = int(indexes.split("-")[0])
             self._num2 = int(indexes.split("-")[1])
@@ -112,10 +113,8 @@ class gen_replay(CANModule):
                 self._replay = True
                 self._full = self._num2 - self._num1
                 self._last = 0
-                self._cmdList['g'].is_enabled =  False
+                self._cmdList['g'].is_enabled = False
                 self.CANList.set_index(self._num1)
-
-
         except:
             self._replay = False
 
@@ -140,8 +139,8 @@ class gen_replay(CANModule):
                     can_msg.CANData = True
                     self._last += 1
                 can_msg.bus = self._bus
-                self._status = self._last/(self._full/100.0)
-            except Exception as e:
+                self._status = self._last / (self._full / 100.0)
+            except Exception:
                 self._replay = False
                 self._cmdList['g'].is_enabled = True
                 self.CANList.reset()

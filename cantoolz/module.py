@@ -1,11 +1,7 @@
-"""
-Generic class for modules
-"""
-
-import threading
-import collections
 import codecs
+import threading
 import traceback
+import collections
 
 
 class Command(object):
@@ -134,7 +130,6 @@ class CANModule:
                     else:
                         ret = cmd.callback(cmd.index)
                 except Exception as e:
-                    #self.set_error_text("ERROR: " + str(e))
                     ret = "ERROR: " + str(e)
                     traceback.print_exc()
             else:
@@ -177,14 +172,14 @@ class CANModule:
             self._error_text = ""
         self.thr_block.set()
 
-        return {'bar': status,'text': error_text}
+        return {'bar': status, 'text': error_text}
 
     def set_error_text(self, text):
         """Function to set current notification or error
 
         :returns: int -- Status of init.
         """
-        print("!!! "+text)
+        print("!!! " + text)
         self._error_text = self.__class__.name + ": " + text
 
     def do_init(self, params):

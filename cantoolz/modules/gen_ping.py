@@ -1,15 +1,20 @@
-from cantoolz.module import *
-from cantoolz.uds import *
 import time
 
+from cantoolz.can import CANMessage
+from cantoolz.uds import UDSMessage
+from cantoolz.isotp import ISOTPMessage
+from cantoolz.module import CANModule
+
+
 class gen_ping(CANModule):
+
     name = "Sending CAN pings"
     help = """
-    
+
     This module doing ID buteforce.
     (combine with mod_stat for example)
     Init parameters: None
-    Module parameters:  
+    Module parameters:
        body           -  data HEX that will be used in CAN for discovery (by default body is 0000000000000000)
        mode           -  by default CAN, but also support ISOTP and UDS
        range          -  [0,1000] - ID range
@@ -81,20 +86,21 @@ class gen_ping(CANModule):
                             else:
                                 dat = []
 
-                            if type(sub) == type(int()):
+                            if isinstance(sub, int):
                                 sub = [sub]
-                            elif type(sub) == type(str()):
+                            elif isinstance(sub, str):
                                 x1 = 16 if sub.split("-")[0].strip()[0:2] == "0x" else 10
                                 x2 = 16 if sub.split("-")[1].strip()[0:2] == "0x" else 10
                                 sub = range(int(sub.split("-")[0], x1), int(sub.split("-")[1], x2))
-                            elif type(sub) != type(list()): # https://github.com/eik00d/CANToolz/issues/93 by @DePierre
+                            # https://github.com/eik00d/CANToolz/issues/93 by @DePierre
+                            elif not isinstance(sub, list):
                                 sub = [None]
 
                             serv = service['service']
 
-                            if type(serv) == type(int()):
+                            if isinstance(serv, int):
                                 serv = [serv]
-                            elif type(serv) == type(str()):
+                            elif isinstance(serv, str):
                                 x1 = 16 if serv.split("-")[0].strip()[0:2] == "0x" else 10
                                 x2 = 16 if serv.split("-")[1].strip()[0:2] == "0x" else 10
                                 serv = range(int(serv.split("-")[0], x1), int(serv.split("-")[1], x2))
@@ -110,7 +116,6 @@ class gen_ping(CANModule):
             self.set_error_text("ERROR: No range specified")
         self._full = len(self.queue_messages)
         self._last = 0
-
 
     def do_effect(self, can_msg, args):
         d_time = float(args.get('delay', 0))
@@ -129,6 +134,6 @@ class gen_ping(CANModule):
                 can_msg.CANData = True
                 can_msg.bus = self._bus
                 self._last += 1
-                self._status = self._last/(self._full/100.0)
+                self._status = self._last / (self._full / 100.0)
 
         return can_msg

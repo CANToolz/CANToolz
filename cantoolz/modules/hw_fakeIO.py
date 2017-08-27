@@ -1,24 +1,26 @@
-from cantoolz.can import *
-from cantoolz.module import *
 import copy
+
+from cantoolz.can import CANMessage
+from cantoolz.module import CANModule, Command
 
 
 class hw_fakeIO(CANModule):
+
     name = "test I/O"
     help = """
-    
-    This module using for fake reading and writing CAN messages.
-    No physical canal required. Used for tests. 
-    
-    Init parameters example:  
 
-    Module parameters: 
+    This module using for fake reading and writing CAN messages.
+    No physical canal required. Used for tests.
+
+    Init parameters example:
+
+    Module parameters:
       action - read or write. Will write/read to/from bus
       pipe -  integer, 1 or 2 - from which pipe to read or write 
           If you use both buses(and different), than you need only one pipe configured...
-        
+
           Example: {'action':'read','pipe':2}
-   
+
     """
 
     version = 1.0
@@ -31,8 +33,7 @@ class hw_fakeIO(CANModule):
         self.CANList = []
 
     def do_init(self, params):  # Get device and open serial port
-        self._cmdList['t'] = Command("Send direct command to the device, like 13:8:1122334455667788", 1, " <cmd> ",
-                              self.dev_write, True)
+        self._cmdList['t'] = Command("Send direct command to the device, like 13:8:1122334455667788", 1, " <cmd> ", self.dev_write, True)
         self.CANList = []
         return 1
 

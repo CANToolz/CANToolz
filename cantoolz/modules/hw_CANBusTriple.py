@@ -1,31 +1,34 @@
-from cantoolz.can import *
-from cantoolz.module import *
-import serial
-import serial.tools.list_ports
 import time
 import json
+import struct
+import serial
+import serial.tools.list_ports
+
+from cantoolz.can import CANMessage
+from cantoolz.module import CANModule, Command
 
 
 class hw_CANBusTriple(CANModule):
+
     name = "CANBus Triple I/O"
     help = """
-    
+
     This module to read/write with CANBus Triple https://canb.us/.
     This device support up to 3 buses, so it is enough for MITM
-    
-    Init parameters example:  
+
+    Init parameters example:
 
         'port' : 'auto'      # Serial port, COM3 or path.. auto also could work there
         'debug' : 2          # debug level (default 0)
         'speed' : 50         # this device support AutoRate, use auto for that
-        
-    Module parameters: 
+
+    Module parameters:
       action     - 'read' or 'write'. Will write/read to/from bus
       pipe       -  integer, 1 or 2 - from which pipe to read or write
           Example: {'action':'read','pipe':2,'bus':1}
-          
+
     P.S. this device still does not support 29-bit IDs... so they will be ignored on R/W
-    
+
     """
 
     version = 1.0
@@ -64,7 +67,7 @@ class hw_CANBusTriple(CANModule):
         self._serialPort.close()
 
     def do_start(self, params):  # enable reading
-        self._queue=[[],[],[]]
+        self._queue = [[], [], []]
         self._serialPort.write(b"\x03\x01\x01\x00\x00\x00\x00")
         time.sleep(1)
         self._serialPort.write(b"\x03\x02\x01\x00\x00\x00\x00")
@@ -181,7 +184,7 @@ class hw_CANBusTriple(CANModule):
         self.DEBUG = int(params.get('debug', 0))
 
         self.dprint(1, "Init phase started...")
-        self._queue=[[],[],[]]
+        self._queue = [[], [], []]
         if 'port' in params:
             self._COMPort = params['port']
             if params['port'] == 'auto':
@@ -215,12 +218,9 @@ class hw_CANBusTriple(CANModule):
         time.sleep(4)
         self.read_all()
 
-
         self.dprint(1, "CANBus Triple device detected, version: " + self.read_json(self.get_info())['version'])
 
-
-        self._cmdList['t'] = Command("Send direct command to the device, like 02010011112233440000000008", 1, " <cmd> ",
-                              self.dev_write, True)
+        self._cmdList['t'] = Command("Send direct command to the device, like 02010011112233440000000008", 1, " <cmd> ", self.dev_write, True)
 
     def dev_write(self, def_in, data):
         self.dprint(1, "CMD: " + data)
@@ -243,9 +243,9 @@ class hw_CANBusTriple(CANModule):
         rBus = int(args.get("bus", 0))
 
         if 0 < rBus < 4:
-            if len(self._queue[rBus-1]) > 0:
+            if len(self._queue[rBus - 1]) > 0:
                 if not can_msg.CANData and not can_msg.debugData:
-                    can_msg.CANFrame = self._queue[rBus-1].pop(0)
+                    can_msg.CANFrame = self._queue[rBus - 1].pop(0)
                     can_msg.bus = rBus
                     can_msg.CANData = True
                     print("BUS " + str(rBus))
@@ -276,7 +276,7 @@ class hw_CANBusTriple(CANModule):
                                 print("MESS:" + str(_id) + " " + str(_length) + " " + self.get_hex(_data))
                                 print(self.get_hex(tmp_data))
                             else:
-                                self._queue[bus-1].append(CANMessage(_id, _length, _data, False, CANMessage.DataFrame))
+                                self._queue[bus - 1].append(CANMessage(_id, _length, _data, False, CANMessage.DataFrame))
                                 print("BUS " + str(rBus))
                                 print("QUEU:" + str(_id) + " " + str(_length) + " " + self.get_hex(_data))
                                 print(self.get_hex(tmp_data))
@@ -291,14 +291,13 @@ class hw_CANBusTriple(CANModule):
 
     def do_write(self, can_msg, params):
         if can_msg.CANData and not can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.DataFrame:  # Only 11 bit support now..., only DataFrame
-            bs = int(params.get('bus','0'))
+            bs = int(params.get('bus', '0'))
             if 0 < bs < 4:
                 write_buf = b"\x02" + struct.pack("B", bs) + can_msg.CANFrame.frame_raw_id + \
-                can_msg.CANFrame.frame_raw_data + \
-                        (b"\x00" * (8 - can_msg.CANFrame.frame_length)) + \
-                        can_msg.CANFrame.frame_raw_length
-                print("NUL:"+ str(8 - can_msg.CANFrame.frame_length))
+                    can_msg.CANFrame.frame_raw_data + \
+                    (b"\x00" * (8 - can_msg.CANFrame.frame_length)) + \
+                    can_msg.CANFrame.frame_raw_length
+                print("NUL:" + str(8 - can_msg.CANFrame.frame_length))
                 print(str(can_msg.CANFrame.frame_raw_data))
             self._serialPort.write(write_buf)
             self.dprint(2, "WRITE: " + self.get_hex(write_buf))
-

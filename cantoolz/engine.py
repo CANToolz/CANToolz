@@ -1,13 +1,17 @@
 import sys
-import threading
-from cantoolz.can import *
 import time
-'''
-Main class
-'''
+import threading
+
+# from cantoolz.can import *
+from cantoolz.can import CANSploitMessage
 
 
 class CANSploit:
+
+    """
+    Main class
+    """
+
     DEBUG = 0
     ascii_logo_c = """
 
@@ -44,11 +48,8 @@ class CANSploit:
     # Main loop with two pipes
     def main_loop(self):
         # Run until STOP
-        #error_on_bus = {}
-        #error = False
         while not self.do_stop_e.is_set():
             self._pipes = {}
-            i = 0
             for name, module, params in self._enabledList:  # Each module
                 #  Handle CAN message
 
@@ -57,7 +58,7 @@ class CANSploit:
                     module.thr_block.clear()
                     if params['pipe'] not in self._pipes:
                         self._pipes[params['pipe']] = CANSploitMessage()
-                    self.dprint(2,"DO EFFECT" + name)
+                    self.dprint(2, "DO EFFECT" + name)
                     self._pipes[params['pipe']] = module.do_effect(self._pipes[params['pipe']], params)
 
                     """
@@ -80,16 +81,16 @@ class CANSploit:
                     """
                     module.thr_block.set()
 
-        self.dprint(2,"STOPPING...")
-                    # Here when STOP
+        self.dprint(2, "STOPPING...")
+        # Here when STOP
         for name, module, params in self._enabledList:
-            self.dprint(2,"stopping " + name)
+            self.dprint(2, "stopping " + name)
             module.do_stop(params)
 
         self.do_stop_e.clear()
-        self.dprint(2,"STOPPED")
+        self.dprint(2, "STOPPED")
 
-    # Call module command        
+    # Call module command
     def call_module(self, index, params):
         # x = self.find_module(mod)
         x = index
@@ -101,18 +102,17 @@ class CANSploit:
 
     def engine_exit(self):
         for name, module, params in self._enabledList:
-            self.dprint(2,"exit for " + name)
+            self.dprint(2, "exit for " + name)
             module.do_exit(params)
 
-    # Enable loop        
+    # Enable loop
     def start_loop(self):
-        self.dprint(2,"START SIGNAL")
+        self.dprint(2, "START SIGNAL")
         if self._stop.is_set() and not self.do_stop_e.is_set():
             self.do_stop_e.set()
             for name, module, params in self._enabledList:
-                self.dprint(2,"startingg " + name)
+                self.dprint(2, "startingg " + name)
                 module.do_start(params)
-                #params['!error_on_bus'] = False
                 module.thr_block.set()
 
             self._thread = threading.Thread(target=self.main_loop)
@@ -120,15 +120,15 @@ class CANSploit:
 
             self._stop.clear()
             self.do_stop_e.clear()
-            self.dprint(2,"GO")
+            self.dprint(2, "GO")
             self._thread.start()
-            self.dprint(2,"STARTED")
+            self.dprint(2, "STARTED")
 
         return not self._stop.is_set()
 
-    # Pause loop      
+    # Pause loop
     def stop_loop(self):
-        self.dprint(2,"STOP SIGNAL")
+        self.dprint(2, "STOP SIGNAL")
         if not self._stop.is_set() and not self.do_stop_e.is_set():
             self.do_stop_e.set()
             while self.do_stop_e.is_set():
@@ -203,7 +203,7 @@ class CANSploit:
         fullpath = fullpath.replace('\\', '/')
         parts = fullpath.split("/")
 
-        if len(parts)>1:
+        if len(parts) > 1:
             path = '/'.join(parts[0:-1])
             sys.path.append(path)
 

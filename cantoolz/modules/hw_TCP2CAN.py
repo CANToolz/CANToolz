@@ -1,11 +1,15 @@
-from cantoolz.can import *
-from cantoolz.module import *
-import socketserver
-import socket
 import time
+import struct
+import socket
+import threading
+import traceback
+import socketserver
+
+from cantoolz.can import CANMessage
+from cantoolz.module import CANModule, Command
+
 
 class CustomTCPClient():
-
 
     def __init__(self, conn):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -19,46 +23,29 @@ class CustomTCPClient():
         self._access_in = threading.Event()
         self._access_out = threading.Event()
 
-
     def handle(self):
         while(1):
-
             try:
-                self.socket.sendall(b'c\x01\x00\x00') # Request for frames
-                inc_header = self.socket.recv(4) # Get header first
-                #print("CLIENT HEADER INC")
-                #print(inc_header)
-                #print()
-
+                self.socket.sendall(b'c\x01\x00\x00')  # Request for frames
+                inc_header = self.socket.recv(4)  # Get header first
                 if inc_header[0:2] != b'c\x02':
-                    self.selfx.dprint(0,"HEADER ERROR")
+                    self.selfx.dprint(0, "HEADER ERROR")
                     self.selfx.set_error_text('HEADER ERROR')
                     continue
                 else:
                     ready = struct.unpack("!H", inc_header[2:4])[0]
                     inc_size = 16 * ready
-                    #print('ready '+str(inc_size))
                     if ready > 0:
-                        inc_data = self.socket.recv(inc_size) # Get frames
+                        inc_data = self.socket.recv(inc_size)  # Get frames
                         idx = 0
-                        #print("++++")
-                        #print(b'!! '+inc_data)
-                        #print("++++ "+str(ready))
                         while ready != 0:
                             packet = inc_data[idx:idx + 16]
-                            #print("---")
-                            #print()
-                            #print(str(ready) + " ~ " +str(packet))
-                            #print("---")
                             if packet[0:3] != b'ct\x03':
-                                self.selfx.dprint(0,'CLIENT GOT INCORRECT DATA')
+                                self.selfx.dprint(0, 'CLIENT GOT INCORRECT DATA')
                                 self.selfx.set_error_text('CLIENT GOT INCORRECT DATA')
                                 break
                             else:
                                 fid = struct.unpack("!I", packet[3:7])[0]
-                                #print('CLIENT GOT (parsed):')
-                                #print(packet)
-                                #print("=====")
                                 flen = packet[7]
                                 fdata = packet[8:16]
                                 while self._access_in.is_set():
@@ -78,10 +65,7 @@ class CustomTCPClient():
                 ready = len(self.CANList_out)
                 if ready > 0:
                     sz = struct.pack("!H", ready)
-                    send_msg = b'c\x04' +  sz
-                    #print('CLIENT HEADER SENT:')
-                    #print(send_msg)
-                    #print()
+                    send_msg = b'c\x04' + sz
                     self.socket.sendall(send_msg)
                     send_msg = b''
                     for can_msg in self.CANList_out:
@@ -92,9 +76,7 @@ class CustomTCPClient():
                         self.CANList_out = []
 
                 self._access_out.clear()
-
             except Exception as e:
-                #print('TCPClient: recv response error')
                 self.selfx.set_error_text('TCPClient: recv response error:' + str(e))
                 traceback.print_exc()
 
@@ -120,12 +102,11 @@ class CustomTCPClient():
         self._thread._stop()
         self.socket.close()
 
+
 class CustomTCPServer(socketserver.TCPServer):
 
     def __init__(self, server_address, RequestHandlerClass):
-
         super().__init__(server_address, RequestHandlerClass)
-        #socketserver.TCPServer.__init__(self, server_address, RequestHandlerClass)
         self.CANList_in = []
         self.CANList_out = []
         self._access_in = threading.Event()
@@ -138,7 +119,6 @@ class CustomTCPServer(socketserver.TCPServer):
             time.sleep(0.0001)
         self._access_out.set()
         self.CANList_out.append(can_frame)
-        #print("ADDING TO "+str(self.prt) + " " + str(can_frame))
 
         self._access_out.clear()
 
@@ -153,7 +133,9 @@ class CustomTCPServer(socketserver.TCPServer):
         else:
             return None
 
+
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
+
     def handle(self):
         # self.request is the TCP socket connected to the client
         print("TCP2CAN connected to " + str(self.server.prt))
@@ -163,40 +145,30 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         self.server._access_out.clear()
 
         while(1):
-            #Get header first
+            # Get header first
             data = self.request.recv(4)
 
             if data[0:1] == b'c':
-                #print('SERVER GOT:')
-                #print(data)
-                #print()
-
                 # Header
-                if data[1] == 1: # Request for frames
-
+                if data[1] == 1:  # Request for frames
                     while self.server._access_out.is_set():
                         time.sleep(0.0001)
                     self.server._access_out.set()
-                    #print('found '+str(len(self.server.CANList_out)))
                     ready = len(self.server.CANList_out)
 
                     sz = struct.pack("!H", ready)
-                    send_msg = b'c\x02' +  sz
-                    #print('SERVER HEADER SENT:')
-                    #print(send_msg)
-                    #print()
+                    send_msg = b'c\x02' + sz
                     self.request.sendall(send_msg)
                     send_msg = b''
                     for can_msg in self.server.CANList_out:
                         # 16 byte
                         send_msg += b'ct\x03' + (b'\x00' * (4 - len(can_msg.frame_raw_id))) + can_msg.frame_raw_id + can_msg.frame_raw_length + can_msg.frame_raw_data + (b'\x00' * (8 - can_msg.frame_length))
-                        #print("Just sent from: " + str(self.server.prt) + " " + str(can_msg))
                     if ready > 0:
                         self.request.sendall(send_msg)
                         self.server.CANList_out = []
 
                     self.server._access_out.clear()
-                elif data[1] == 4: # Incoming frames...
+                elif data[1] == 4:  # Incoming frames...
                     ready = struct.unpack("!H", data[2:4])[0]
                     inc_size = 16 * ready
                     if ready > 0:
@@ -210,9 +182,6 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                                 break
                             else:
                                 fid = struct.unpack("!I", packet[3:7])[0]
-                                #print('SERVER GOT (parsed):')
-                                #print(packet)
-                                #print()
                                 flen = packet[7]
                                 fdata = packet[8:16]
                                 while self.server._access_in.is_set():
@@ -227,37 +196,35 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                             ready -= 1
 
 
-
-
 class hw_TCP2CAN(CANModule):
+
     name = "TCP interface"
     help = """
-    
+
     This module works as TCP client/server for tunneling CAN Frames
-    
-    Init parameters example:  
+
+    Init parameters example:
       mode  - 'client' or 'server'
       port  - <int> - TCP prt to listen or to connect (depends on mode)
       address - 'ip.ip.ip.ip' - IP address of the server
 
       Example: {'mode':'server','port':2001,'address':''}
 
-    Module parameters: 
+    Module parameters:
       action - read or write. Will write/read to/from TCP
       pipe -  integer, 1 or 2 - from which pipe to read or write 
           If you use both buses(and different), than you need only one pipe configured...
-        
+
           Example: {'action':'read','pipe':2}
-   
+
     """
 
-    def get_status(self, def_in = 0):
-        return "Current status: IN: "+str(len(self.server.CANList_in)) + str(self.server._access_in.is_set())+ " OUT: "+str(len(self.server.CANList_out))+ str(self.server._access_out.is_set())
+    def get_status(self, def_in=0):
+        return "Current status: IN: " + str(len(self.server.CANList_in)) + str(self.server._access_in.is_set()) + " OUT: " + str(len(self.server.CANList_out)) + str(self.server._access_out.is_set())
 
     def do_start_x(self):
-
         if self.server is None:
-            self.dprint(2,'Started mode as ' + str(self.mode))
+            self.dprint(2, 'Started mode as ' + str(self.mode))
             self.set_error_text('Started mode as ' + str(self.mode))
             if self.mode == 'server':
                 self.server = CustomTCPServer((self.HOST, self.PORT), ThreadedTCPRequestHandler)
@@ -265,44 +232,36 @@ class hw_TCP2CAN(CANModule):
                 self._thread = threading.Thread(target=self.server.serve_forever)
                 self._thread.daemon = True
 
-                #self._access.clear()
                 self._thread.start()
-
             else:
                 self.server = CustomTCPClient((self.HOST, self.PORT))
-
             self.server.selfx = self
-
-
 
     def do_stop_x(self):  # disable reading
         if self.server is not None:
-            self.dprint(2,'Stoped mode as ' + str(self.mode))
+            self.dprint(2, 'Stoped mode as ' + str(self.mode))
             self.set_error_text('Stoped mode as ' + str(self.mode))
             if self.mode == 'server':
                 self.server.server_close()
                 self.server.shutdown()
                 self._thread._stop()
-                #self._access.clear()
                 print("DONE")
             else:
                 self.server.close()
-            self.server =  None
+            self.server = None
 
     def do_init(self, params):  # Get device and open serial port
-        self._cmdList['t'] = Command("Send direct command to the device, like 13:8:1122334455667788", 1, " <cmd> ",
-                              self.dev_write, True)
+        self._cmdList['t'] = Command("Send direct command to the device, like 13:8:1122334455667788", 1, " <cmd> ", self.dev_write, True)
 
         self.mode = params.get('mode', None)
         self.server = None
-        if not self.mode or self.mode not in ['server','client']:
+        if not self.mode or self.mode not in ['server', 'client']:
             self.dprint(0, 'Can\'t get mode!')
             exit()
 
-        self.HOST = params.get('address','localhost')
+        self.HOST = params.get('address', 'localhost')
         self.PORT = int(params.get('port', 6550))
-        #self._access = threading.Event()
-        self._bus = "TCP_"+self.mode+"_"+str(self.PORT)
+        self._bus = "TCP_" + self.mode + "_" + str(self.PORT)
         self.do_start_x()
 
         return 1
@@ -328,7 +287,6 @@ class hw_TCP2CAN(CANModule):
     def do_write(self, can_msg):
         if can_msg.CANData:
             self.server.write_can(can_msg.CANFrame)
-            #print ("HAVE ADDED TO: "+str(self.server.prt))
         return can_msg
 
     def do_read(self, can_msg):

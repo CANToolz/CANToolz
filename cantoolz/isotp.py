@@ -1,14 +1,15 @@
-from cantoolz.can import *
-
-'''
-dirty ISOTP impl
-ISO 15765-2
-
-https://en.wikipedia.org/wiki/ISO_15765-2
-'''
+from cantoolz.can import CANMessage
 
 
 class ISOTPMessage:
+
+    """
+    dirty ISOTP impl
+    ISO 15765-2
+
+    https://en.wikipedia.org/wiki/ISO_15765-2
+    """
+
     # PCI
     SingleFrame = 0
     FirstFrame = 1
@@ -19,7 +20,7 @@ class ISOTPMessage:
     Wait = 11
     OverflowAbort = 12
 
-    def __init__(self, id = 0, length = 0, data = [], finished = False):  # Init EMPTY message
+    def __init__(self, id=0, length=0, data=[], finished=False):  # Init EMPTY message
         self.message_id = id
         self.message_data = data
         self.message_length = length
@@ -108,7 +109,7 @@ class ISOTPMessage:
             return -5
 
     @classmethod
-    def generate_can(self, fid, data, padding = None):  # generate CAN messages seq
+    def generate_can(self, fid, data, padding=None):  # generate CAN messages seq
         _length = len(data)
         can_msg_list = []
 

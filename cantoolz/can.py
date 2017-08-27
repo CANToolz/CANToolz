@@ -1,21 +1,23 @@
 import struct
 import binascii
 import bitstring
-from cantoolz.module import CANModule
 
-'''
-Generic class for CAN message
-'''
+from cantoolz.module import CANModule
 
 
 class CANMessage:
+
+    """
+    Generic class for CAN message.
+    """
+
     DataFrame = 1
     RemoteFrame = 2
     ErrorFrame = 3
     OverloadFrame = 4
 
     def __init__(self, fid, length, data, extended, type):  # Init EMPTY message
-        self.frame_id = min( 0x1FFFFFFF, int(fid))  # Message ID
+        self.frame_id = min(0x1FFFFFFF, int(fid))  # Message ID
         self.frame_length = min(8, int(length))  # DATA length
         self.frame_data = list(data)[0:self.frame_length]  # DATA
         self.frame_ext = bool(extended)  # 29 bit message ID - boolean flag
@@ -35,11 +37,11 @@ class CANMessage:
         return hex(self.frame_id)
 
     def get_bits(self):
-        fill  = 8 - self.frame_length
+        fill = 8 - self.frame_length
         bits_array = '0b'
         bits_array += '0' * fill * 8
         for byte in self.frame_data:
-            bits_array+= bin(byte)[2:].zfill(8)
+            bits_array += bin(byte)[2:].zfill(8)
         return bitstring.BitArray(bits_array, length=64)
 
     def get_text(self):
@@ -84,14 +86,14 @@ class CANMessage:
 
         return CANMessage(fid, length, data, extended, 1)
 
-'''
-Class to handle CAN messages and other data
-'''
-
 
 class CANSploitMessage:
-    def __init__(self):  # Init EMPTY message
 
+    """
+    Class to handle CAN messages and other data.
+    """
+
+    def __init__(self):  # Init EMPTY message
         self.debugText = ""
         self.CANFrame = None
         self.debugData = False

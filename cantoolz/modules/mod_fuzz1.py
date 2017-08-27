@@ -1,22 +1,22 @@
-from cantoolz.module import *
-from cantoolz.can import *
-from random import shuffle
+from cantoolz.can import CANMessage
+from cantoolz.module import CANModule
 
 
 class mod_fuzz1(CANModule):
+
     name = "Proxy fuzzing one byte with chosen shift of CAN message"
     help = """
-    
+
     This module doing one-byte fuzzing for chosen shift in data.
-    
+
     Init parameters:  None
-    
-    Module parameters: 
-    
+
+    Module parameters:
+
       'fuzz'  - list of ID that should be fuzzed
       'nfuzz' - list of ID that should not be filtered
       'byte'  - byte index form 1 to 8, that should be fuzzed
-      
+
       Example: {'fuzz':[133,111],'byte':1}
 
     """

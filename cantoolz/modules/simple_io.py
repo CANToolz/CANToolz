@@ -1,25 +1,25 @@
-from cantoolz.module import *
 from cantoolz.can import CANMessage
+from cantoolz.module import CANModule, Command
 
 
 class simple_io(CANModule):
+
     name = "Simple read/werite module"
     help = """
-    
+
     This module can read/write and store message.
-    
+
     Init parameters:  None
-    
-    Module parameters: 
-    
+
+    Module parameters:
+
       none
-      
+
       Example: {'action':'read'}
-    
+
     """
 
     _active = True
-
 
     def do_init(self, params):
         self.can_buffer_read = []
@@ -28,7 +28,7 @@ class simple_io(CANModule):
         self._cmdList['r'] = Command("Read message", 0, "", self.cmd_read, True)
         self._cmdList['w'] = Command("Write message", 1, "[0x]ID[:len]:HEX_DATA", self.cmd_write, True)
 
-    def get_status(self, def_in = 0):
+    def get_status(self, def_in=0):
         return "Current status: " + str(self._active) + "\nFrames to read: " + str(len(self.can_buffer_read)) + "\nFrames to write: " + str(len(self.can_buffer_write))
 
     def cmd_write(self, def_p, frame):
@@ -52,7 +52,7 @@ class simple_io(CANModule):
         self.can_buffer_write.append(CANMessage.init_data(fid, length, data))
         return "Added to queue"
 
-    def cmd_read(self, def_p = 0):
+    def cmd_read(self, def_p=0):
         ret = "None"
         if len(self.can_buffer_read) > 0:
             msg = self.can_buffer_read.pop(0)

@@ -1,8 +1,11 @@
-from cantoolz.module import *
-from cantoolz.uds import *
 import json
 
+from cantoolz.can import CANMessage
+from cantoolz.module import CANModule, Command
+
+
 class control_ecu_doors(CANModule):
+
     name = "Doors trigger for vircar"
     help = """
 
@@ -26,8 +29,8 @@ class control_ecu_doors(CANModule):
 
     """
 
-
     _active = True
+
     def do_init(self, params):
         self._status2 = params
         self.frames = []
@@ -37,11 +40,11 @@ class control_ecu_doors(CANModule):
         self._cmdList['central_unlock'] = Command("Unlock doors", 0, "", self.control_unlock, True)
 
     def control_lock(self, flag):
-        self.frames.append(CANMessage(self._status2['id_command'],int(len(self._status2['commands']['lock'])/2),bytes.fromhex(self._status2['commands']['lock']),False, CANMessage.DataFrame))
+        self.frames.append(CANMessage(self._status2['id_command'], int(len(self._status2['commands']['lock']) / 2), bytes.fromhex(self._status2['commands']['lock']), False, CANMessage.DataFrame))
         return ""
 
     def control_unlock(self, flag):
-        self.frames.append(CANMessage(self._status2['id_command'],int(len(self._status2['commands']['unlock'])/2),bytes.fromhex(self._status2['commands']['unlock']),False, CANMessage.DataFrame))
+        self.frames.append(CANMessage(self._status2['id_command'], int(len(self._status2['commands']['unlock']) / 2), bytes.fromhex(self._status2['commands']['unlock']), False, CANMessage.DataFrame))
         return ""
 
     def control_get_status(self, flag):
@@ -51,10 +54,10 @@ class control_ecu_doors(CANModule):
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
     def do_effect(self, can_msg, args):
-        if args['action'] == 'read' and can_msg.CANData: # READ
+        if args['action'] == 'read' and can_msg.CANData:  # READ
             if can_msg.CANFrame.frame_id in self._status2.get('id_report', {}).keys():
                 for status, code in self._status2['reports'].items():
-                    if can_msg.CANFrame.frame_length == int(len(code)/2) and code == self.get_hex(can_msg.CANFrame.frame_raw_data):
+                    if can_msg.CANFrame.frame_length == int(len(code) / 2) and code == self.get_hex(can_msg.CANFrame.frame_raw_data):
                         self._doors.update(
                             {self._status2['id_report'][can_msg.CANFrame.frame_id]: status}
                         )

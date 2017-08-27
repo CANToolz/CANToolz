@@ -1,13 +1,16 @@
-from cantoolz.module import *
-from cantoolz.can import *
 import re
 
+from cantoolz.can import CANMessage
+from cantoolz.module import CANModule, Command
+
+
 class ecu_controls(CANModule):
+
     name = "Controls for ECU"
     help = """
-    
+
     This module read statues and send commands.
-    
+
     Init parameters:
     AS Init parameters you can configure commands and statuses parser (regex)
 
@@ -31,19 +34,16 @@ class ecu_controls(CANModule):
      }}
 
      ]}
-    
-
-    
     """
 
-
     _active = True
+
     def do_init(self, params):
-        self._statuses = params.get('statuses',[])
-        self._commands = params.get('commands',[])
+        self._statuses = params.get('statuses', [])
+        self._commands = params.get('commands', [])
         self._frames = []
 
-        cmd_list = [chr(i) for i in ( list(range(0x41,0x41+26)) + list(range(0x61,0x61+26))) if i not in self._cmdList.keys()]
+        cmd_list = [chr(i) for i in (list(range(0x41, 0x41 + 26)) + list(range(0x61, 0x61 + 26))) if i not in self._cmdList.keys()]
         index = 0
 
         for command in self._commands:
@@ -53,7 +53,7 @@ class ecu_controls(CANModule):
                     cmd_list.remove(cmd)
             else:
                 cmd = cmd_list.pop()
-            self._cmdList[cmd] = Command("Action: " + list([x for x in list(command.keys()) if  x not in ["cmd"]])[0],0,'', self.send_command, True, index)
+            self._cmdList[cmd] = Command("Action: " + list([x for x in list(command.keys()) if x not in ["cmd"]])[0], 0, '', self.send_command, True, index)
             index += 1
         index = 0
         for status in self._statuses:
@@ -63,15 +63,15 @@ class ecu_controls(CANModule):
                     cmd_list.remove(cmd)
             else:
                 cmd = cmd_list.pop()
-            self._cmdList[cmd] = Command("Status: " + list([x for x in list(status.keys()) if  x not in ["id_list_can_toolz_system","cmd","current_status"]])[0],0,'', self.get_statuses, True, index)
+            self._cmdList[cmd] = Command("Status: " + list([x for x in list(status.keys()) if x not in ["id_list_can_toolz_system", "cmd", "current_status"]])[0], 0, '', self.get_statuses, True, index)
             index += 1
             fid_list = []
             for name, data in status.items():
-                if name not in ['cmd','id_list_can_toolz_system','current_status']:
+                if name not in ['cmd', 'id_list_can_toolz_system', 'current_status']:
                     for act, frame in data.items():
-                        fid =  frame.split("#")[0].strip()
+                        fid = frame.split("#")[0].strip()
                         if fid[0:2] == '0x':
-                            fid = int(fid,16)
+                            fid = int(fid, 16)
                         else:
                             fid = int(fid)
                         if fid not in fid_list:
@@ -80,19 +80,19 @@ class ecu_controls(CANModule):
 
     def get_statuses(self, index):
         status = self._statuses[index].get('current_status', 'Unknown')
-        name = list([x for x in list(self._statuses[index].keys()) if  x not in ["id_list_can_toolz_system","cmd","current_status"]])[0]
+        name = list([x for x in list(self._statuses[index].keys()) if x not in ["id_list_can_toolz_system", "cmd", "current_status"]])[0]
         return name + " is " + status
 
     def send_command(self, index):
         cmd = self._commands[index]
-        name = list([x for x in list(cmd.keys()) if  x not in ["cmd"]])[0]
+        name = list([x for x in list(cmd.keys()) if x not in ["cmd"]])[0]
         (fid, length, data_hex) = cmd[name].split(":")
         fid = fid.strip()
         length = int(length)
         data_hex = data_hex.strip()
 
         if fid[0:2] == '0x':
-            fid = int(fid,16)
+            fid = int(fid, 16)
         else:
             fid = int(fid)
 
@@ -101,17 +101,16 @@ class ecu_controls(CANModule):
         self._frames.append(CANMessage.init_data(fid, length, data_hex))
         return name + " has been added to queue!"
 
-    def read_statuses(self,can_msg):
+    def read_statuses(self, can_msg):
         for status in self._statuses:
-           if can_msg.CANFrame.frame_id in status.get('id_list_can_toolz_system', []):
-               data_hex = self.get_hex(can_msg.CANFrame.frame_raw_data)
-               for stat, options in list(status.items()):
-                   if stat not in ['id_list_can_toolz_system', 'current_status', 'cmd']:
+            if can_msg.CANFrame.frame_id in status.get('id_list_can_toolz_system', []):
+                data_hex = self.get_hex(can_msg.CANFrame.frame_raw_data)
+                for stat, options in list(status.items()):
+                    if stat not in ['id_list_can_toolz_system', 'current_status', 'cmd']:
                         for value, reg in list(options.items()):
                             reg = reg.split('#')[1].strip()
                             if re.match(reg, data_hex, re.IGNORECASE):
                                 status['current_status'] = value
-
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
     def do_effect(self, can_msg, args):

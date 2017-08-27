@@ -1,15 +1,4 @@
-import re
-import ast
-import json
-import traceback
-import http.server
-import collections
-import socketserver
-
-from argparse import ArgumentParser
-
-from cantoolz.engine import *
-
+"""
 ######################################################
 #                                                    # 
 #          Yet Another Car Hacking Tool              #
@@ -43,15 +32,28 @@ from cantoolz.engine import *
 #    https://defcon-russia.ru                        #
 #                                                    #
 ######################################################
+"""
+
+import re
+import sys
+import ast
+import json
+import traceback
+import http.server
+import collections
+import socketserver
+
+from argparse import ArgumentParser
+
+from cantoolz.engine import CANSploit
 
 
-
-class ThreadingSimpleServer(socketserver.ThreadingMixIn,
-                   http.server.HTTPServer):
+class ThreadingSimpleServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
     daemon_threads = True
     # much faster rebinding
     allow_reuse_address = True
     pass
+
 
 # WEB class
 class WebConsole(http.server.SimpleHTTPRequestHandler):
@@ -102,7 +104,7 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
                         resp_code = 404
                 except Exception as e:
                     resp_code = 500
-                    body = "{ \"error\": "+json.dumps(str(e))+"}"
+                    body = "{ \"error\": " + json.dumps(str(e)) + "}"
                     traceback.print_exc()
 
             elif cmd == "cmd" and path_parts[3]:
@@ -113,7 +115,7 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
                     resp_code = 200
                 except Exception as e:
                     resp_code = 500
-                    body = "{ \"error\": "+json.dumps(str(e))+"}"
+                    body = "{ \"error\": " + json.dumps(str(e)) + "}"
                     traceback.print_exc()
 
         self.send_response(resp_code)
@@ -154,7 +156,7 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
                     resp_code = 200
                 except Exception as e:
                     resp_code = 500
-                    body = "{ \"error\": "+json.dumps(str(e))+"}"
+                    body = "{ \"error\": " + json.dumps(str(e)) + "}"
                     traceback.print_exc()
             elif cmd == "help" and path_parts[3]:
                 try:
@@ -166,7 +168,7 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
                     resp_code = 200
                 except Exception as e:
                     resp_code = 500
-                    body = "{ \"error\": "+json.dumps(str(e))+"}"
+                    body = "{ \"error\": " + json.dumps(str(e)) + "}"
                     traceback.print_exc()
             elif cmd == "start":
                 try:
@@ -175,7 +177,7 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
                     resp_code = 200
                 except Exception as e:
                     resp_code = 500
-                    body = "{ \"error\": "+json.dumps(str(e))+"}"
+                    body = "{ \"error\": " + json.dumps(str(e)) + "}"
                     traceback.print_exc()
 
             elif cmd == "stop":
@@ -185,7 +187,7 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
                     resp_code = 200
                 except Exception as e:
                     resp_code = 500
-                    body = "{ \"error\": "+json.dumps(str(e))+"}"
+                    body = "{ \"error\": " + json.dumps(str(e)) + "}"
                     traceback.print_exc()
             elif cmd == "status":
                 try:
@@ -197,12 +199,13 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
                         for key, cmd in module._cmdList.items():
                             btns[key] = cmd.is_enabled
                         sts = module.get_status_bar()
-                        modz3[name] = {"bar": sts['bar'],"text": sts['text'], "status": module.is_active, "buttons":btns}
+                        modz3[name] = {
+                            "bar": sts['bar'], "text": sts['text'], "status": module.is_active, "buttons": btns}
                     body = json.dumps({"status": modz, "progress": modz3})
                     resp_code = 200
                 except Exception as e:
                     resp_code = 500
-                    body = "{ \"error\": "+json.dumps(str(e))+"}"
+                    body = "{ \"error\": " + json.dumps(str(e)) + "}"
                     traceback.print_exc()
 
         else:  # Static content request
@@ -217,11 +220,16 @@ class WebConsole(http.server.SimpleHTTPRequestHandler):
 
                 ext = self.path.split(".")[-1]
 
-                if ext == 'html':   cont_type = 'text/html'
-                elif ext == 'js':   cont_type = 'text/javascript'
-                elif ext == 'css':  cont_type = 'text/css'
-                elif ext == 'png':  cont_type = 'image/png'
-                else:               cont_type = 'text/plain'
+                if ext == 'html':
+                    cont_type = 'text/html'
+                elif ext == 'js':
+                    cont_type = 'text/javascript'
+                elif ext == 'css':
+                    cont_type = 'text/css'
+                elif ext == 'png':
+                    cont_type = 'image/png'
+                else:
+                    cont_type = 'text/plain'
 
                 resp_code = 200
 
@@ -317,7 +325,6 @@ class UserInterface:
             print("gg bb")
             exit()
 
-
     def console_loop(self):
         while True:
             try:
@@ -348,7 +355,7 @@ class UserInterface:
                     tab2 = "\t"
                     tab1 += "\t" * int(12 / len(str(name)))
                     tab2 += "\t"
-                    print(("("+str(i)+")\t-\t" + name + tab1 + str(params) + tab2 + "Enabled: " + str(module.is_active)))
+                    print(("(" + str(i) + ")\t-\t" + name + tab1 + str(params) + tab2 + "Enabled: " + str(module.is_active)))
                     if i < total - 1:
                         print("\t\t||\t")
                         print("\t\t||\t")
@@ -398,9 +405,8 @@ class UserInterface:
                 if match:
                     try:
                         module = int(match.group(2).strip())
-                        mod  = self.CANEngine.get_modules_list()[module][1]
-                        print(("\nModule " + mod.__class__.__name__ + ": " + mod.name + "\n" + mod.help + \
-                            "\n\nConsole commands:\n"))
+                        mod = self.CANEngine.get_modules_list()[module][1]
+                        print(("\nModule " + mod.__class__.__name__ + ": " + mod.name + "\n" + mod.help + "\n\nConsole commands:\n"))
                         for key, cmd in mod._cmdList.items():
                             print(("\t" + key + " " + cmd.desc_params + "\t\t - " + cmd.description + "\n"))
                     except Exception as e:
@@ -418,10 +424,6 @@ class UserInterface:
                     print()
 
 
-def main():
+if __name__ == '__main__':
     sys.dont_write_bytecode = True
     UserInterface()
-
-
-if __name__ == '__main__':
-    main()
