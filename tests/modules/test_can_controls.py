@@ -13,7 +13,7 @@ class EcuControl(unittest.TestCase):
 
     def test_ecu_commands_and_firewall(self):
         self.CANEngine = CANSploit()
-        self.CANEngine.load_config("tests/configurations/test_9.py")
+        self.CANEngine.load_config("tests/configurations/conf_can_controls.py")
         self.CANEngine.start_loop()
         time.sleep(1)
         ret = self.CANEngine.call_module(1, "x")
