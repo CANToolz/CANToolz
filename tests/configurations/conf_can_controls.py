@@ -5,19 +5,11 @@ load_modules = {
         'bus': 'ECU_TEST',
         'commands': [
             {'cmd': 'a', 'Unlock': '0x122:2:fff0'},
-            {'Lock': '0x122:2:ffff'},
-            {'Open Trunk': '290:2:ffa0'}],
+            {'cmd': 'b', 'Lock': '0x122:2:ffff'},
+            {'cmd': 'c', 'Open Trunk': '290:2:ffa0'}],
         'statuses': [
-            {
-                'cmd': 'b', 'Door - Rear passenger': {
-                    'Open': '0x133#ff.*',
-                    'Closed': '0x133#00.*'}
-            }, {
-                'Door - Front driver': {
-                    'Open': '0x133#..FF.*',
-                    'Closed': '0x133#..00.*'}
-            }
-        ]
+            {'cmd': 'd', 'Door - Rear passenger': {'Open': '0x133#ff.*', 'Closed': '0x133#00.*'}},
+            {'cmd': 'e', 'Door - Front driver': {'Open': '0x133#..FF.*', 'Closed': '0x133#..00.*'}}]
     },
     'mod_firewall': {},
     'mod_stat': {'debug': 2},
