@@ -5,14 +5,14 @@ import unittest
 from cantoolz.engine import CANSploit
 
 
-class ModPingTests(unittest.TestCase):
+class TestGenPing(unittest.TestCase):
 
     def tearDown(self):
         self.CANEngine.stop_loop()
 
-    def test_isoanal(self):
+    def test_iso_anal(self):
         self.CANEngine = CANSploit()
-        self.CANEngine.load_config("tests/configurations/test_2.py")
+        self.CANEngine.load_config("tests/configurations/conf_gen_ping.py")
         self.CANEngine.edit_module(0, {
             'pipe': 2,
             'range': [542999, 543002],
@@ -26,27 +26,31 @@ class ModPingTests(unittest.TestCase):
         })
         self.CANEngine.start_loop()
         time.sleep(2)
-        self.CANEngine.call_module(0, "s")
-        self.CANEngine.call_module(1, "s")
+        # Activate gen_ping modules.
+        self.CANEngine.call_module(0, 's')
+        self.CANEngine.call_module(1, 's')
         time.sleep(1)
-        ret = self.CANEngine.call_module(3, "p")
+        # Print table of sniffed CAN packets from mod_stat.
+        ret = self.CANEngine.call_module(3, 'p')
         print(ret)
-        ret = self.CANEngine.call_module(3, "a")
+        # Analysis sniffed CAN packets using mod_stat.
+        ret = self.CANEngine.call_module(3, 'a')
         print(ret)
         self.assertTrue(ret.find("ID: 0x84917") > 0, "Should be be found 542999")
         self.assertTrue(ret.find("ID: 0x84918") > 0, "Should be found 543000")
         self.assertFalse(ret.find("ID: 0x8491a") > 0, "Should not be found 543002")
 
-    def test_emptyConfig(self):
+    def test_empty_config(self):
         self.CANEngine = CANSploit()
-        self.CANEngine.load_config("tests/configurations/test_2.py")
+        self.CANEngine.load_config("tests/configurations/conf_gen_ping.py")
         self.CANEngine.edit_module(0, {
             'pipe': 2,
             'body': '000000000000010203040506070102030405060711121314151617a1a2a3a4a5a6a7112233',
             'mode': 'isotp'
         })
         self.CANEngine.start_loop()
-        self.CANEngine.call_module(0, "s")
+        # Activate gen_ping first module.
+        self.CANEngine.call_module(0, 's')
         time.sleep(1)
         index = 3
         _bodyList = self.CANEngine._enabledList[index][1]._bodyList
@@ -54,7 +58,7 @@ class ModPingTests(unittest.TestCase):
 
     def test_ping(self):
         self.CANEngine = CANSploit()
-        self.CANEngine.load_config("tests/configurations/test_2.py")
+        self.CANEngine.load_config("tests/configurations/conf_gen_ping.py")
         self.CANEngine.edit_module(0, {
             'pipe': 2,
             'body': '000000000000010203040506070102030405060711121314151617a1a2a3a4a5a6a7112233',
@@ -63,11 +67,12 @@ class ModPingTests(unittest.TestCase):
         })
         self.CANEngine.start_loop()
         time.sleep(1)
-        self.CANEngine.call_module(0, "s")
+        # Activate gen_ping first module.
+        self.CANEngine.call_module(0, 's')
         time.sleep(1)
         index = 3
-
-        ret = self.CANEngine.call_module(3, "p")
+        # Print table of sniffed CAN packets from mod_stat.
+        ret = self.CANEngine.call_module(3, 'p')
         print(ret)
 
         _bodyList = self.CANEngine._enabledList[index][1]._bodyList
@@ -82,3 +87,4 @@ class ModPingTests(unittest.TestCase):
             "24a1a2a3a4a5a6a7" == (codecs.encode((list(_bodyList[543001].keys())[4][1]), 'hex_codec')).decode("ISO-8859-1"),
             "Last packet of sec should be like that"
         )
+
