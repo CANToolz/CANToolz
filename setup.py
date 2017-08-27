@@ -16,7 +16,6 @@ setup(
     packages=['cantoolz', 'cantoolz.stream', 'cantoolz.utils', 'cantoolz.modules'],
     url='https://github.com/CANToolz/CANToolz',
     install_requires=[
-        'tornado',
         'pyserial',
         'mido',
         'numpy',
