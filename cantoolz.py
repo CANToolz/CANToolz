@@ -43,79 +43,39 @@ from cantoolz.ui.cli import CANToolzCLI
 from cantoolz.ui.web import app
 
 
-# Console calss
-class UserInterface:
-    def __init__(self):
-        parser = ArgumentParser(usage='%(prog)s [options]')
+def main():
+    """CANToolz entry point handling the CLI parameters."""
+    parser = ArgumentParser(usage='%(prog)s [options]')
 
-        parser.add_argument('--debug', '-d', action='store', dest='DEBUG', type=int, help='Debug level')
-        parser.add_argument('--config', '-c', action='store', dest='CONFIG', type=str,
-                            help='Load config from file')
-        parser.add_argument('--gui', '-g', action='store', dest='GUI', type=str,
-                            help='GUI mode, c - console or w - web')
-        parser.add_argument('--host', dest='HOST', type=str, help='Host for the web interface')
-        parser.add_argument('--port', '-p', action='store', dest='PORT', type=int,
-                            help='Port for web interface')
+    parser.add_argument('--config', '-c', action='store', dest='config', type=str, default=None, help='Load config from file')
+    parser.add_argument('--gui', '-g', action='store', dest='gui', type=str, default='web', help='GUI mode, c - console or w - web')
+    parser.add_argument('--host', dest='host', type=str, default='localhost', help='Host for the web interface')
+    parser.add_argument('--port', '-p', action='store', dest='port', type=int, default=4444, help='Port for web interface')
 
-        options = parser.parse_args()
+    args = parser.parse_args()
 
-        if options.DEBUG:
-            self.DEBUG = options.DEBUG
-        else:
-            self.DEBUG = 0
+    can_engine = CANSploit()
+    if args.config:
+        can_engine.load_config(args.config)
 
-        if options.HOST:
-            self.HOST = options.HOST
-        else:
-            self.HOST = '127.0.0.1'
-
-        if options.PORT:
-            self.PORT = options.PORT
-        else:
-            self.PORT = 4444
-
-        if options.CONFIG:
-            self.CONFIG = options.CONFIG
-        else:
-            self.CONFIG = None
-
-        if options.GUI:
-            self.GUI = options.GUI
-        else:
-            self.GUI = "console"
-
-        self.CANEngine = CANSploit()
-
-        if self.CONFIG:
-            self.CANEngine.load_config(self.CONFIG)
-
-        if self.GUI[0] == "c":
-            self.console_loop()
-        elif self.GUI[0] == "w":
-            self.web_loop(host=self.HOST, port=self.PORT)
-        else:
-            print("No such GUI...")
-
-    def web_loop(self, host='127.0.0.1', port=4444):
-        print((self.CANEngine.ascii_logo_c))
-        print('CANtoolz WEB started and bound to: http://{0}:{1}'.format(host, port))
-        print("\tTo exit CTRL-C...")
-        app.can_engine = self.CANEngine
+    print(can_engine.ascii_logo_c)
+    if args.gui.lower().startswith('c'):
+        prompt = CANToolzCLI(can_engine)
+        prompt.cmdloop()
+    else:
+        print('CANtoolz WEB started and bound to: http://{0}:{1}'.format(args.host, args.port))
+        print('\tTo exit CTRL-C...')
+        app.can_engine = can_engine
         try:
-            app.run(host=host, port=port)
+            app.run(host=args.host, port=args.port)
         except KeyboardInterrupt:
             print("Please wait... (do not press ctr-c again!)")
-            self.CANEngine.stop_loop()
-            self.CANEngine.engine_exit()
+            can_engine.stop_loop()
+            can_engine.engine_exit()
             print("gg bb")
             exit()
-
-    def console_loop(self):
-        print((self.CANEngine.ascii_logo_c))
-        prompt = CANToolzCLI(self.CANEngine)
-        prompt.cmdloop()
 
 
 if __name__ == '__main__':
     sys.dont_write_bytecode = True
-    UserInterface()
+    main()
