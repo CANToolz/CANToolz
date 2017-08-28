@@ -112,8 +112,8 @@ class UserInterface:
 
     def console_loop(self):
         print((self.CANEngine.ascii_logo_c))
-        cli = CANToolzCLI(self.CANEngine)
-        cli.run()
+        prompt = CANToolzCLI(self.CANEngine)
+        prompt.cmdloop()
 
 
 if __name__ == '__main__':
