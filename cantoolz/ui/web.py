@@ -2,7 +2,7 @@ import json
 import traceback
 import collections
 
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, Response
 
 
 app = Flask(__name__)
@@ -26,10 +26,10 @@ def get_conf():
     try:
         for name, module, params in modz:
             response['queue'].append({'name': name, "params": params})
-        return json.dumps(response, ensure_ascii=False), 200
+        return Response(json.dumps(response, ensure_ascii=False), status=200, mimetype='application/json')
     except Exception:
         traceback.print_exc()
-        return json.dumps({'error': traceback.format_exc()}), 400
+        return Response(json.dumps({'error': traceback.format_exc()}), status=400, mimetype='application/json')
 
 
 @app.route('/api/help/<path:module>')
@@ -39,30 +39,30 @@ def help(module):
         response_help = collections.OrderedDict()
         for key, cmd in help_list.items():
             response_help[key] = {'descr': cmd.description, 'descr_param': cmd.desc_params, 'param_count': cmd.num_params}
-        return json.dumps(response_help, ensure_ascii=False), 200
+        return Response(json.dumps(response_help, ensure_ascii=False), status=200, mimetype='application/json')
     except Exception:
         traceback.print_exc()
-        return json.dumps({'error': traceback.format_exc()}), 400
+        return Response(json.dumps({'error': traceback.format_exc()}), status=400, mimetype='application/json')
 
 
 @app.route('/api/start')
 def start():
     try:
         modz = app.can_engine.start_loop()
-        return json.dumps({"status": modz}), 200
+        return Response(json.dumps({"status": modz}), status=200, mimetype='application/json')
     except Exception:
         traceback.print_exc()
-        return json.dumps({'error': traceback.format_exc()}), 400
+        return Response(json.dumps({'error': traceback.format_exc()}), status=400, mimetype='application/json')
 
 
 @app.route('/api/stop')
 def stop():
     try:
         modz = app.can_engine.stop_loop()
-        return json.dumps({"status": modz}), 200
+        return Response(json.dumps({"status": modz}), status=200, mimetype='application/json')
     except Exception:
         traceback.print_exc()
-        return json.dumps({'error': traceback.format_exc()}), 400
+        return Response(json.dumps({'error': traceback.format_exc()}), status=400, mimetype='application/json')
 
 
 @app.route('/api/status')
@@ -78,10 +78,10 @@ def status():
             sts = module.get_status_bar()
             modz3[name] = {
                 "bar": sts['bar'], "text": sts['text'], "status": module.is_active, "buttons": btns}
-        return json.dumps({"status": modz, "progress": modz3}), 200
+        return Response(json.dumps({"status": modz, "progress": modz3}), status=200, mimetype='application/json')
     except Exception:
         traceback.print_exc()
-        return json.dumps({'error': traceback.format_exc()}), 400
+        return Response(json.dumps({'error': traceback.format_exc()}), status=400, mimetype='application/json')
 
 
 @app.route('/api/edit/<int:id>', methods=['POST'])
@@ -99,12 +99,12 @@ def edit(id):
                 app.can_engine.get_modules_list()[id][1].do_activate(0, 1)
 
             new_params = app.can_engine.get_module_params(id)
-            return json.dumps(new_params, ensure_ascii=False), 200
+            return Response(json.dumps(new_params, ensure_ascii=False), status=200, mimetype='application/json')
         else:
-            return json.dumps({'error': 'module not found'}), 404
+            return Response(json.dumps({'error': 'module not found'}), status=404, mimetype='application/json')
     except Exception:
         traceback.print_exc()
-        return json.dumps({'error': traceback.format_exc()}), 400
+        return Response(json.dumps({'error': traceback.format_exc()}), status=400, mimetype='application/json')
 
 
 @app.route('/api/cmd/<path:module>', methods=['POST'])
@@ -112,7 +112,7 @@ def cmd(module):
     try:
         paramz = request.get_json().get("cmd")
         text = app.can_engine.call_module(app.can_engine.find_module(module), str(paramz))
-        return json.dumps({'response': str(text)}), 200
+        return Response(json.dumps({'response': str(text)}), status=200, mimetype='application/json')
     except Exception:
         traceback.print_exc()
-        return json.dumps({'error': traceback.format_exc()}), 400
+        return Response(json.dumps({'error': traceback.format_exc()}), status=400, mimetype='application/json')
