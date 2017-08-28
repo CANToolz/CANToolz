@@ -1,11 +1,11 @@
 # Test scenario/configuration
 modules = {
-    'gen_fuzz': {},
+    'fuzz': {},
     'pipe_switch': {},
-    'mod_stat': {}}
+    'analyze': {}}
 # The test scenario logic
 actions = [
-    {'gen_fuzz': {}},
+    {'fuzz': {}},
     {'pipe_switch': {'action': 'read'}},
     {'pipe_switch': {'action': 'write', 'pipe': 3}},
-    {'mod_stat': {'pipe': 3}}]
+    {'analyze': {'pipe': 3}}]

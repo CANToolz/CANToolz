@@ -203,8 +203,8 @@ modules = {
         'reports_delay': 0.2
 
     },
-    'mod_stat':{},
-    'mod_stat~2': {}
+    'analyze':{},
+    'analyze~2': {}
 }
 
 

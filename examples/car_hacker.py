@@ -5,7 +5,7 @@ modules = {
          'id_command': 0x71
     },
 
-    'gen_ping' :    {},
+    'ping' :    {},
 
 
     'vircar/uds_tester_ecu_engine':{
@@ -16,10 +16,10 @@ modules = {
 
     'io/hw_TCP2CAN':    {'port': 1111, 'mode': 'client', 'address':'127.0.0.1', 'debug':3},
     'io/hw_TCP2CAN~1':    {'port': 1112, 'mode': 'client','address':'127.0.0.1', 'debug':3},
-    'gen_fuzz':{},
+    'fuzz':{},
 
-    'mod_stat':{},
-    'mod_stat~2': {}
+    'analyze':{},
+    'analyze~2': {}
 }
 
 
@@ -30,7 +30,7 @@ actions = [
 
 
 
-    {'gen_ping':    {                    # Generate UDS requests
+    {'ping':    {                    # Generate UDS requests
         'pipe': 3,
         'delay': 0.06,
         'range': [1700, 1800],           # ID range (from 1790 to 1794)
@@ -42,8 +42,8 @@ actions = [
 
 
 
-    {'mod_stat':    {'pipe': 2}},
-    {'mod_stat~2':    {'pipe': 1}},
+    {'analyze':    {'pipe': 2}},
+    {'analyze~2':    {'pipe': 1}},
 
 
     {'uds_tester_ecu_engine':
@@ -58,7 +58,7 @@ actions = [
          'action': 'write',
          'pipe': 3}},
 
-    {'gen_fuzz':{
+    {'fuzz':{
         'id':[0x81],'data':[0,0],'index':[0,1],'delay':0.07,'pipe':4,'bytes':(0,0x20)
 
     }},

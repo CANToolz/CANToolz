@@ -17,8 +17,8 @@ from cantoolz.stream.subnet import Subnet
 from cantoolz.stream.separator import Separator
 
 
-class mod_stat(CANModule):
-    name = "Service discovery and statistic"
+class analyze(CANModule):
+    name = "Service discovery, statistic and analysis"
 
     help = """
 
@@ -109,7 +109,7 @@ class mod_stat(CANModule):
         self._cmdList['r'] = Command("Dump buffer (if index is empty then all) in replay format", 1, " <filename>, [index]", self.do_dump_replay, True)
         self._cmdList['d2'] = Command("Dump buffer (if index is empty then all) in CSV format", 1, " <filename>, [index]", self.do_dump_csv2, True)
         self._cmdList['d'] = Command("Dump STATS for buffer (if index is empty then all) in CSV format", 1, " <filename>, [index]", self.do_dump_csv, True)
-        self._cmdList['g'] = Command("Get DELAY value for gen_ping/gen_fuzz (EXPERIMENTAL)", 1, "<Bus SPEED in Kb/s>", self.get_delay, True)
+        self._cmdList['g'] = Command("Get DELAY value for ping/fuzz (EXPERIMENTAL)", 1, "<Bus SPEED in Kb/s>", self.get_delay, True)
 
     def get_delay(self, def_in, speed):
         _speed = float(speed) * 1024

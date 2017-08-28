@@ -5,7 +5,7 @@ from cantoolz.isotp import ISOTPMessage
 from cantoolz.module import CANModule
 
 
-class gen_fuzz(CANModule):
+class fuzz(CANModule):
     name = "Fuzzing one byte with shift (CAN), byte fuzz"
     help = """
 

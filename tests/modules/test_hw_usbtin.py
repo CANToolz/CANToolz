@@ -9,12 +9,12 @@ class TestUSBtin(TestCANToolz):
         self.CANEngine.load_config("tests/configurations/conf_hw_usbtin.py")
         self.CANEngine.start_loop()
         time.sleep(1)
-        # Replay loaded CAN messages via gen_replay
+        # Replay loaded CAN messages via replay
         self.CANEngine.call_module(1, 'r')
         # Send CAN message via hw_USBtin
         self.CANEngine.call_module(3, 't T112233446112233445566')
         time.sleep(1)
-        # Print table of sniffed CAN packets from mod_stat.
+        # Print table of sniffed CAN packets from analyze.
         ret = self.CANEngine.call_module(2, 'p')
         _bodyList = self.CANEngine._enabledList[2][1]._bodyList
         self.assertTrue(6 == len(_bodyList), "6 unique ID, should be sent")

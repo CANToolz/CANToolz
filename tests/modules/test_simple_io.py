@@ -8,7 +8,7 @@ class TestSimpleIO(TestCANToolz):
     def test_send_recieve(self):
         self.CANEngine.load_config('tests/configurations/conf_simple_io.py')
         self.CANEngine.start_loop()
-        mod_stat = self.CANEngine.find_module('mod_stat')
+        analyze = self.CANEngine.find_module('analyze')
         simple_io = self.CANEngine.find_module('simple_io')
         time.sleep(1)
         # Write CAN messages via SimpleIO.
@@ -16,8 +16,8 @@ class TestSimpleIO(TestCANToolz):
         self.CANEngine.call_module(simple_io, 'w 111:4:00112233')
         self.CANEngine.call_module(simple_io, 'w 0x111:0011223344')
         time.sleep(1)
-        # Print table of sniffed CAN packets from mod_stat.
-        ret = self.CANEngine.call_module(mod_stat, 'p')
+        # Print table of sniffed CAN packets from analyze.
+        ret = self.CANEngine.call_module(analyze, 'p')
         self.assertTrue(ret.find(" 001122 ") > 0, "Should be found")
         self.assertTrue(ret.find(" 00112233 ") > 0, "Should be found")
         self.assertTrue(ret.find(" 0011223344 ") > 0, "Should be found")

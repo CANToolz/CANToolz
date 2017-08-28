@@ -3,17 +3,17 @@ import time
 from ..utils import TestCANToolz
 
 
-class TestGenFuzz(TestCANToolz):
+class TestFuzz(TestCANToolz):
 
     def test_fuzz_can(self):
-        self.CANEngine.load_config("tests/configurations/conf_gen_fuzz.py")
+        self.CANEngine.load_config("tests/configurations/conf_fuzz.py")
         self.CANEngine.edit_module(0, {'id': [111], 'data': [0, 1], 'bytes': (0, 4), 'delay': 0})
         self.CANEngine.start_loop()
         time.sleep(1)
-        # Start gen_fuzz module.
+        # Start fuzz module.
         self.CANEngine.call_module(0, 's')
         time.sleep(3)
-        # Print table of sniffed CAN packets from mod_stat.
+        # Print table of sniffed CAN packets from analyze.
         ret = self.CANEngine.call_module(3, 'p')
         print(ret)
         index = 3
@@ -21,7 +21,7 @@ class TestGenFuzz(TestCANToolz):
         self.assertTrue(16 == len(_bodyList[111]), "16 unique packets should be sent")
 
     def test_fuzz_iso(self):
-        self.CANEngine.load_config("tests/configurations/conf_gen_fuzz.py")
+        self.CANEngine.load_config("tests/configurations/conf_fuzz.py")
         self.CANEngine.edit_module(
             0,
             {
@@ -34,10 +34,10 @@ class TestGenFuzz(TestCANToolz):
             })
         self.CANEngine.start_loop()
         time.sleep(1)
-        # Start gen_fuzz module.
+        # Start fuzz module.
         self.CANEngine.call_module(0, 's')
         time.sleep(3)
-        # Print table of sniffed CAN packets from mod_stat.
+        # Print table of sniffed CAN packets from analyze.
         ret = self.CANEngine.call_module(3, 'p')
         print(ret)
         index = 3

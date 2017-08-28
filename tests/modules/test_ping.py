@@ -4,10 +4,10 @@ import codecs
 from ..utils import TestCANToolz
 
 
-class TestGenPing(TestCANToolz):
+class TestPing(TestCANToolz):
 
     def test_iso_anal(self):
-        self.CANEngine.load_config("tests/configurations/conf_gen_ping.py")
+        self.CANEngine.load_config("tests/configurations/conf_ping.py")
         self.CANEngine.edit_module(0, {
             'pipe': 2,
             'range': [542999, 543002],
@@ -21,14 +21,14 @@ class TestGenPing(TestCANToolz):
         })
         self.CANEngine.start_loop()
         time.sleep(2)
-        # Activate gen_ping modules.
+        # Activate ping modules.
         self.CANEngine.call_module(0, 's')
         self.CANEngine.call_module(1, 's')
         time.sleep(1)
-        # Print table of sniffed CAN packets from mod_stat.
+        # Print table of sniffed CAN packets from analyze.
         ret = self.CANEngine.call_module(3, 'p')
         print(ret)
-        # Analysis sniffed CAN packets using mod_stat.
+        # Analysis sniffed CAN packets using analyze.
         ret = self.CANEngine.call_module(3, 'a')
         print(ret)
         self.assertTrue(ret.find("ID: 0x84917") > 0, "Should be be found 542999")
@@ -36,14 +36,14 @@ class TestGenPing(TestCANToolz):
         self.assertFalse(ret.find("ID: 0x8491a") > 0, "Should not be found 543002")
 
     def test_empty_config(self):
-        self.CANEngine.load_config("tests/configurations/conf_gen_ping.py")
+        self.CANEngine.load_config("tests/configurations/conf_ping.py")
         self.CANEngine.edit_module(0, {
             'pipe': 2,
             'body': '000000000000010203040506070102030405060711121314151617a1a2a3a4a5a6a7112233',
             'mode': 'isotp'
         })
         self.CANEngine.start_loop()
-        # Activate gen_ping first module.
+        # Activate ping first module.
         self.CANEngine.call_module(0, 's')
         time.sleep(1)
         index = 3
@@ -51,7 +51,7 @@ class TestGenPing(TestCANToolz):
         self.assertTrue(len(_bodyList) == 0, "Should be empty list")
 
     def test_ping(self):
-        self.CANEngine.load_config("tests/configurations/conf_gen_ping.py")
+        self.CANEngine.load_config("tests/configurations/conf_ping.py")
         self.CANEngine.edit_module(0, {
             'pipe': 2,
             'body': '000000000000010203040506070102030405060711121314151617a1a2a3a4a5a6a7112233',
@@ -60,11 +60,11 @@ class TestGenPing(TestCANToolz):
         })
         self.CANEngine.start_loop()
         time.sleep(1)
-        # Activate gen_ping first module.
+        # Activate ping first module.
         self.CANEngine.call_module(0, 's')
         time.sleep(1)
         index = 3
-        # Print table of sniffed CAN packets from mod_stat.
+        # Print table of sniffed CAN packets from analyze.
         ret = self.CANEngine.call_module(3, 'p')
         print(ret)
 
@@ -82,7 +82,7 @@ class TestGenPing(TestCANToolz):
         )
 
     def test_ping_uds(self):
-        self.CANEngine.load_config('tests/configurations/conf_gen_replay_uds.py')
+        self.CANEngine.load_config('tests/configurations/conf_replay_uds.py')
         self.CANEngine.edit_module(
             2,
             {
@@ -97,12 +97,12 @@ class TestGenPing(TestCANToolz):
         time.sleep(1)
         self.CANEngine.start_loop()
         time.sleep(1)
-        # Start gen_ping module.
+        # Start ping module.
         self.CANEngine.call_module(2, 's')
         time.sleep(1)
-        mod_stat = 3
+        analyze = 3
         # Print count of loaded packets.
-        ret1 = self.CANEngine.call_module(mod_stat, 'p 0')
+        ret1 = self.CANEngine.call_module(analyze, 'p 0')
         print(ret1)
         self.assertTrue(0 <= ret1.find('020505'), "Should be found")
         self.assertTrue(0 <= ret1.find('020504'), "Should be found")
@@ -116,7 +116,7 @@ class TestGenPing(TestCANToolz):
 
     # https://github.com/eik00d/CANToolz/issues/93 by @DePierre
     def test_ping_uds_none_crash(self):
-        self.CANEngine.load_config('tests/configurations/conf_gen_replay_uds.py')
+        self.CANEngine.load_config('tests/configurations/conf_replay_uds.py')
         self.CANEngine.edit_module(
             2,
             {
@@ -129,12 +129,12 @@ class TestGenPing(TestCANToolz):
         time.sleep(1)
         self.CANEngine.start_loop()
         time.sleep(1)
-        # Start gen_ping module.
+        # Start ping module.
         self.CANEngine.call_module(2, 's')
         time.sleep(1)
-        mod_stat = 3
+        analyze = 3
         # Print count of loaded packets.
-        ret1 = self.CANEngine.call_module(mod_stat, 'p 0')
+        ret1 = self.CANEngine.call_module(analyze, 'p 0')
         print(ret1)
         self.assertTrue(0 <= ret1.find('0x1'), "Should be found")
         self.assertTrue(0 <= ret1.find('0101'), "Should be found")

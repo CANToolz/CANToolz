@@ -4,7 +4,7 @@ from cantoolz.replay import Replay
 from cantoolz.module import CANModule, Command
 
 
-class gen_replay(CANModule):
+class replay(CANModule):
 
     name = "Replay module"
     help = """

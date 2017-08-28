@@ -85,12 +85,12 @@ hw_USBtin | IO module for USBtin
 hw_CANSocket | IO module for CANSocket (Linux only)
 hw_TCP2CAN | client/server IO component for tunnelinc raw CAN traffic over TCP
 hw_CAN232 | IO module for LAWICEL (USB to Serial) CAN devices (e.g. SeeedStudio CAN bus shield)
-mod_firewall | module for blocking CAN message by ID
-mod_fuzz1 | Simple 'Proxy' fuzzer  (1 byte) Can be combined with gen_ping/gen_replay
+firewall | module for blocking CAN message by ID
+fuzz | Simple 'Proxy' fuzzer  (1 byte) Can be combined with ping/replay
 mod_printMessage | printing CAN messages
-mod_stat | CAN messages statistic (with .csv file output) / Analysis option (c mod_stat a) will try to find UDS/ISO TP messages
-gen_ping | generating CAN messages with chosen IDs (ECU/Service discovery)
-gen_replay | save and replay packets
+analyze | CAN messages statistic (with .csv file output) / Analysis option (c analyze a) will try to find UDS/ISO TP messages
+ping | generating CAN messages with chosen IDs (ECU/Service discovery)
+replay | save and replay packets
 
 We are working on supporting other types of I/O hardware and modules. Please join us! With your help, we can create
 modules that can be useful for all of us!

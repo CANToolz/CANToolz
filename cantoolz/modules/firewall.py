@@ -1,7 +1,7 @@
 from cantoolz.module import CANModule
 
 
-class mod_firewall(CANModule):
+class firewall(CANModule):
 
     name = "Filter CAN messages"
     help = """

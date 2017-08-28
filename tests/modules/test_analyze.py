@@ -3,10 +3,10 @@ import time
 from ..utils import TestCANToolz
 
 
-class TestModStat(TestCANToolz):
+class TestAnalyze(TestCANToolz):
 
-    def test_mod_stat(self):
-        self.CANEngine.load_config('tests/configurations/conf_mod_stat.py')
+    def test_analyze(self):
+        self.CANEngine.load_config('tests/configurations/conf_analyze.py')
         self.CANEngine.edit_module(1, {'pipe': 2})
         time.sleep(1)
         self.CANEngine.start_loop()
@@ -24,7 +24,7 @@ class TestModStat(TestCANToolz):
         self.CANEngine.call_module(0, 't 4:4:1122334455')
         time.sleep(1)
         index = 1
-        # Print table of sniffed CAN packets from mod_stat.
+        # Print table of sniffed CAN packets from analyze.
         ret = self.CANEngine.call_module(1, 'p')
         print(ret)
         _bodyList = self.CANEngine._enabledList[index][1]._bodyList
@@ -33,29 +33,29 @@ class TestModStat(TestCANToolz):
         self.assertTrue(455678 in _bodyList, "We should be able to find ID 455678")
         self.assertFalse(2 in _bodyList, "We should not be able to find ID 2")
         self.assertFalse(0 in _bodyList, "We should not be able to find ID 0")
-        # Clear sniffed CAN packets table from mod_stat
+        # Clear sniffed CAN packets table from analyze
         self.CANEngine.call_module(1, 'c')
         # Send one CAN packet to the bus.
         self.CANEngine.call_module(0, 't 2:8:1122334411223344')
         time.sleep(1)
-        # Print table of sniffed CAN packets from mod_stat.
+        # Print table of sniffed CAN packets from analyze.
         self.CANEngine.call_module(1, 'p')
         _bodyList = self.CANEngine._enabledList[index][1]._bodyList
         self.assertFalse(4 in _bodyList, "We should not be able to find ID 4")
         self.assertFalse(455678 in _bodyList, "We should not be able to find ID 455678")
         self.assertTrue(2 in _bodyList, "We should be able to find ID 2")
 
-    def test_mod_stat_diff(self):
-        self.CANEngine.load_config('tests/configurations/conf_gen_replay_uds.py')
+    def test_analyze_diff(self):
+        self.CANEngine.load_config('tests/configurations/conf_replay_uds.py')
         self.CANEngine.start_loop()
         time.sleep(1)
-        # Replay loaded packets via gen_replay.
+        # Replay loaded packets via replay.
         self.CANEngine.call_module(0, 'r 0-3')
         time.sleep(1)
         # Switch sniffing to a new buffer.
         self.CANEngine.call_module(1, 'D')
         time.sleep(1)
-        # Replay loaded packets via gen_replay.
+        # Replay loaded packets via replay.
         self.CANEngine.call_module(0, 'r 0-3')
         time.sleep(1)
         # Print diff between two buffers.
@@ -64,7 +64,7 @@ class TestModStat(TestCANToolz):
         self.assertFalse(0 <= ret.find(" 0x2bc "), "Should be empty diff")
         self.assertFalse(0 <= ret.find(" 0x70b "), "Should be empty diff")
         self.assertFalse(0 <= ret.find(" 0x709 "), "Should be empty diff")
-        # Replay loaded packets via gen_replay.
+        # Replay loaded packets via replay.
         self.CANEngine.call_module(0, 'r 0-6')
         time.sleep(1)
         # Print diff between two buffers.
@@ -78,7 +78,7 @@ class TestModStat(TestCANToolz):
         self.assertFalse(0 <= ret.find(" 0x70b "), "Should be empty diff")
         self.assertFalse(0 <= ret.find(" 0x709 "), "Should be empty diff")
 
-        # Replay loaded packets via gen_replay.
+        # Replay loaded packets via replay.
         self.CANEngine.call_module(0, 'r 0-6')
         time.sleep(1)
         # Print diff between two buffers and show only new IDs.
@@ -94,12 +94,12 @@ class TestModStat(TestCANToolz):
 
         # Switch sniffing to a new buffer.
         self.CANEngine.call_module(1, 'D , TEST BUFF')
-        # Replay loaded packets via gen_replay.
+        # Replay loaded packets via replay.
         self.CANEngine.call_module(0, 'r 0-6')
         time.sleep(1)
         # Switch sniffing to a new buffer.
         self.CANEngine.call_module(1, 'D , TEST BUFF2')
-        # Replay loaded packets via gen_replay.
+        # Replay loaded packets via replay.
         self.CANEngine.call_module(0, 'r')
         time.sleep(1)
         # Print diff between two buffers.
@@ -138,24 +138,24 @@ class TestModStat(TestCANToolz):
         self.assertFalse(0 <= ret.find("215a543533383236"), "Should not be empty diff")
         self.assertFalse(0 <= ret.find("2246313039313439"), "Should not be empty diff")
 
-    def test_mod_stat_fields(self):
-        self.CANEngine.load_config('tests/configurations/conf_gen_replay_uds.py')
+    def test_analyze_fields(self):
+        self.CANEngine.load_config('tests/configurations/conf_replay_uds.py')
         self.CANEngine.start_loop()
         time.sleep(1)
-        # Clean gen_replay loaded table.
+        # Clean replay loaded table.
         self.CANEngine.call_module(0, 'c')
         time.sleep(1)
-        # Load CAN messages from file into gen_replay.
+        # Load CAN messages from file into replay.
         self.CANEngine.call_module(0, 'l tests/data/test_fields.dump')
         time.sleep(1)
-        # Replay loaded CAN message with gen_replay.
+        # Replay loaded CAN message with replay.
         self.CANEngine.call_module(0, 'r')
         time.sleep(1)
-        mod_stat = 1
+        analyze = 1
         # Show detected amount of fields for a chosen ECU.
-        ret1 = self.CANEngine.call_module(mod_stat, 'show')
+        ret1 = self.CANEngine.call_module(analyze, 'show')
         # Show fields value for a chosen ECU, in hex.
-        ret2 = self.CANEngine.call_module(mod_stat, 'fields 2, hex')
+        ret2 = self.CANEngine.call_module(analyze, 'fields 2, hex')
         print(ret1)
         self.assertTrue(0 <= ret1.find("ECU: 0x2     Length: 2     FIELDS DETECTED: 2"), "Should be found")
         self.assertTrue(0 <= ret1.find("ECU: 0x1     Length: 7     FIELDS DETECTED: 2"), "Should be found")
@@ -165,13 +165,13 @@ class TestModStat(TestCANToolz):
         self.assertTrue(0 <= ret2.find("1110    0"), "Should be found")
 
         # Show fields value for a chosen ECU, in binary.
-        ret2 = self.CANEngine.call_module(mod_stat, "fields 2, bin")
+        ret2 = self.CANEngine.call_module(analyze, "fields 2, bin")
         print(ret2)
         self.assertTrue(0 <= ret2.find("1000100010001    000"), "Should be found")
         self.assertTrue(0 <= ret2.find("1000100010000    001"), "Should be found")
 
         # Show fields value for a chosen ECU, in decimal.
-        ret2 = self.CANEngine.call_module(mod_stat, "fields 1, int")
+        ret2 = self.CANEngine.call_module(analyze, "fields 1, int")
 
         self.assertTrue(0 <= ret2.find("1    1    9626517791733640"), "Should be found")
         self.assertTrue(0 <= ret2.find("2    2    9626517791733640"), "Should be found")
@@ -179,23 +179,23 @@ class TestModStat(TestCANToolz):
         self.assertTrue(0 <= ret2.find("17895699    17895697"), "Should be found")
         self.assertTrue(0 <= ret2.find("17895697    17895697"), "Should be found")
 
-    def test_mod_stat_meta_add(self):
-        self.CANEngine.load_config('tests/configurations/conf_gen_replay_uds.py')
+    def test_analyze_meta_add(self):
+        self.CANEngine.load_config('tests/configurations/conf_replay_uds.py')
         self.CANEngine.start_loop()
         time.sleep(1)
-        # Replay loaded CAN message with gen_replay.
+        # Replay loaded CAN message with replay.
         self.CANEngine.call_module(0, 'r 0-9')
         time.sleep(2)
-        mod_stat = 1
+        analyze = 1
         # Add meta description for several CAN frames.
-        self.CANEngine.call_module(mod_stat, 'i 0x708 ,.*, TEST UDS')
-        self.CANEngine.call_module(mod_stat, 'i 0x2bc , 0f410d00 , TEST 700')
-        self.CANEngine.call_module(mod_stat, 'i 1803 , 2f............44 , TEST 1803')
-        self.CANEngine.call_module(mod_stat, 'i 1801 , 036f , TEST 1801')
+        self.CANEngine.call_module(analyze, 'i 0x708 ,.*, TEST UDS')
+        self.CANEngine.call_module(analyze, 'i 0x2bc , 0f410d00 , TEST 700')
+        self.CANEngine.call_module(analyze, 'i 1803 , 2f............44 , TEST 1803')
+        self.CANEngine.call_module(analyze, 'i 1801 , 036f , TEST 1801')
         # Save meta description to file.
-        self.CANEngine.call_module(mod_stat, 'z tests/data/meta.txt')
-        # Print table of sniffed CAN packets from mod_stat.
-        ret = self.CANEngine.call_module(mod_stat, 'p')
+        self.CANEngine.call_module(analyze, 'z tests/data/meta.txt')
+        # Print table of sniffed CAN packets from analyze.
+        ret = self.CANEngine.call_module(analyze, 'p')
         print(ret)
         idx = ret.find("TEST UDS")
         self.assertTrue(0 <= idx, "Comment 'TEST UDS' should be found 1 times")
@@ -205,25 +205,25 @@ class TestModStat(TestCANToolz):
         self.assertTrue(0 <= ret.find("TEST 1803"), "Comment 'TEST 1803' should be found 1 times")
         self.assertFalse(0 <= ret.find("TEST 1801"), "Comment 'TEST 1801' should NOT be found 1 times")
 
-    def test_mod_stat_meta_load(self):
-        self.CANEngine.load_config('tests/configurations/conf_gen_replay_uds.py')
+    def test_analyze_meta_load(self):
+        self.CANEngine.load_config('tests/configurations/conf_replay_uds.py')
         self.CANEngine.start_loop()
         time.sleep(1)
-        # Replay loaded CAN message with gen_replay.
+        # Replay loaded CAN message with replay.
         self.CANEngine.call_module(0, 'r 0-9')
         time.sleep(2)
-        mod_stat = 1
-        # Print table of sniffed CAN packets from mod_stat.
-        ret = self.CANEngine.call_module(mod_stat, 'p')
+        analyze = 1
+        # Print table of sniffed CAN packets from analyze.
+        ret = self.CANEngine.call_module(analyze, 'p')
         idx = ret.find("TEST UDS")
         self.assertTrue(-1 == idx, "Comment 'TEST UDS' should NOT be found")
         # Load meta description from file.
-        self.CANEngine.call_module(mod_stat, 'l tests/data/meta.txt')
-        # Print table of sniffed CAN packets from mod_stat.
-        ret = self.CANEngine.call_module(mod_stat, 'p')
+        self.CANEngine.call_module(analyze, 'l tests/data/meta.txt')
+        # Print table of sniffed CAN packets from analyze.
+        ret = self.CANEngine.call_module(analyze, 'p')
         print(ret)
         # Save buffer stats in CSV format to file.
-        self.CANEngine.call_module(mod_stat, 'd tests/data/meta_test.csv')
+        self.CANEngine.call_module(analyze, 'd tests/data/meta_test.csv')
         idx = ret.find("TEST UDS")
         self.assertTrue(0 <= idx, "Comment 'TEST UDS' should be found 1 times")
         idx2 = ret.find("TEST UDS", idx + 8)

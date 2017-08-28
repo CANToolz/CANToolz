@@ -2,21 +2,21 @@
 modules = {
     'io/hw_USBtin':    {'port':'loop', 'debug':1, 'speed':500},                # IO hardware module connected to first BUS (IVI)
     'io/hw_USBtin~2':  {'port':'loop', 'debug':1, 'speed':500, 'bus': 62 },    # IO hardware module (connected to OBD2)
-    'gen_ping' :    {},                                                     # Generator/Ping
-    'mod_firewall': {},                                                     # We need firewall to block all other packets
-    'mod_stat':     {}                                                      # Mod stat to see results
+    'ping' :    {},                                                     # Generator/Ping
+    'firewall': {},                                                     # We need firewall to block all other packets
+    'analyze':     {}                                                      # Mod stat to see results
 }
 
 actions = [
     {'hw_USBtin':    {'action': 'read','pipe': 1}},     # Read to PIPE 1 from IVI
     {'hw_USBtin~2':  {'action': 'read','pipe': 2}},     # Read to PIPE 2 from OBD2 port
-    {'mod_firewall': {'white_body':[[1,2,3,4,5,6,7,8]],'pipe': 1}}, # Block all other CAN frames, but let frames with
+    {'firewall': {'white_body':[[1,2,3,4,5,6,7,8]],'pipe': 1}}, # Block all other CAN frames, but let frames with
                                                                   #  data "\x01\x02\x03\x04\x05\x06\x07\x08" pass
-    {'mod_firewall': {'white_body':[[1,2,3,4,5,6,7,8]], 'pipe': 2}},
+    {'firewall': {'white_body':[[1,2,3,4,5,6,7,8]], 'pipe': 2}},
 
-    {'mod_stat': {'pipe': 1}}, {'mod_stat': {'pipe': 2}}, # read from both pipes after filtration
+    {'analyze': {'pipe': 1}}, {'analyze': {'pipe': 2}}, # read from both pipes after filtration
 
-    {'gen_ping': {'range': [1,2000],'mode':'CAN','body':'0102030405060708','pipe':3, 'delay':0.06}},
+    {'ping': {'range': [1,2000],'mode':'CAN','body':'0102030405060708','pipe':3, 'delay':0.06}},
                                                          # Generate CAN frames to PIPE 3
     {'hw_USBtin': {'pipe': 3, 'action': 'write'}},         # Write generated packets to both buses
     {'hw_USBtin~2': {'pipe': 3, 'action': 'write'}}
@@ -56,23 +56,23 @@ actions = [
 #                 ||
 #                 ||
 #                 \/
-# (2)     -       mod_firewall            {'pipe': 1, 'white_body': [[1, 2, 3, 4, 5, 6, 7, 8]]}          Enabled: True
+# (2)     -       firewall            {'pipe': 1, 'white_body': [[1, 2, 3, 4, 5, 6, 7, 8]]}          Enabled: True
 #                 ||
 #                 ||
 #                 \/
-# (3)     -       mod_firewall            {'pipe': 2, 'white_body': [[1, 2, 3, 4, 5, 6, 7, 8]]}          Enabled: True
+# (3)     -       firewall            {'pipe': 2, 'white_body': [[1, 2, 3, 4, 5, 6, 7, 8]]}          Enabled: True
 #                 ||
 #                 ||
 #                 \/
-# (4)     -       mod_stat                {'pipe': 1}             Enabled: True
+# (4)     -       analyze                {'pipe': 1}             Enabled: True
 #                 ||
 #                 ||
 #                 \/
-# (5)     -       mod_stat                {'pipe': 2}             Enabled: True
+# (5)     -       analyze                {'pipe': 2}             Enabled: True
 #                 ||
 #                 ||
 #                 \/
-# (6)     -       gen_ping                {'body': '0102030405060708', 'pipe': 3, 'range': [1, 2000], 'mode': 'CAN'}              Enabled: False
+# (6)     -       ping                {'body': '0102030405060708', 'pipe': 3, 'range': [1, 2000], 'mode': 'CAN'}              Enabled: False
 #                 ||
 #                 ||
 #                 \/

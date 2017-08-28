@@ -6,14 +6,14 @@
 # Load needed modules
 modules = {
     'io/hw_USBtin':    {'port': 'auto', 'debug': 1, 'speed': 500},                # IO hardware module
-    'gen_ping' :    {},                                                     # Generator/Ping
-    'mod_stat':     {}                                                      # Mod stat to see results
+    'ping' :    {},                                                     # Generator/Ping
+    'analyze':     {}                                                      # Mod stat to see results
 }
 
 actions = [
     {'hw_USBtin':   {'action': 'read'}}, # Read to PIPE 1
-    {'mod_stat':    {}},                 # Mod stat (with CAN traffic analyzer)
-    {'gen_ping':    {                    # Generate UDS requests
+    {'analyze':    {}},                 # Mod stat (with CAN traffic analyze)
+    {'ping':    {                    # Generate UDS requests
         'pipe': 2,
         'delay': 0.06,
         'range': [1, 2047],           # ID range (from 1790 to 1794)
@@ -21,7 +21,7 @@ actions = [
                     {'service': 0x3E, 'sub': 0x01}],
         'mode':'UDS'}
     },
-    {'mod_stat':    {'pipe': 2}},
+    {'analyze':    {'pipe': 2}},
      {'hw_USBtin':   {'action': 'write','pipe':2}}
     ]
 

@@ -6,13 +6,13 @@ from cantoolz.isotp import ISOTPMessage
 from cantoolz.module import CANModule
 
 
-class gen_ping(CANModule):
+class ping(CANModule):
 
     name = "Sending CAN pings"
     help = """
 
     This module doing ID buteforce.
-    (combine with mod_stat for example)
+    (combine with analyze for example)
     Init parameters: None
     Module parameters:
        body           -  data HEX that will be used in CAN for discovery (by default body is 0000000000000000)

@@ -1,14 +1,14 @@
 # Load needed modules
 modules = {
     'io/hw_CANBusTriple':    {'port':'auto', 'debug':1, 'speed':500}, # IO hardware module
-    'mod_stat' :    {},                                      # Mod stat
-    'gen_ping' :    {'debug': 1}                            # Generator/Ping
+    'analyze' :    {},                                      # Mod stat
+    'ping' :    {'debug': 1}                            # Generator/Ping
 }
 # Now let's describe the logic of this test
 actions = [
     {'hw_CANBusTriple':   {'action': 'read','pipe': 2}}, # Read to PIPE 2
-    {'mod_stat':    {'pipe': 2}},                  # Statistic for PIPE 2
-    {'gen_ping':    {                              # Generate pings to PIPE 1
+    {'analyze':    {'pipe': 2}},                  # Statistic for PIPE 2
+    {'ping':    {                              # Generate pings to PIPE 1
         'pipe': 1,
         'delay':0.06,
         'body': '000000000000010203040506070102030405060711121314151617a1a2a3a4a5a6a7112233', # ISO TP data
@@ -44,11 +44,11 @@ actions = [
 #                 ||
 #                 ||
 #                 \/
-# (1)     -       mod_stat                {'pipe': 2}             Enabled: True
+# (1)     -       analyze                {'pipe': 2}             Enabled: True
 #                 ||
 #                 ||
 #                 \/
-# (2)     -       gen_ping                {'pipe': 1, 'body': '000000000000010203040506070102030405060711121314151617a1a2a3a4a5a6a7112233', 'range': [502999, 543002], 'mode': 'isotp'}
+# (2)     -       ping                {'pipe': 1, 'body': '000000000000010203040506070102030405060711121314151617a1a2a3a4a5a6a7112233', 'range': [502999, 543002], 'mode': 'isotp'}
 #                 ||
 #                 ||
 #                 \/
@@ -73,7 +73,7 @@ actions = [
 # >> c 2 s                                               # now start ID bruteforce with
 # Active status: True
 # New ID found: 510994 (BUS: 60)                                  # here we got new ID
-# gen_ping: Loop finished
+# ping: Loop finished
 # >> c 1 p                                     # let's check what we have for now.
 #
 # BUS     LEN     ID              MESSAGE                 COUNT

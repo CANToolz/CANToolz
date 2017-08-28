@@ -4,9 +4,9 @@ from cantoolz.can import CANMessage
 from cantoolz.module import CANModule, Command
 
 
-class can_controls(CANModule):
+class can_control(CANModule):
 
-    name = "Controls via CAN messages"
+    name = "Control via CAN messages"
     help = """
 
     This module read statues and send commands.

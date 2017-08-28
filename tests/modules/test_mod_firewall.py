@@ -3,10 +3,10 @@ import time
 from ..utils import TestCANToolz
 
 
-class TestModFirewall(TestCANToolz):
+class TestFirewall(TestCANToolz):
 
     def test_blocked_body_hex(self):
-        self.CANEngine.load_config('tests/configurations/conf_mod_stat.py')
+        self.CANEngine.load_config('tests/configurations/conf_analyze.py')
         self.CANEngine.edit_module(2, {'pipe': 2, 'hex_black_body': ['0102030605']})
         self.CANEngine.start_loop()
         index = 3
@@ -41,7 +41,7 @@ class TestModFirewall(TestCANToolz):
         self.CANEngine._enabledList[index][1].CANList = []
 
     def test_blocked_body(self):
-        self.CANEngine.load_config('tests/configurations/conf_mod_stat.py')
+        self.CANEngine.load_config('tests/configurations/conf_analyze.py')
         self.CANEngine.edit_module(2, {'pipe': 2, 'black_body': [[1, 2, 3, 6, 5]]})
         self.CANEngine.start_loop()
         index = 3
@@ -75,7 +75,7 @@ class TestModFirewall(TestCANToolz):
         self.CANEngine._enabledList[index][1].CANList = []
 
     def test_blocked_id(self):
-        self.CANEngine.load_config('tests/configurations/conf_mod_stat.py')
+        self.CANEngine.load_config('tests/configurations/conf_analyze.py')
         self.CANEngine.edit_module(2, {'pipe': 2, 'black_list': [1, 2, 3, 6, 5]})
         self.CANEngine.start_loop()
         index = 3

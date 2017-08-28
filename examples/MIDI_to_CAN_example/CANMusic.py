@@ -8,7 +8,7 @@ CANEngine = CANSploit()
 CANEngine.load_config("CANToolz_config/BMW_F10_MUSIC.py")
 CANEngine.start_loop()
 index = CANEngine.find_module('ecu_controls')
-index2 = CANEngine.find_module('mod_stat')
+index2 = CANEngine.find_module('analyze')
 while not CANEngine.status_loop:
     time.sleep(0.000001)
 

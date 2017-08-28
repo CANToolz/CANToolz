@@ -3,10 +3,10 @@ import time
 from ..utils import TestCANToolz
 
 
-class TestCanControls(TestCANToolz):
+class TestCanControl(TestCANToolz):
 
     def test_ecu_commands_and_firewall(self):
-        self.CANEngine.load_config('tests/configurations/conf_can_controls.py')
+        self.CANEngine.load_config('tests/configurations/conf_can_control.py')
         self.CANEngine.start_loop()
         time.sleep(1)
         # Call Door - Front Driver status command.

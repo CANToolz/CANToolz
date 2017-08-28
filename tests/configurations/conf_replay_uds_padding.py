@@ -1,13 +1,13 @@
 # Test scenario/configuration
 modules = {
     'io/hw_USBtin': {'port': 'loop', 'debug': 1, 'speed': 500},
-    'gen_ping': {'debug': 1},
-    'gen_replay': {'load_from': 'tests/data/test_responses2.save'},
-    'mod_stat': {}}
+    'ping': {'debug': 1},
+    'replay': {'load_from': 'tests/data/test_responses2.save'},
+    'analyze': {}}
 # The test scenario logic
 actions = [
     {'hw_USBtin': {'action': 'read', 'pipe': 1}},
-    {'gen_ping': {
+    {'ping': {
         'pipe': 2,
         'range': [1790, 1810],
         'services':[
@@ -16,6 +16,6 @@ actions = [
             {'service': 0x2F, 'sub': 0x03, 'data': [7, 3, 0, 0]}],
         'mode': 'UDS',
         'padding': 0x41}},
-    {'gen_replay': {'pipe': 2}},
-    {'mod_stat': {}},
+    {'replay': {'pipe': 2}},
+    {'analyze': {}},
     {'hw_USBtin': {'action': 'write', 'pipe': 2}}]
