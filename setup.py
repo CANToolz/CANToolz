@@ -3,7 +3,7 @@
 
 __author__ = 'Alexey Sintsov'
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='CANToolz',
@@ -13,7 +13,8 @@ setup(
     author_email='alex.sintsov@gmail.com',
     license='Apache 2.0',
     keywords='framework black-box CAN analysis security',
-    packages=['cantoolz', 'cantoolz.stream', 'cantoolz.utils', 'cantoolz.modules'],
+    packages=find_packages(),
+    scripts=['bin/cantoolz'],
     url='https://github.com/CANToolz/CANToolz',
     install_requires=[
         'flask',
