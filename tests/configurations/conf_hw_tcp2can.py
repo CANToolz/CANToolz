@@ -7,8 +7,8 @@ modules['gen_replay~2'] = {'load_from': 'tests/data/replay.save', 'debug': 2, 'b
 modules['mod_stat'] = {'debug': 2}
 modules['mod_stat~1'] = {'debug': 2}
 modules['mod_firewall'] = {'debug': 2}
-modules['hw_TCP2CAN~server'] = {'port': 14131, 'mode': 'server', 'address': '127.0.0.1', 'debug': 3}
-modules['hw_TCP2CAN~client'] = {'port': 14131, 'mode': 'client', 'address': '127.0.0.1', 'debug': 3}
+modules['io/hw_TCP2CAN~server'] = {'port': 14131, 'mode': 'server', 'address': '127.0.0.1', 'debug': 3}
+modules['io/hw_TCP2CAN~client'] = {'port': 14131, 'mode': 'client', 'address': '127.0.0.1', 'debug': 3}
 # The test scenario logic
 actions = [
     {'hw_TCP2CAN~server': {'action': 'read'}},

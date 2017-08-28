@@ -1,6 +1,6 @@
 # Test scenario/configuration
 modules = {
-    'hw_fakeIO': {'bus': 31},
+    'io/hw_fakeIO': {'bus': 31},
     'gen_ping': {'debug': 2, 'bus': 32},
     'gen_ping~1': {'debug': 2},
     'mod_stat': {'debug': 2}}

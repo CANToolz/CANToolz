@@ -1,6 +1,6 @@
 # Test scenario/configuration
 modules = {
-    'hw_USBtin': {'port': 'loop', 'debug': 2, 'speed': 500},
+    'io/hw_USBtin': {'port': 'loop', 'debug': 2, 'speed': 500},
     'can_controls': {
         'bus': 'ECU_TEST',
         'commands': [

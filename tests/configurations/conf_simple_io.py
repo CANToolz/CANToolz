@@ -1,7 +1,7 @@
 # Test scenario/configuration
 modules = {
-    'hw_USBtin': {'port': 'loop', 'debug': 2, 'speed': 500},
-    'simple_io': {'bus': 'TEST_1'},
+    'io/hw_USBtin': {'port': 'loop', 'debug': 2, 'speed': 500},
+    'io/simple_io': {'bus': 'TEST_1'},
     'mod_firewall': {},
     'mod_stat': {}}
 # The test scenario logic

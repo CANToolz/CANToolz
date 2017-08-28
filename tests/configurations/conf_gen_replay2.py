@@ -1,6 +1,6 @@
 # Test scenario/configuration
 modules = {
-    'hw_fakeIO': {'bus': 31},
+    'io/hw_fakeIO': {'bus': 31},
     'gen_replay~1': {'debug': 2, 'save_to': 'tests/data/dump2.save', 'load_from': 'tests/data/dump.save'},
     'mod_stat': {'debug': 2}}
 # The test scenario logic

@@ -195,8 +195,10 @@ class CANSploit:
     def init_module(self, mod, params):
         """Dynamically initialize a module.
 
-        Dynamically find and load the module from `modules/`. If the module is not found under `modules/z, then it
-        recursively looks inside the subdirectories under `modules/`.
+        Dynamically find and load the module from `modules/`. If the module is not found under `modules/`, then it
+        recursively looks inside the subdirectories under `modules/`. If the module name contains the subdirectory
+        where to find it, it will search specifically in the specified directory and fallback to the subdirectories
+        within that directory.
 
         .. note::
 
@@ -206,21 +208,33 @@ class CANSploit:
         :param str mod: Name of the module to dynamically load.
         :param list params: Parameters to pass to the module class when instanciating the module class.
 
+        :raises: ImportError when the module cannot be found.
+
         """
+        # Is the module name containing any '/'? Then it might indicate a subdirectory as well.
+        subdir = ''
+        if os.sep in mod:
+            subdir, mod = mod.rsplit(os.sep, 1)
+        search_path = os.path.join('cantoolz', 'modules')
+        search_path = os.path.join(search_path, subdir)
         mod_name = mod.split('~')[0]
+        # Now ready to dynamically search the module.
         try:
-            loaded_module = imp.load_module(mod_name, *imp.find_module(mod_name, path=['cantoolz/modules']))
+            loaded_module = imp.load_module(mod_name, *imp.find_module(mod_name, path=[search_path]))
+            logging.info('Loaded {} from directory {}'.format(mod_name, search_path))
         except ImportError:
-            for subdir in os.listdir('cantoolz/modules'):
-                if os.path.isdir(os.path.join(os.path.abspath('cantoolz/modules'), subdir)):
+            # Now have to try to find module in subdirectories.
+            for subdir in os.listdir(search_path):
+                if os.path.isdir(os.path.join(os.path.abspath(search_path), subdir)):
                     try:
-                        loaded_module = imp.load_module(mod_name, *imp.find_module(mod_name, path=['cantoolz/modules/{}'.format(subdir)]))
-                        logging.info('Loaded {} from subdirectory {}'.format(mod_name, subdir))
+                        new_search_path = os.path.join(search_path, subdir)
+                        loaded_module = imp.load_module(mod_name, *imp.find_module(mod_name, path=[new_search_path]))
+                        logging.info('Loaded {} from subdirectory {}'.format(mod_name, new_search_path))
                         break
                     except ImportError:
                         continue
             else:  # No module found anywhere under modules/*
-                logging.error('Could not find {}, even in subdirectories...'.format(mod_name))
+                raise ImportError('Could not find {}, even in subdirectories...'.format(mod_name))
         # Dynamically instanciate the module class.
         self._type[mod] = getattr(loaded_module, mod_name)(params)
 

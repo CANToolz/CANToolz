@@ -1,6 +1,6 @@
 # Test scenario/configuration
 modules = {
-    'hw_USBtin': {'port': 'loop', 'debug': 1, 'speed': 500},
+    'io/hw_USBtin': {'port': 'loop', 'debug': 1, 'speed': 500},
     'gen_replay': {'debug': 1, 'load_from': 'tests/data/test_responses.save'},                             # Module for sniff and replay
     'mod_stat': {}}
 # The test scenario logic

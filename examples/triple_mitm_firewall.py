@@ -1,11 +1,11 @@
 
 modules = {
-    'hw_CANBusTriple':    {
+    'io/hw_CANBusTriple':    {
         'port':'auto',
         'debug': 2,
         'speed':500,'bus':'CBT'}, # IO hardware module
-    'hw_USBtin~2':  {'port':'auto', 'debug':2, 'speed':500, 'bus': 'TIN2'},
-    'hw_USBtin':    {'port':'auto', 'debug':2, 'speed':500, 'bus': 'TIN1'},
+    'io/hw_USBtin~2':  {'port':'auto', 'debug':2, 'speed':500, 'bus': 'TIN2'},
+    'io/hw_USBtin':    {'port':'auto', 'debug':2, 'speed':500, 'bus': 'TIN1'},
     'mod_stat':    {},     'gen_ping' :    {'debug': 1} ,                                 # Mod stat
     'mod_firewall':    {'debug': 2}                            # Generator/Ping
 }

@@ -1,7 +1,7 @@
 # Test scenario/configuration
 modules = {
-    'hw_fakeIO': {'debug': 2, 'bus': 31},
-    'hw_fakeIO~1': {'debug': 2, 'bus': 32},
+    'io/hw_fakeIO': {'debug': 2, 'bus': 31},
+    'io/hw_fakeIO~1': {'debug': 2, 'bus': 32},
     'mod_firewall': {'debug': 2},
     'mod_stat': {'debug': 2}}
 # The test scenario logic

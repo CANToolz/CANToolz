@@ -1,6 +1,6 @@
 # Load needed modules
 modules = {
-    'hw_CANBusTriple':    {'port':'auto', 'debug':1, 'speed':500}, # IO hardware module
+    'io/hw_CANBusTriple':    {'port':'auto', 'debug':1, 'speed':500}, # IO hardware module
     'mod_stat' :    {},                                      # Mod stat
     'gen_ping' :    {'debug': 1}                            # Generator/Ping
 }

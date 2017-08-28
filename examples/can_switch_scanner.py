@@ -1,7 +1,7 @@
 # Load needed modules
 modules = {
-    'hw_USBtin':    {'port':'loop', 'debug':1, 'speed':500},                # IO hardware module connected to first BUS (IVI)
-    'hw_USBtin~2':  {'port':'loop', 'debug':1, 'speed':500, 'bus': 62 },    # IO hardware module (connected to OBD2)
+    'io/hw_USBtin':    {'port':'loop', 'debug':1, 'speed':500},                # IO hardware module connected to first BUS (IVI)
+    'io/hw_USBtin~2':  {'port':'loop', 'debug':1, 'speed':500, 'bus': 62 },    # IO hardware module (connected to OBD2)
     'gen_ping' :    {},                                                     # Generator/Ping
     'mod_firewall': {},                                                     # We need firewall to block all other packets
     'mod_stat':     {}                                                      # Mod stat to see results

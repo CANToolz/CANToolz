@@ -1,21 +1,21 @@
 modules = {
     ########### Attacker
 
-    'uds_engine_auth_baypass': {
+    'vircar/uds_engine_auth_baypass': {
          'id_command': 0x71
     },
 
     'gen_ping' :    {},
 
 
-    'uds_tester_ecu_engine':{
+    'vircar/uds_tester_ecu_engine':{
         'id_uds': 0x701,
         'uds_shift': 0x08,
         'uds_key':''
     },
 
-    'hw_TCP2CAN':    {'port': 1111, 'mode': 'client', 'address':'127.0.0.1', 'debug':3},
-    'hw_TCP2CAN~1':    {'port': 1112, 'mode': 'client','address':'127.0.0.1', 'debug':3},
+    'io/hw_TCP2CAN':    {'port': 1111, 'mode': 'client', 'address':'127.0.0.1', 'debug':3},
+    'io/hw_TCP2CAN~1':    {'port': 1112, 'mode': 'client','address':'127.0.0.1', 'debug':3},
     'gen_fuzz':{},
 
     'mod_stat':{},
