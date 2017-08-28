@@ -138,7 +138,7 @@ class CANSploit:
                 time.sleep(0.01)
 
         self._stop.set()
-        return 1
+        return not self._stop.is_set()
 
     # Current status
     @property
