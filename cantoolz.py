@@ -41,7 +41,7 @@ import ast
 from argparse import ArgumentParser
 
 from cantoolz.engine import CANSploit
-from cantoolz.webui.api import app
+from cantoolz.ui.web import app
 
 
 # Console calss
