@@ -156,7 +156,7 @@ function initControls(scenario) {
       var args = d3.select('.controls input[command="' + command + '"]')
           .node().value;
 
-      d3.json('/api/cmd/' + module).post(JSON.stringify({
+      d3.json('/api/cmd/' + module).header("Content-Type","application/json").post(JSON.stringify({
         'cmd': command + ' ' + args
       }), function(error, result) {
         if (result !== undefined) {
@@ -217,7 +217,7 @@ function initControls(scenario) {
     }
 
     if (step) {
-      d3.json('/api/edit/' + index)
+      d3.json('/api/edit/' + index).header("Content-Type","application/json")
           .post(JSON.stringify(step.params), handleResult);
     }
   });

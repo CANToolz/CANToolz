@@ -2,8 +2,8 @@
 <html>
   <head>
     <title>VIRCar interface</title>
-    <link rel="stylesheet" href="css/bootstrap.css" />
-    <link rel="stylesheet" href="css/main.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
   </head>
   <style>
     body { /* just for this demo. */
@@ -102,7 +102,7 @@ caption {
   </style>
 
   <body class="application" style="background-color: rgb(233, 242, 243);" onload="">
-<img src="img/1.png" class="logo">
+<img src="{{ url_for('static', filename='img/1.png') }}" class="logo">
 
 <br>
 
@@ -147,7 +147,7 @@ caption {
 
 <!--<img src="img/vircar/just-car.png">-->
 
-    <script src="js/d3.v3.min.js"></script>
+    <script src="{{ url_for('static', filename='js/d3.v3.min.js') }}"></script>
 
     <script>
 
@@ -168,19 +168,19 @@ caption {
     var img_down_1 = new Image();
     var img_down_2 = new Image();
 
-    img_front_1.src = '/img/vircar/tiles/front_1.png';
-    img_front_2.src = '/img/vircar/tiles/front_2.png';
-    img_front_3.src = '/img/vircar/tiles/front_3.png';
+    img_front_1.src = "{{ url_for('static', filename='img/vircar/tiles/front_1.png') }}";
+    img_front_2.src = "{{ url_for('static', filename='img/vircar/tiles/front_2.png') }}";
+    img_front_3.src = "{{ url_for('static', filename='img/vircar/tiles/front_3.png') }}";
 
-    img_back_1.src = '/img/vircar/tiles/back_1.png';
-    img_back_2.src = '/img/vircar/tiles/back_2.png';
-    img_back_3.src = '/img/vircar/tiles/back_3.png';
+    img_back_1.src = "{{ url_for('static', filename='img/vircar/tiles/back_1.png') }}";
+    img_back_2.src = "{{ url_for('static', filename='img/vircar/tiles/back_2.png') }}";
+    img_back_3.src = "{{ url_for('static', filename='img/vircar/tiles/back_3.png') }}";
 
-    img_up_1.src = '/img/vircar/tiles/up_1.png';
-    img_up_2.src = '/img/vircar/tiles/up_2.png';
+    img_up_1.src = "{{ url_for('static', filename='img/vircar/tiles/up_1.png') }}";
+    img_up_2.src = "{{ url_for('static', filename='img/vircar/tiles/up_2.png') }}";
 
-    img_down_1.src = '/img/vircar/tiles/down_1.png';
-    img_down_2.src = '/img/vircar/tiles/down_2.png';
+    img_down_1.src = "{{ url_for('static', filename='img/vircar/tiles/down_1.png') }}";
+    img_down_2.src = "{{ url_for('static', filename='img/vircar/tiles/down_2.png') }}";
     var mul = 3;
     var w = 4528/mul
     var h = 1148/mul
@@ -247,19 +247,19 @@ caption {
 
      function loff(){
 
-       d3.json('/api/cmd/control_ecu_lights').post(
+       d3.json('/api/cmd/control_ecu_lights').header("Content-Type","application/json").post(
             JSON.stringify({'cmd': 'off'}))
 
     }
      function lon(){
 
-       d3.json('/api/cmd/control_ecu_lights').post(
+       d3.json('/api/cmd/control_ecu_lights').header("Content-Type","application/json").post(
             JSON.stringify({'cmd': 'on'}))
 
     }
      function ldl(){
 
-       d3.json('/api/cmd/control_ecu_lights').post(
+       d3.json('/api/cmd/control_ecu_lights').header("Content-Type","application/json").post(
             JSON.stringify({'cmd': 'distance'}))
 
     }
@@ -267,14 +267,14 @@ caption {
 
     function lock(){
 
-       d3.json('/api/cmd/control_ecu_doors').post(
+       d3.json('/api/cmd/control_ecu_doors').header("Content-Type","application/json").post(
             JSON.stringify({'cmd': 'central_lock'}))
 
     }
 
     function ulock(){
 
-       d3.json('/api/cmd/control_ecu_doors').post(
+       d3.json('/api/cmd/control_ecu_doors').header("Content-Type","application/json").post(
             JSON.stringify({'cmd': 'central_unlock'}))
 
     }
@@ -283,27 +283,27 @@ caption {
 
     function engine_start(){
 
-       d3.json('/api/cmd/control_ecu_engine').post(
+       d3.json('/api/cmd/control_ecu_engine').header("Content-Type","application/json").post(
             JSON.stringify({'cmd': 'start'}))
 
     }
 
     function engine_stop(){
 
-       d3.json('/api/cmd/control_ecu_engine').post(
+       d3.json('/api/cmd/control_ecu_engine').header("Content-Type","application/json").post(
             JSON.stringify({'cmd': 'stop'}))
 
     }
 
     function rpm_up(){
 
-       d3.json('/api/cmd/control_ecu_engine').post(
+       d3.json('/api/cmd/control_ecu_engine').header("Content-Type","application/json").post(
             JSON.stringify({'cmd': 'rpmup'}))
 
     }
 
     function rpm_down(){
-       d3.json('/api/cmd/control_ecu_engine').post(
+       d3.json('/api/cmd/control_ecu_engine').header("Content-Type","application/json").post(
             JSON.stringify({'cmd': 'rpmdw'}))
 
     }
@@ -567,7 +567,7 @@ caption {
     }
 
     function updateGauges() {
-        d3.json('/api/cmd/control_ecu_engine').post(
+        d3.json('/api/cmd/control_ecu_engine').header("Content-Type","application/json").post(
             JSON.stringify({'cmd': 'status'}),
             function(error, result) {
               if (result !== undefined) {
@@ -590,7 +590,7 @@ caption {
 
 
     function updateLock() {
-        d3.json('/api/cmd/control_ecu_doors').post(
+        d3.json('/api/cmd/control_ecu_doors').header("Content-Type","application/json").post(
             JSON.stringify({'cmd': 'status'}),
             function(error, result) {
               if (result !== undefined) {
@@ -618,7 +618,7 @@ caption {
 
 
     function updateLight() {
-        d3.json('/api/cmd/control_ecu_lights').post(
+        d3.json('/api/cmd/control_ecu_lights').header("Content-Type","application/json").post(
             JSON.stringify({'cmd': 'status'}),
             function(error, result) {
               if (result !== undefined) {
