@@ -15,6 +15,8 @@ setup(
     keywords='framework black-box CAN analysis security',
     packages=find_packages(),
     scripts=['bin/cantoolz'],
+    include_package_data=True,
+    zip_safe=False,
     url='https://github.com/CANToolz/CANToolz',
     install_requires=[
         'flask',

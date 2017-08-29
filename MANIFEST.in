@@ -1,0 +1,2 @@
+recursive-include cantoolz/ui/templates *
+recursive-include cantoolz/ui/static *
