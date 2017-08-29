@@ -140,6 +140,9 @@ class CANModule:
     def do_effect(self, can_msg, args):
         """Function to override when implementing an effect (fuzzing, sniffer, filtering operations, etc.)
 
+        :param cantoolz.can.CANSploitMessage can_msg: The CAN message in the pipe.
+        :param dict args: The action arguments as configured in the configuration file.
+
         :returns: str -- CAN message after effect has been applied.
         """
         return can_msg
@@ -183,7 +186,7 @@ class CANModule:
         self._error_text = self.__class__.name + ": " + text
 
     def do_init(self, params):
-        """Function to perform calculations before doing any actual work.
+        """Function to initialize the module before doing any actual work.
 
         :returns: int -- Status of init.
         """

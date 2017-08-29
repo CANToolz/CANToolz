@@ -62,6 +62,10 @@ class CANMessage:
     def frame_raw_data(self):
         return bytes(self.frame_data)
 
+    @frame_raw_data.setter
+    def frame_raw_data(self, value):
+        self.frame_data = list(value)[0:self.frame_length]  # DATA
+
     def to_hex(self):
         """CAN frame in HEX format ready to be sent (include ID, length and data)"""
         if not self.frame_ext:
