@@ -11,7 +11,10 @@ from cantoolz.can import CANSploitMessage
 class CANSploit:
 
     """
-    Main class
+    Main class implementing the core logic of CANToolz.
+
+    The class is responsible for parsing the user configuration, dynamically load the requested modules and initialize
+    them with the requested configuration, setup the pipes and handle the threads.
     """
 
     DEBUG = 0
@@ -28,60 +31,50 @@ class CANSploit:
 """
 
     def dprint(self, level, msg):
+        """Debug print method with debug level to filter output.
+
+        :param int level: Level of debug logging (e.g 0 for lowest verbosity; 10 for highest verbosity)
+        :param str msg: Debug message.
+        """
         if level <= self.DEBUG:
-            print((self.__class__.__name__ + ": " + msg))
+            print('{}: {}'.format(self.__class__.__name__, msg))
 
     def __init__(self):
-        self._version = "3b"  # version
-        self._enabledList = []  # queue of active modules with params
-        self._pipes = {}  # two pipes with CANMessages
-        self._type = {}  # Pointers on instances here
-        self._modules = []  # loaded modules
+        # Queue containing enabled modules with their parameters.
+        self._enabledList = []
+        # References initialized modules.
+        self._type = {}
+        # Thread reference
         self._thread = None
-        self._mainThread = None
         self._stop = threading.Event()
         self._stop.set()
         self.do_stop_e = threading.Event()
         self.do_stop_e.clear()
-        self._raw = threading.Event()
-        self._idc = -1
         sys.dont_write_bytecode = True
 
     # Main loop with two pipes
     def main_loop(self):
-        # Run until STOP
+        """Main event loop handling CANMessages pipes, chaining the modules requested by the user."""
         while not self.do_stop_e.is_set():
-            self._pipes = {}
-            for name, module, params in self._enabledList:  # Each module
-                #  Handle CAN message
-
-                if module.is_active:
-                    module.thr_block.wait(3)
-                    module.thr_block.clear()
-                    if params['pipe'] not in self._pipes:
-                        self._pipes[params['pipe']] = CANSploitMessage()
-                    self.dprint(2, "DO EFFECT" + name)
-                    self._pipes[params['pipe']] = module.do_effect(self._pipes[params['pipe']], params)
-
-                    """
-                    if error and error_on_bus.get(i, False):
-                        self._pipes[params['pipe']] = module.do_effect(self._pipes[params['pipe']], params) # If error, try to fix
-                    elif not error:
-                        self._pipes[params['pipe']] = module.do_effect(self._pipes[params['pipe']], params) # doEffect on CANMessage
-
-                    if self._pipes[params['pipe']].debugData and self._pipes[params['pipe']].debugText.get('do_not_send', False):
-                        error_on_bus[i] = True
-                        error = True
-                        module.dprint(0,"BUS ERROR detected")
-                        self._pipes[params['pipe']].debugData = False
-                    elif self._pipes[params['pipe']].debugData and self._pipes[params['pipe']].debugText.get('please_send', False):
-                        error_on_bus[i] = False
-                        error = False
-                        self._pipes[params['pipe']].debugData = False
-                        module.dprint(0,"BUS ERROR fixed")
-                    i += 1
-                    """
-                    module.thr_block.set()
+            # Pipes to handle CANMessages on multiple channels.
+            pipes = {}
+            # Iterating sequentially over each module requested by the user in the configuration file.
+            for name, module, params in self._enabledList:
+                if not module.is_active:
+                    continue  # Only handling active modules. Inactive modules are skipped.
+                module.thr_block.wait(3)
+                module.thr_block.clear()
+                # Default pipe is named 1, enforced by `_validate_module_params`.
+                pipe_name = params['pipe']
+                # If the pipe is newly created, initializ it with an empty CAN message. The CAN message will be further
+                # processed by the loaded modules on the same pipe.
+                if pipe_name not in pipes:
+                    pipes[pipe_name] = CANSploitMessage()
+                self.dprint(2, "DO EFFECT" + name)
+                # Call module processing method and store the modified CAN message back to its pipe, so that next
+                # module can continue processing the message.
+                pipes[pipe_name] = module.do_effect(pipes[pipe_name], params)
+                module.thr_block.set()
 
         self.dprint(2, "STOPPING...")
         # Here when STOP
@@ -92,8 +85,15 @@ class CANSploit:
         self.do_stop_e.clear()
         self.dprint(2, "STOPPED")
 
-    # Call module command
     def call_module(self, index, params):
+        """Call a module id `index` with the parameters supplied.
+
+        :param int index: The index of the module to call, in the list of enabled modules.
+        :param str params: The parameters to pass to the madule.
+
+        :return: Result from the module call
+        :rtype: str
+        """
         # x = self.find_module(mod)
         x = index
         if x >= 0:
@@ -103,12 +103,17 @@ class CANSploit:
         return ret
 
     def engine_exit(self):
+        """Exit CANToolz engine by exiting all the loaded modules."""
         for name, module, params in self._enabledList:
             self.dprint(2, "exit for " + name)
             module.do_exit(params)
 
-    # Enable loop
     def start_loop(self):
+        """Start engine loop.
+
+        :return: Status of the engine
+        :rtype: bool
+        """
         self.dprint(2, "START SIGNAL")
         if self._stop.is_set() and not self.do_stop_e.is_set():
             self.do_stop_e.set()
@@ -128,8 +133,12 @@ class CANSploit:
 
         return not self._stop.is_set()
 
-    # Pause loop
     def stop_loop(self):
+        """Stop the engine.
+
+        :return: Status of the engine
+        :rtype: bool
+        """
         self.dprint(2, "STOP SIGNAL")
         if not self._stop.is_set() and not self.do_stop_e.is_set():
             self.do_stop_e.set()
@@ -139,24 +148,36 @@ class CANSploit:
         self._stop.set()
         return not self._stop.is_set()
 
-    # Current status
     @property
     def status_loop(self):
+        """Get the status of the engine.
+
+        :return: Status of the engine
+        :rtype: bool
+        """
         return not self._stop.is_set()
 
-    # Having defulat values for id and pipe params
-    def check_params(self, params):
-        if 'pipe' not in list(params.keys()):
+    def _validate_module_params(self, params):
+        """Validate the required parameters for running the module.
+
+        :param dict params: Parameters to validate.
+
+        :return: Validated parameters.
+        :rtype: dict
+        """
+        if 'pipe' not in params:
             params['pipe'] = 1
         return params
 
-    # Add module and params to the end
-    def push_module(self, mod, params):
-        chkd_params = self.check_params(params)
-        self._enabledList.append([mod, self._type[mod.split("!")[0]], chkd_params])
-
-    # Find index of module with name mod
+    # FIXME: This is not thread safe. The id returned could be wrong as soon as it is looked up.
     def find_module(self, mod):
+        """Find the index of the module `mod` in the list of enabled modules.
+
+        :param str mod: Module name to find in the list of enabled modules.
+
+        :return: Index of the module `mod` in the list of enabled modules.
+        :rtype: int
+        """
         i = 0
         x = -1
         for name, module, params in self._enabledList:
@@ -166,30 +187,44 @@ class CANSploit:
             i += 1
         return x
 
-        # Add new params to module named mod
-
     def edit_module(self, index, params):
+        """Edit the module configuration with new parameters.
+
+        :param int index: Index of the module in the list of enabled modules.
+        :param dict params: New parameters for the module.
+
+        :return: Error code >= 0 if the update was successful, < 0 otherwise.
+        :rtype: int
+        """
         # x = self.find_module(mod)
         x = index
         if x >= 0:
-            chkd_params = self.check_params(params)
+            chkd_params = self._validate_module_params(params)
             self._enabledList[x][2] = chkd_params
             return x
         return -1
 
-    # Get all modules and parameters
     def get_modules_list(self):
+        """Get the list of loaded modules.
+
+        :return: List of modules.
+        :rtype: list
+        """
         return self._enabledList
 
-    # Get all parameters for module named mod
     def get_module_params(self, index):
+        """Get the list of parameters for the module index `index`.
+
+        :param int index: Index of the module in the list of enabled modules.
+
+        :return: Parameters of the module.
+        :rtype: dict
+        """
         # x = self.find_module(mod)
         x = index
         if x >= 0:
             return self._enabledList[x][2]
         return None
-
-        # Load and init new module form lib
 
     def init_module(self, mod, params):
         """Dynamically initialize a module.
@@ -237,7 +272,14 @@ class CANSploit:
         # Dynamically instanciate the module class.
         self._type[mod] = getattr(loaded_module, mod_name)(params)
 
-    def load_config(self, fullpath):  # Load config from file
+    def load_config(self, fullpath):
+        """Load CANToolz configuration from `fullpath`.
+
+        :param str fullpath: Fullpath to the CANToolz configuration file.
+
+        :return: 1
+        :rtype: int
+        """
         fullpath = fullpath.replace('\\', '/')
         parts = fullpath.split("/")
 
@@ -257,5 +299,7 @@ class CANSploit:
             self.init_module(module, init_params)
 
         for action in config.actions:
-            self.push_module(list(action.keys())[0], list(action.values())[0])
+            chkd_params = self._validate_module_params(list(action.values())[0])
+            mod = list(action.keys())[0]
+            self._enabledList.append([mod, self._type[mod.split("!")[0]], chkd_params])
         return 1
