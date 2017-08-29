@@ -249,7 +249,7 @@ class CANSploit:
         subdir = ''
         if os.sep in mod:
             subdir, mod = mod.rsplit(os.sep, 1)
-        search_path = os.path.join('cantoolz', 'modules')
+        search_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'modules'))
         search_path = os.path.join(search_path, subdir)
         mod_name = mod.split('~')[0]
         # Now ready to dynamically search the module.
