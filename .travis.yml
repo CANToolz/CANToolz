@@ -8,7 +8,7 @@ python:
 install:
     - pip install pyserial numpy bitstring mido coverage flake8
 
-before-script:
+before_script:
     - flake8 cantoolz
 
 script:
