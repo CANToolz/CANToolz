@@ -6,7 +6,10 @@ python:
     - "3.6"
 
 install:
-    - pip install pyserial numpy bitstring mido coverage
+    - pip install pyserial numpy bitstring mido coverage flake8
+
+before-script:
+    - flake8 cantoolz
 
 script:
     - nosetests -v -d --cover-erase --with-coverage --cover-package=cantoolz
