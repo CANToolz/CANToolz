@@ -9,7 +9,7 @@ class replay(CANModule):
     name = "Replay module"
     help = """
 
-    This module doing replay of captured packets. 
+    This module doing replay of captured packets.
 
     Init parameters:
         load_from  - load packets from file (optional)

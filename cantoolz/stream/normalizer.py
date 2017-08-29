@@ -7,6 +7,7 @@ from cantoolz.stream.processor import Processor
 
 
 class Normalizer(Processor):
+
     def __init__(self, size: int, message_builder: callable):
         self._message_builder = message_builder
         self._size = size
@@ -27,5 +28,4 @@ class Normalizer(Processor):
         norm = (value - mean) / var
 
         if norm == norm:
-                yield self._message_builder(
-                    message, norm)
+            yield self._message_builder(message, norm)

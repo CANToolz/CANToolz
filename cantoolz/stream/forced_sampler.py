@@ -26,7 +26,3 @@ class ForcedSampler(Processor):
 
     def flush(self) -> Iterable:
         yield from self._sampler.flush()
-
-
-
-

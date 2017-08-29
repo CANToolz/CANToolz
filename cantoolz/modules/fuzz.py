@@ -6,6 +6,7 @@ from cantoolz.module import CANModule
 
 
 class fuzz(CANModule):
+
     name = "Fuzzing one byte with shift (CAN), byte fuzz"
     help = """
 
@@ -13,7 +14,7 @@ class fuzz(CANModule):
 
     Init parameters:  None
 
-    Module parameters: 
+    Module parameters:
 
       'id'  - [0,1,2,111,333,[334,339]] - ID to fuzz. If list have sublist, than sublist should be a range
       'data'   - default data

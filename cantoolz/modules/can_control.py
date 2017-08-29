@@ -37,7 +37,7 @@ class can_control(CANModule):
     """
 
     _active = True
- 
+
     def do_init(self, params):
         self._statuses = params.get('statuses', [])
         self._commands = params.get('commands', [])

@@ -212,7 +212,7 @@ class hw_TCP2CAN(CANModule):
 
     Module parameters:
       action - read or write. Will write/read to/from TCP
-      pipe -  integer, 1 or 2 - from which pipe to read or write 
+      pipe -  integer, 1 or 2 - from which pipe to read or write
           If you use both buses(and different), than you need only one pipe configured...
 
           Example: {'action':'read','pipe':2}

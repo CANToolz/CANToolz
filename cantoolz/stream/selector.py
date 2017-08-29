@@ -4,6 +4,7 @@ from cantoolz.stream.processor import Processor
 
 
 class Selector(Processor):
+
     def __init__(self, streams):
         self._streams = streams
 

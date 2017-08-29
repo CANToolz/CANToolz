@@ -1,4 +1,4 @@
-from collections import Counter, Iterable
+from collections import Iterable
 
 from cantoolz.stream.processor import Processor
 

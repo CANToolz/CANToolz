@@ -5,7 +5,6 @@ import time
 import logging
 import threading
 
-# from cantoolz.can import *
 from cantoolz.can import CANSploitMessage
 
 
@@ -151,12 +150,12 @@ class CANSploit:
             params['pipe'] = 1
         return params
 
-    # Add module and params to the end    
+    # Add module and params to the end
     def push_module(self, mod, params):
         chkd_params = self.check_params(params)
         self._enabledList.append([mod, self._type[mod.split("!")[0]], chkd_params])
 
-    # Find index of module with name mod    
+    # Find index of module with name mod
     def find_module(self, mod):
         i = 0
         x = -1
@@ -178,11 +177,11 @@ class CANSploit:
             return x
         return -1
 
-    # Get all modules and parameters    
+    # Get all modules and parameters
     def get_modules_list(self):
         return self._enabledList
 
-    # Get all parameters for module named mod    
+    # Get all parameters for module named mod
     def get_module_params(self, index):
         # x = self.find_module(mod)
         x = index
