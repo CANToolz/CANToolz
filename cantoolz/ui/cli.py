@@ -38,12 +38,13 @@ class CANToolzCLI(cmd.Cmd):
 
         print(row_format.format(*('ID', 'Module', 'Parameters', 'Active')))
         print('-' * (sum(sizes) + 2 * len(sizes)))
-        for row in table[:-1]:
-            print(row_format.format(*row))
-            print(row_format.format(*('', '||', '', '', '')))
-            print(row_format.format(*('', '||', '', '', '')))
-            print(row_format.format(*('', '\/', '', '', '')))
-        print(row_format.format(*table[-1]), end='\n' * 2)
+        if len(table):
+            for row in table[:-1]:
+                print(row_format.format(*row))
+                print(row_format.format(*('', '||', '', '', '')))
+                print(row_format.format(*('', '||', '', '', '')))
+                print(row_format.format(*('', '\/', '', '', '')))
+            print(row_format.format(*table[-1]), end='\n' * 2)
 
     def do_edit(self, arg):
         """Edit parameters for a module.
