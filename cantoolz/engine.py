@@ -277,19 +277,15 @@ class CANSploit:
 
         :param str fullpath: Fullpath to the CANToolz configuration file.
 
-        :return: 1
-        :rtype: int
+        :raises ModuleNotFoundError: When the configuration file cannot be found.
         """
-        fullpath = fullpath.replace('\\', '/')
-        parts = fullpath.split("/")
+        path, filename = os.path.split(fullpath)
+        if not path:  # Configuration is loaded from current directory
+            path = os.getcwd()
+        sys.path.append(path)
 
-        if len(parts) > 1:
-            path = '/'.join(parts[0:-1])
-            sys.path.append(path)
+        config = __import__(os.path.splitext(filename)[0])
 
-        mod = parts[-1].split(".")[0]
-
-        config = __import__(mod)
         if hasattr(config, 'modules'):
             modules = config.modules.items()
         elif hasattr(config, 'load_modules'):
@@ -299,7 +295,6 @@ class CANSploit:
             self.init_module(module, init_params)
 
         for action in config.actions:
-            chkd_params = self._validate_module_params(list(action.values())[0])
-            mod = list(action.keys())[0]
-            self._enabledList.append([mod, self._type[mod.split("!")[0]], chkd_params])
-        return 1
+            for module, parameters in action.items():
+                validated_parameters = self._validate_module_params(parameters)
+                self._enabledList.append([module, self._type[module], validated_parameters])
