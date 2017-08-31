@@ -1,6 +1,7 @@
 import re
 import ast
 import cmd
+import traceback
 
 
 class CANToolzCLI(cmd.Cmd):
@@ -21,24 +22,28 @@ class CANToolzCLI(cmd.Cmd):
         print('CANToolz engine started: {}'.format(self.can_engine.stop_loop()))
 
     def do_view(self, arg):
-        """View loaded actions."""
-        print("Loaded queue of actions: ")
-        modz = self.can_engine.actions
-        total = len(modz)
-        i = 0
-        print()
-        for name, module, params in modz:
-            tab1 = "\t"
-            tab2 = "\t"
-            tab1 += "\t" * int(12 / len(str(name)))
-            tab2 += "\t"
-            print(("(" + str(i) + ")\t-\t" + name + tab1 + str(params) + tab2 + "Enabled: " + str(module.is_active)))
-            if i < total - 1:
-                print("\t\t||\t")
-                print("\t\t||\t")
-                print("\t\t\/\t")
-            i += 1
-        print()
+        """View table of the loaded actions."""
+        actions = self.can_engine.actions
+        print('Loaded queue of actions (total {}):'.format(len(actions)), end='\n' * 2)
+        # Generate table rows
+        table = [
+            ['({})'.format(i), name, str(params), str(module.is_active)]
+            for i, (name, module, params) in enumerate(actions)]
+        # Create printing format with correct max padding.
+        sizes = [10] * 4  # Padding 10 characters minimum.
+        for row in table:
+            # Get max(len(cell), padding) for each cell in each row of the table
+            sizes = list(map(max, zip(map(len, row), sizes)))
+        row_format = ''.join('{{:{}}}'.format(size + 4) for size in sizes)
+
+        print(row_format.format(*('ID', 'Module', 'Parameters', 'Active')))
+        print('-' * (sum(sizes) + 2 * len(sizes)))
+        for row in table[:-1]:
+            print(row_format.format(*row))
+            print(row_format.format(*('', '||', '', '', '')))
+            print(row_format.format(*('', '||', '', '', '')))
+            print(row_format.format(*('', '\/', '', '', '')))
+        print(row_format.format(*table[-1]), end='\n' * 2)
 
     def do_edit(self, arg):
         """Edit parameters for a module.
@@ -49,29 +54,29 @@ class CANToolzCLI(cmd.Cmd):
             edit 0 {'action': 'write', 'pipe': 'Cabin'}
         """
         match = re.match(r'(\d+)\s+(.+)', arg, re.IGNORECASE)
-        if match:
-            module = int(match.group(1).strip())
-            _paramz = match.group(2).strip()
-            try:
-                paramz = ast.literal_eval(_paramz)
-                self.can_engine.edit_module(module, paramz)
-                print(("Edited module: " + str(self.can_engine.actions[module][0])))
-                print(("Added  params: " + str(self.can_engine.actions[module][2])))
-
-                mode = 1 if self.can_engine.actions[module][1].is_active else 0
-                if mode == 1:
-                    self.can_engine.actions[module][1].do_activate(0, 0)
-                if not self.can_engine._stop.is_set():
-                    self.can_engine.actions[module][1].do_stop(paramz)
-                    self.can_engine.actions[module][1].do_start(paramz)
-                if mode == 1:
-                    self.can_engine.actions[module][1].do_activate(0, 1)
-            except Exception as e:
-                print("edit error: " + str(e))
-                return
-        else:
+        if not match:
             print('Missing/invalid required parameters. See: help edit')
             return
+        module = int(match.group(1).strip())
+        _paramz = match.group(2).strip()
+        try:
+            paramz = ast.literal_eval(_paramz)
+            self.can_engine.edit_module(module, paramz)
+        except Exception:
+            print('Error when edit the module with {}:'.format(arg))
+            traceback.print_exc()
+            return
+        print('Edited module: {}'.format(self.can_engine.actions[module][0]))
+        print('Added params: {}'.format(self.can_engine.actions[module][2]))
+
+        active = self.can_engine.actions[module][1].is_active
+        if active:
+            self.can_engine.actions[module][1].do_activate(0, 0)
+        if self.can_engine.status_loop:
+            self.can_engine.actions[module][1].do_stop(paramz)
+            self.can_engine.actions[module][1].do_start(paramz)
+        if active:
+            self.can_engine.actions[module][1].do_activate(0, 1)
 
     def do_cmd(self, arg):
         """Call module command.
@@ -82,17 +87,18 @@ class CANToolzCLI(cmd.Cmd):
             cmd 0 S
         """
         match = re.match(r'(\d+)\s+(.*)', arg, re.IGNORECASE)
-        if match:
-            _mod = int(match.group(1).strip())
-            _paramz = match.group(2).strip()
-            try:
-                text = self.can_engine.call_module(_mod, str(_paramz))
-                print("Response: " + text)
-            except Exception as e:
-                print("cmd arg error: " + str(e))
-                return
-        else:
+        if not match:
             print('Missing/invalid required parameters. See: help cmd')
+            return
+        _mod = int(match.group(1).strip())
+        _paramz = match.group(2).strip()
+        try:
+            text = self.can_engine.call_module(_mod, str(_paramz))
+        except Exception:
+            print('Error when calling the command {}:'.format(arg))
+            traceback.print_exc()
+            return
+        print('Response: {}'.format(text))
 
     def do_help(self, arg):
         """Show module help or CANToolz help if no parameter specified.
@@ -100,23 +106,25 @@ class CANToolzCLI(cmd.Cmd):
         help [module id]
         """
         match = re.match(r'(\d+)', arg, re.IGNORECASE)
-        if match:
-            try:
-                module = int(match.group(1).strip())
-                mod = self.can_engine.actions[module][1]
-                print(("\nModule " + mod.__class__.__name__ + ": " + mod.name + "\n" + mod.help + "\n\nConsole commands:\n"))
-                for key, value in mod.commands.items():
-                    print(("\t" + key + " " + value.desc_params + "\t\t - " + value.description + "\n"))
-            except Exception as e:
-                print(("Help error: " + str(e)))
-                return
-        else:
+        if not match:
             super(CANToolzCLI, self).do_help(arg)
+            return
+        module = int(match.group(1).strip())
+        try:
+            mod = self.can_engine.actions[module][1]
+        except Exception:
+            print('Error when retrieving the requested module: ')
+            traceback.print_exc()
+            return
+        print('Module {}: {}\n{}\nCommands:'.format(mod.__class__.__name__, mod.name, mod.help))
+        for key, value in mod.commands.items():
+            print('\t{} {} - {}'.format(key, value.desc_params, value.description))
+        print()
 
     def do_quit(self, arg):
         """Quit CANToolz"""
-        print("Please wait... (do not press ctr-c again!)")
+        print('Exiting CANToolz. Please wait... ', end='')
         self.can_engine.stop_loop()
         self.can_engine.engine_exit()
-        print("gg bb")
+        print('Done')
         raise SystemExit
