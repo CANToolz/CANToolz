@@ -52,14 +52,23 @@ def main():
     parser.add_argument('--gui', '-g', action='store', dest='gui', type=str, default='web', help='GUI mode, c - console or w - web')
     parser.add_argument('--host', dest='host', type=str, default='localhost', help='Host for the web interface')
     parser.add_argument('--port', '-p', action='store', dest='port', type=int, default=4444, help='Port for web interface')
+    parser.add_argument('--list-modules', action='store_true', dest='list_modules', help='List available modules')
 
     args = parser.parse_args()
 
     can_engine = CANSploit()
+    print(can_engine.ascii_logo_c)
+
+    if args.list_modules:
+        modules = can_engine.list_modules()
+        print('List of available modules (total {}):'.format(len(modules)))
+        for name, description in modules.items():
+            print('\t{:20} - {}'.format(name, description))
+        sys.exit(0)
+
     if args.config:
         can_engine.load_config(args.config)
 
-    print(can_engine.ascii_logo_c)
     if args.gui.lower().startswith('c'):
         prompt = CANToolzCLI(can_engine)
         prompt.cmdloop()

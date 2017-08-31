@@ -1,9 +1,11 @@
 import os
 import sys
 import imp
+import glob
 import time
 import logging
 import threading
+import collections
 
 from cantoolz.can import CANSploitMessage
 
@@ -191,6 +193,29 @@ class CANSploit:
             return False
         self._actions[index][2] = self._validate_action_params(params)
         return True
+
+    def list_modules(self):
+        """List the available modules that can be loaded by the user.
+
+        :return: Dictionaries of module, with {name: description} for each module existing.
+        :rtype: collections.OrderedDict
+        """
+        search_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'modules'))
+        search_path = os.path.join(search_path, '**', '*.py')
+        modules = collections.OrderedDict()
+        for fullpath in glob.iglob(search_path, recursive=True):
+            if not fullpath.endswith('__init__.py'):
+                path, filename = os.path.split(fullpath)
+                subdir = os.path.split(os.path.dirname(fullpath))[1]
+                filename = os.path.splitext(filename)[0]
+                sys.path.append(path)
+                module = __import__(filename)
+                if subdir != 'modules':
+                    new_module = {os.path.join(subdir, filename): getattr(module, filename).name}
+                else:
+                    new_module = {filename: getattr(module, filename).name}
+                modules.update(new_module)
+        return modules
 
     def load_config(self, fullpath):
         """Load CANToolz scenario configuration from `fullpath`.
