@@ -16,7 +16,7 @@ class TestUSBtin(TestCANToolz):
         time.sleep(1)
         # Print table of sniffed CAN packets from analyze.
         ret = self.CANEngine.call_module(2, 'p')
-        _bodyList = self.CANEngine._enabledList[2][1]._bodyList
+        _bodyList = self.CANEngine._actions[2][1]._bodyList
         self.assertTrue(6 == len(_bodyList), "6 unique ID, should be sent")
         self.assertTrue(0 <= ret.find(" 0x2bc "), "Message should be in the list")
         self.assertTrue(0 <= ret.find(" 2f410d0011223344 "), "Message should be in the list")

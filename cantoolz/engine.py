@@ -40,10 +40,10 @@ class CANSploit:
             print('{}: {}'.format(self.__class__.__name__, msg))
 
     def __init__(self):
-        # Queue containing enabled modules with their parameters.
-        self._enabledList = []
-        # References initialized modules.
-        self._type = {}
+        # List of actions with their parameters to perform during the scenario.
+        self._actions = []
+        # Dictionary of initialized modules for the scenario
+        self._modules = {}
         # Thread reference
         self._thread = None
         self._stop = threading.Event()
@@ -59,7 +59,7 @@ class CANSploit:
             # Pipes to handle CANMessages on multiple channels.
             pipes = {}
             # Iterating sequentially over each module requested by the user in the configuration file.
-            for name, module, params in self._enabledList:
+            for name, module, params in self._actions:
                 if not module.is_active:
                     continue  # Only handling active modules. Inactive modules are skipped.
                 module.thr_block.wait(3)
@@ -78,7 +78,7 @@ class CANSploit:
 
         self.dprint(2, "STOPPING...")
         # Here when STOP
-        for name, module, params in self._enabledList:
+        for name, module, params in self._actions:
             self.dprint(2, "stopping " + name)
             module.do_stop(params)
 
@@ -97,14 +97,14 @@ class CANSploit:
         # x = self.find_module(mod)
         x = index
         if x >= 0:
-            ret = self._enabledList[x][1].raw_write(params)
+            ret = self._actions[x][1].raw_write(params)
         else:
             ret = "Module " + str(index) + " not loaded!"
         return ret
 
     def engine_exit(self):
         """Exit CANToolz engine by exiting all the loaded modules."""
-        for name, module, params in self._enabledList:
+        for name, module, params in self._actions:
             self.dprint(2, "exit for " + name)
             module.do_exit(params)
 
@@ -117,7 +117,7 @@ class CANSploit:
         self.dprint(2, "START SIGNAL")
         if self._stop.is_set() and not self.do_stop_e.is_set():
             self.do_stop_e.set()
-            for name, module, params in self._enabledList:
+            for name, module, params in self._actions:
                 self.dprint(2, "startingg " + name)
                 module.do_start(params)
                 module.thr_block.set()
@@ -180,7 +180,7 @@ class CANSploit:
         """
         i = 0
         x = -1
-        for name, module, params in self._enabledList:
+        for name, module, params in self._actions:
             if name == mod:
                 x = i
                 break
@@ -200,7 +200,7 @@ class CANSploit:
         x = index
         if x >= 0:
             chkd_params = self._validate_module_params(params)
-            self._enabledList[x][2] = chkd_params
+            self._actions[x][2] = chkd_params
             return x
         return -1
 
@@ -210,7 +210,7 @@ class CANSploit:
         :return: List of modules.
         :rtype: list
         """
-        return self._enabledList
+        return self._actions
 
     def get_module_params(self, index):
         """Get the list of parameters for the module index `index`.
@@ -223,7 +223,7 @@ class CANSploit:
         # x = self.find_module(mod)
         x = index
         if x >= 0:
-            return self._enabledList[x][2]
+            return self._actions[x][2]
         return None
 
     def init_module(self, mod, params):
@@ -270,7 +270,7 @@ class CANSploit:
             else:  # No module found anywhere under modules/*
                 raise ImportError('Could not find {}, even in subdirectories...'.format(mod_name))
         # Dynamically instanciate the module class.
-        self._type[mod] = getattr(loaded_module, mod_name)(params)
+        self._modules[mod] = getattr(loaded_module, mod_name)(params)
 
     def load_config(self, fullpath):
         """Load CANToolz configuration from `fullpath`.
@@ -297,4 +297,4 @@ class CANSploit:
         for action in config.actions:
             for module, parameters in action.items():
                 validated_parameters = self._validate_module_params(parameters)
-                self._enabledList.append([module, self._type[module], validated_parameters])
+                self._actions.append([module, self._modules[module], validated_parameters])

@@ -52,7 +52,7 @@ class TestReplay(TestCANToolz):
         index = 2
         # Get table of CAN messages sniffed by analyze
         ret = self.CANEngine.call_module(2, 'p')
-        _bodyList = self.CANEngine._enabledList[index][1]._bodyList
+        _bodyList = self.CANEngine._actions[index][1]._bodyList
         print(ret)
         time.sleep(1)
         self.assertTrue(len(_bodyList) == 3, "Should be 3 groups found")
@@ -67,7 +67,7 @@ class TestReplay(TestCANToolz):
         index = 2
         # Get table of CAN messages sniffed by analyze
         self.CANEngine.call_module(2, 'p')
-        _bodyList = self.CANEngine._enabledList[index][1]._bodyList
+        _bodyList = self.CANEngine._actions[index][1]._bodyList
         self.assertTrue(len(_bodyList) == 0, "Should be 0 packets sent")
         # Replay a range of CAN messages.
         self.CANEngine.call_module(1, 'r 2-4')
@@ -75,7 +75,7 @@ class TestReplay(TestCANToolz):
         # Get table of CAN messages sniffed by analyze
         ret = self.CANEngine.call_module(2, 'p')
         print(ret)
-        _bodyList = self.CANEngine._enabledList[index][1]._bodyList
+        _bodyList = self.CANEngine._actions[index][1]._bodyList
 
         self.assertTrue(2 == len(_bodyList), "Should be 2 packets sent")
         self.assertTrue(666 in _bodyList, "ID 666 should be dound")
@@ -109,7 +109,7 @@ class TestReplay(TestCANToolz):
         # Print table of CAN messages sniffed by analyze.
         ret = self.CANEngine.call_module(1, 'p')
         print(ret)
-        _bodyList = self.CANEngine._enabledList[index][1]._bodyList
+        _bodyList = self.CANEngine._actions[index][1]._bodyList
         self.assertTrue(len(_bodyList) == 20, "Should be 20 groups of packets")
         self.assertTrue(1790 in _bodyList, "1790 should be there")
         self.assertTrue(1791 in _bodyList, "1791 should be there")
@@ -131,7 +131,7 @@ class TestReplay(TestCANToolz):
         # Print table of CAN messages sniffed by analyze.
         ret = self.CANEngine.call_module(1, 'p')
         print(ret)
-        _bodyList = self.CANEngine._enabledList[index][1]._bodyList
+        _bodyList = self.CANEngine._actions[index][1]._bodyList
         # Use gen_stat to analyse the UDS traffic
         ret = self.CANEngine.call_module(1, 'a')
         print(ret)
@@ -159,7 +159,7 @@ class TestReplay(TestCANToolz):
         # Print table of CAN messages sniffed by analyze.
         ret = self.CANEngine.call_module(3, 'p')
         print(ret)
-        _bodyList = self.CANEngine._enabledList[3][1]._bodyList
+        _bodyList = self.CANEngine._actions[3][1]._bodyList
         self.assertTrue(len(_bodyList) == 20, "Should be 20 groups of packets")
         self.assertTrue(1790 in _bodyList, "1790 should be there")
         self.assertTrue(1791 in _bodyList, "1791 should be there")
@@ -177,7 +177,7 @@ class TestReplay(TestCANToolz):
         # Print table of CAN messages sniffed by analyze.
         ret = self.CANEngine.call_module(3, 'p')
         print(ret)
-        _bodyList = self.CANEngine._enabledList[3][1]._bodyList
+        _bodyList = self.CANEngine._actions[3][1]._bodyList
         # Use gen_stat to analyse the UDS traffic
         ret = self.CANEngine.call_module(3, 'a')
         print(ret)
@@ -205,7 +205,7 @@ class TestReplay(TestCANToolz):
         time1 = time.clock()
         # Replay loaded CAN packets with replay.
         self.CANEngine.call_module(0, 'r')
-        while self.CANEngine._enabledList[0][1]._status < 100.0:
+        while self.CANEngine._actions[0][1]._status < 100.0:
             continue
         # Print table of CAN messages sniffed by analyze.
         ret = self.CANEngine.call_module(1, 'p')
@@ -230,7 +230,7 @@ class TestReplay(TestCANToolz):
         time1 = time.clock()
         # Replay loaded CAN packets with replay.
         self.CANEngine.call_module(0, 'r')
-        while self.CANEngine._enabledList[0][1]._status < 100.0:
+        while self.CANEngine._actions[0][1]._status < 100.0:
             continue
         # Print table of CAN messages sniffed by analyze.
         ret = self.CANEngine.call_module(1, 'p')

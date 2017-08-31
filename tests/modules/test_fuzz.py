@@ -17,7 +17,7 @@ class TestFuzz(TestCANToolz):
         ret = self.CANEngine.call_module(3, 'p')
         print(ret)
         index = 3
-        _bodyList = self.CANEngine._enabledList[index][1]._bodyList
+        _bodyList = self.CANEngine._actions[index][1]._bodyList
         self.assertTrue(16 == len(_bodyList[111]), "16 unique packets should be sent")
 
     def test_fuzz_iso(self):
@@ -41,5 +41,5 @@ class TestFuzz(TestCANToolz):
         ret = self.CANEngine.call_module(3, 'p')
         print(ret)
         index = 3
-        _bodyList = self.CANEngine._enabledList[index][1]._bodyList
+        _bodyList = self.CANEngine._actions[index][1]._bodyList
         self.assertTrue(9 == len(_bodyList[111]), "9 unique packets should be sent")
