@@ -21,9 +21,9 @@ class CANToolzCLI(cmd.Cmd):
         print('CANToolz engine started: {}'.format(self.can_engine.stop_loop()))
 
     def do_view(self, arg):
-        """View loaded modules."""
-        print("Loaded queue of modules: ")
-        modz = self.can_engine.get_modules_list()
+        """View loaded actions."""
+        print("Loaded queue of actions: ")
+        modz = self.can_engine.actions
         total = len(modz)
         i = 0
         print()
@@ -55,17 +55,17 @@ class CANToolzCLI(cmd.Cmd):
             try:
                 paramz = ast.literal_eval(_paramz)
                 self.can_engine.edit_module(module, paramz)
-                print(("Edited module: " + str(self.can_engine.get_modules_list()[module][0])))
-                print(("Added  params: " + str(self.can_engine.get_module_params(module))))
+                print(("Edited module: " + str(self.can_engine.actions[module][0])))
+                print(("Added  params: " + str(self.can_engine.actions[module][2])))
 
-                mode = 1 if self.can_engine.get_modules_list()[module][1].is_active else 0
+                mode = 1 if self.can_engine.actions[module][1].is_active else 0
                 if mode == 1:
-                    self.can_engine.get_modules_list()[module][1].do_activate(0, 0)
+                    self.can_engine.actions[module][1].do_activate(0, 0)
                 if not self.can_engine._stop.is_set():
-                    self.can_engine.get_modules_list()[module][1].do_stop(paramz)
-                    self.can_engine.get_modules_list()[module][1].do_start(paramz)
+                    self.can_engine.actions[module][1].do_stop(paramz)
+                    self.can_engine.actions[module][1].do_start(paramz)
                 if mode == 1:
-                    self.can_engine.get_modules_list()[module][1].do_activate(0, 1)
+                    self.can_engine.actions[module][1].do_activate(0, 1)
             except Exception as e:
                 print("edit error: " + str(e))
                 return
@@ -103,7 +103,7 @@ class CANToolzCLI(cmd.Cmd):
         if match:
             try:
                 module = int(match.group(1).strip())
-                mod = self.can_engine.get_modules_list()[module][1]
+                mod = self.can_engine.actions[module][1]
                 print(("\nModule " + mod.__class__.__name__ + ": " + mod.name + "\n" + mod.help + "\n\nConsole commands:\n"))
                 for key, value in mod._cmdList.items():
                     print(("\t" + key + " " + value.desc_params + "\t\t - " + value.description + "\n"))

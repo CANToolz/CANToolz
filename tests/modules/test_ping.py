@@ -47,7 +47,7 @@ class TestPing(TestCANToolz):
         self.CANEngine.call_module(0, 's')
         time.sleep(1)
         index = 3
-        _bodyList = self.CANEngine._actions[index][1]._bodyList
+        _bodyList = self.CANEngine.actions[index][1]._bodyList
         self.assertTrue(len(_bodyList) == 0, "Should be empty list")
 
     def test_ping(self):
@@ -68,7 +68,7 @@ class TestPing(TestCANToolz):
         ret = self.CANEngine.call_module(3, 'p')
         print(ret)
 
-        _bodyList = self.CANEngine._actions[index][1]._bodyList
+        _bodyList = self.CANEngine.actions[index][1]._bodyList
         self.assertTrue(543000 in _bodyList, "We should be able to find ID 543000")
         self.assertFalse(543002 in _bodyList, "We should not be able to find ID 543002")
         self.assertTrue([1, 1, 1, 1, 1, 1] == list(_bodyList[543001].values()), "We should not be able to find ID")

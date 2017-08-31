@@ -52,6 +52,14 @@ class CANSploit:
         self.do_stop_e.clear()
         sys.dont_write_bytecode = True
 
+    @property
+    def actions(self):
+        return self._actions
+
+    @property
+    def modules(self):
+        return self._modules
+
     # Main loop with two pipes
     def main_loop(self):
         """Main event loop handling CANMessages pipes, chaining the modules requested by the user."""
@@ -64,7 +72,6 @@ class CANSploit:
                     continue  # Only handling active modules. Inactive modules are skipped.
                 module.thr_block.wait(3)
                 module.thr_block.clear()
-                # Default pipe is named 1, enforced by `_validate_module_params`.
                 pipe_name = params['pipe']
                 # If the pipe is newly created, initializ it with an empty CAN message. The CAN message will be further
                 # processed by the loaded modules on the same pipe.
@@ -94,13 +101,9 @@ class CANSploit:
         :return: Result from the module call
         :rtype: str
         """
-        # x = self.find_module(mod)
-        x = index
-        if x >= 0:
-            ret = self._actions[x][1].raw_write(params)
-        else:
-            ret = "Module " + str(index) + " not loaded!"
-        return ret
+        if index < 0 or index >= len(self._actions):
+            return 'Module {} not found!'.format(index)
+        return self._actions[index][1].raw_write(params)
 
     def engine_exit(self):
         """Exit CANToolz engine by exiting all the loaded modules."""
@@ -157,35 +160,23 @@ class CANSploit:
         """
         return not self._stop.is_set()
 
-    def _validate_module_params(self, params):
-        """Validate the required parameters for running the module.
-
-        :param dict params: Parameters to validate.
-
-        :return: Validated parameters.
-        :rtype: dict
-        """
-        if 'pipe' not in params:
-            params['pipe'] = 1
-        return params
-
     # FIXME: This is not thread safe. The id returned could be wrong as soon as it is looked up.
-    def find_module(self, mod):
-        """Find the index of the module `mod` in the list of enabled modules.
+    def find_module(self, module):
+        """Find the index of the module `module` in the list of actions.
 
-        :param str mod: Module name to find in the list of enabled modules.
+        :param str module: Module name to find
 
-        :return: Index of the module `mod` in the list of enabled modules.
+        :return: Index of the module `mod` in the list of enabled modules. -1 if not found.
         :rtype: int
         """
-        i = 0
-        x = -1
-        for name, module, params in self._actions:
-            if name == mod:
-                x = i
+        index = 0
+        for name, _, _ in self._actions:
+            if name == module:
                 break
-            i += 1
-        return x
+            index += 1
+        else:
+            return -1  # Module not found
+        return index
 
     def edit_module(self, index, params):
         """Edit the module configuration with new parameters.
@@ -196,37 +187,39 @@ class CANSploit:
         :return: Error code >= 0 if the update was successful, < 0 otherwise.
         :rtype: int
         """
-        # x = self.find_module(mod)
-        x = index
-        if x >= 0:
-            chkd_params = self._validate_module_params(params)
-            self._actions[x][2] = chkd_params
-            return x
-        return -1
+        if index < 0 or index >= len(self._actions):
+            return False
+        self._actions[index][2] = self._validate_action_params(params)
+        return True
 
-    def get_modules_list(self):
-        """Get the list of loaded modules.
+    def load_config(self, fullpath):
+        """Load CANToolz scenario configuration from `fullpath`.
 
-        :return: List of modules.
-        :rtype: list
+        :param str fullpath: Fullpath to the CANToolz configuration file.
+
+        :raises ModuleNotFoundError: When the configuration file cannot be found.
         """
-        return self._actions
+        path, filename = os.path.split(fullpath)
+        if not path:  # Configuration is loaded from current directory
+            path = os.getcwd()
+        sys.path.append(path)
 
-    def get_module_params(self, index):
-        """Get the list of parameters for the module index `index`.
+        config = __import__(os.path.splitext(filename)[0])
 
-        :param int index: Index of the module in the list of enabled modules.
+        if hasattr(config, 'modules'):
+            modules = config.modules.items()
+        elif hasattr(config, 'load_modules'):
+            logging.warning('The configuration `load_modules` has been deprecated in favor of `modules`.')
+            modules = config.load_modules.items()
+        for module, init_params in modules:
+            self._init_module(module, init_params)
 
-        :return: Parameters of the module.
-        :rtype: dict
-        """
-        # x = self.find_module(mod)
-        x = index
-        if x >= 0:
-            return self._actions[x][2]
-        return None
+        for action in config.actions:
+            for module, parameters in action.items():
+                validated_parameters = self._validate_action_params(parameters)
+                self._actions.append([module, self._modules[module], validated_parameters])
 
-    def init_module(self, mod, params):
+    def _init_module(self, mod, params):
         """Dynamically initialize a module.
 
         Dynamically find and load the module from `modules/`. If the module is not found under `modules/`, then it
@@ -272,29 +265,14 @@ class CANSploit:
         # Dynamically instanciate the module class.
         self._modules[mod] = getattr(loaded_module, mod_name)(params)
 
-    def load_config(self, fullpath):
-        """Load CANToolz configuration from `fullpath`.
+    def _validate_action_params(self, params):
+        """Validate the required parameters for an action.
 
-        :param str fullpath: Fullpath to the CANToolz configuration file.
+        :param dict params: Parameters to validate.
 
-        :raises ModuleNotFoundError: When the configuration file cannot be found.
+        :return: Validated parameters.
+        :rtype: dict
         """
-        path, filename = os.path.split(fullpath)
-        if not path:  # Configuration is loaded from current directory
-            path = os.getcwd()
-        sys.path.append(path)
-
-        config = __import__(os.path.splitext(filename)[0])
-
-        if hasattr(config, 'modules'):
-            modules = config.modules.items()
-        elif hasattr(config, 'load_modules'):
-            logging.warning('The configuration `load_modules` has been deprecated in favor of `modules`.')
-            modules = config.load_modules.items()
-        for module, init_params in modules:
-            self.init_module(module, init_params)
-
-        for action in config.actions:
-            for module, parameters in action.items():
-                validated_parameters = self._validate_module_params(parameters)
-                self._actions.append([module, self._modules[module], validated_parameters])
+        if 'pipe' not in params:
+            params['pipe'] = 1
+        return params

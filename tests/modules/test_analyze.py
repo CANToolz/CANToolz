@@ -27,7 +27,7 @@ class TestAnalyze(TestCANToolz):
         # Print table of sniffed CAN packets from analyze.
         ret = self.CANEngine.call_module(1, 'p')
         print(ret)
-        _bodyList = self.CANEngine._actions[index][1]._bodyList
+        _bodyList = self.CANEngine.actions[index][1]._bodyList
 
         self.assertTrue(4 in _bodyList, "We should be able to find ID 4")
         self.assertTrue(455678 in _bodyList, "We should be able to find ID 455678")
@@ -40,7 +40,7 @@ class TestAnalyze(TestCANToolz):
         time.sleep(1)
         # Print table of sniffed CAN packets from analyze.
         self.CANEngine.call_module(1, 'p')
-        _bodyList = self.CANEngine._actions[index][1]._bodyList
+        _bodyList = self.CANEngine.actions[index][1]._bodyList
         self.assertFalse(4 in _bodyList, "We should not be able to find ID 4")
         self.assertFalse(455678 in _bodyList, "We should not be able to find ID 455678")
         self.assertTrue(2 in _bodyList, "We should be able to find ID 2")

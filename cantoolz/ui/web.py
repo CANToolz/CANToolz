@@ -22,7 +22,7 @@ def vircar():
 @app.route('/api/get_conf')
 def get_conf():
     response = {"queue": []}
-    modz = app.can_engine.get_modules_list()
+    modz = app.can_engine.actions
     try:
         for name, module, params in modz:
             response['queue'].append({'name': name, "params": params})
@@ -35,7 +35,7 @@ def get_conf():
 @app.route('/api/help/<path:module>')
 def help(module):
     try:
-        help_list = app.can_engine.get_modules_list()[app.can_engine.find_module(module)][1]._cmdList
+        help_list = app.can_engine.actions[app.can_engine.find_module(module)][1]._cmdList
         response_help = collections.OrderedDict()
         for key, cmd in help_list.items():
             response_help[key] = {'descr': cmd.description, 'descr_param': cmd.desc_params, 'param_count': cmd.num_params}
@@ -69,7 +69,7 @@ def stop():
 def status():
     try:
         modz = app.can_engine.status_loop
-        modz2 = app.can_engine.get_modules_list()
+        modz2 = app.can_engine.actions
         modz3 = {}
         for name, module, params in modz2:
             btns = {}
@@ -89,16 +89,16 @@ def edit(id):
     try:
         paramz = request.get_json()
         if app.can_engine.edit_module(id, paramz) >= 0:
-            mode = 1 if app.can_engine.get_modules_list()[id][1].is_active else 0
+            mode = 1 if app.can_engine.actions[id][1].is_active else 0
             if mode == 1:
-                app.can_engine.get_modules_list()[id][1].do_activate(0, 0)
+                app.can_engine.actions[id][1].do_activate(0, 0)
             if not app.can_engine._stop.is_set():
-                app.can_engine.get_modules_list()[id][1].do_stop(paramz)
-                app.can_engine.get_modules_list()[id][1].do_start(paramz)
+                app.can_engine.actions[id][1].do_stop(paramz)
+                app.can_engine.actions[id][1].do_start(paramz)
             if mode == 1:
-                app.can_engine.get_modules_list()[id][1].do_activate(0, 1)
+                app.can_engine.actions[id][1].do_activate(0, 1)
 
-            new_params = app.can_engine.get_module_params(id)
+            new_params = app.can_engine.actions[id][2]
             return Response(json.dumps(new_params, ensure_ascii=False), status=200, mimetype='application/json')
         else:
             return Response(json.dumps({'error': 'module not found'}), status=404, mimetype='application/json')
