@@ -184,7 +184,7 @@ class CANSploit:
         :param int index: Index of the module in the list of enabled modules.
         :param dict params: New parameters for the module.
 
-        :return: Error code >= 0 if the update was successful, < 0 otherwise.
+        :return: Return True in case of success, False otherwise.
         :rtype: int
         """
         if index < 0 or index >= len(self._actions):
