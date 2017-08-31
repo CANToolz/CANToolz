@@ -53,10 +53,10 @@ class CANModule:
         self.DEBUG = int(params.get('debug', 0))
         self._bus = params.get('bus', self.__class__.__name__)
         self._active = False if params.get('active') in ["False", "false", "0", "-1"] else True
-        # List of default commands supported by the module.
-        self._cmdList = collections.OrderedDict()  # Command list (doInit section)
-        self._cmdList['S'] = Command('Current status', 0, '', self.get_status, True)
-        self._cmdList['s'] = Command('Stop/Activate current module', 0, '', self.do_activate, True)
+        #: List of commands supported by the module.
+        self.commands = collections.OrderedDict()  # Command list (doInit section)
+        self.commands['S'] = Command('Current status', 0, '', self.get_status, True)
+        self.commands['s'] = Command('Stop/Activate current module', 0, '', self.do_activate, True)
         self._status = 0
         self._error_text = ""
         self.do_init(params)
@@ -121,8 +121,8 @@ class CANModule:
         else:
             in_cmd = full_cmd
             parameters = None
-        if in_cmd in self._cmdList:
-            cmd = self._cmdList[in_cmd]
+        if in_cmd in self.commands:
+            cmd = self.commands[in_cmd]
             if cmd.is_enabled:
                 try:
                     if parameters:
@@ -159,7 +159,7 @@ class CANModule:
 
         :returns: str -- Help of the module.
         """
-        return self._cmdList
+        return self.commands
 
     def get_status_bar(self):
         """Get the status of the module.

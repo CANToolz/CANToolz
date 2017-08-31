@@ -30,7 +30,7 @@ class hw_CANSocket(CANModule):
     def do_init(self, init_params):  # Get device and open serial port
         self.device = init_params.get('iface', None)
         self._bus = init_params.get('bus', 'CANSocket')
-        self._cmdList['t'] = Command("Send CAN frame directly, like 01A#11223344", 1, " <frame> ", self.dev_write, True)
+        self.commands['t'] = Command("Send CAN frame directly, like 01A#11223344", 1, " <frame> ", self.dev_write, True)
         self._active = True
         self._run = False
 

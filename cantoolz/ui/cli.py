@@ -105,7 +105,7 @@ class CANToolzCLI(cmd.Cmd):
                 module = int(match.group(1).strip())
                 mod = self.can_engine.actions[module][1]
                 print(("\nModule " + mod.__class__.__name__ + ": " + mod.name + "\n" + mod.help + "\n\nConsole commands:\n"))
-                for key, value in mod._cmdList.items():
+                for key, value in mod.commands.items():
                     print(("\t" + key + " " + value.desc_params + "\t\t - " + value.description + "\n"))
             except Exception as e:
                 print(("Help error: " + str(e)))

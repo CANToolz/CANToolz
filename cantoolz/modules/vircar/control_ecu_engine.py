@@ -42,11 +42,11 @@ class control_ecu_engine(CANModule):
         self.rpm_down = 0
         self.frames = []
 
-        self._cmdList['status'] = Command("Get engine status", 0, "", self.control_get_status, True)
-        self._cmdList['rpmup'] = Command("Increase RMP", 0, "", self.control_rpm_up, True)
-        self._cmdList['rpmdw'] = Command("Decrease RMP", 0, "", self.control_rpm_down, True)
-        self._cmdList['start'] = Command("Start engine", 0, "", self.control_start_engine, True)
-        self._cmdList['stop'] = Command("Stop engine", 0, "", self.control_stop_engine, True)
+        self.commands['status'] = Command("Get engine status", 0, "", self.control_get_status, True)
+        self.commands['rpmup'] = Command("Increase RMP", 0, "", self.control_rpm_up, True)
+        self.commands['rpmdw'] = Command("Decrease RMP", 0, "", self.control_rpm_down, True)
+        self.commands['start'] = Command("Start engine", 0, "", self.control_start_engine, True)
+        self.commands['stop'] = Command("Stop engine", 0, "", self.control_stop_engine, True)
 
     def control_rpm_up(self, flag):
         self.frames.append(CANMessage(self._status2['id_command'], 2, bytes.fromhex(self._status2['commands']['rpm_up'] + '20'), False, CANMessage.DataFrame))

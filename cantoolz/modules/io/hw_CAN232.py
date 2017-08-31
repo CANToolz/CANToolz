@@ -64,18 +64,18 @@ class hw_CAN232(CANModule):
 
         self.dprint(1, 'C232 version: {0}'.format(self._C232.version(max_tries=100)))
 
-        self._cmdList['V'] = Command('Get version number of the CANBUS hardware', 0, '', self.cmd_version, True)
-        self._cmdList['N'] = Command('Get serial number of the CANBUS hardware', 0, '', self.cmd_serial, True)
-        self._cmdList['O'] = Command('Open communication channel with the CANBUS hardware', 0, '', self.cmd_open, True)
-        self._cmdList['L'] = Command('Open communication channel in read only with the CANBUS hardware', 0, '', self.cmd_ropen, True)
-        self._cmdList['C'] = Command('Close communication channel with the CANBUS hardware', 0, '', self.cmd_close, True)
-        self._cmdList['Speed'] = Command('Set speed of CAN bus (e.g. 500KBPS)', 1, '<speed>', self.cmd_speed, True)
-        self._cmdList['F'] = Command('Get status flag from the CANBUS hardware', 0, '', self.cmd_status, True)
-        self._cmdList['Z'] = Command('Switch on/off the timestamp on the CAN frames', 1, '<True/False>', self.cmd_timestamp, True)
-        self._cmdList['t'] = Command('Transmit a standard (11bit) frame (format iiiLDD..DD; e.g. 10021133)', 1, '<cmd>', self.cmd_transmit_std, True)
-        self._cmdList['T'] = Command('Transmit an extended (29bit) frame (format iiiiiiiiLDD..DD; e.g. 0000010021133)', 1, '<cmd>', self.cmd_transmit_ext, True)
-        self._cmdList['r'] = Command('Transmit a remote standard (11bit) frame (format iiiL; e.g. 1002)', 1, '<cmd>', self.cmd_transmit_rtr_std, True)
-        self._cmdList['R'] = Command('Transmit a remote extended (29bit) frame (format iiiiiiiiL; e.g. 000001002)', 1, '<cmd>', self.cmd_transmit_rtr_ext, True)
+        self.commands['V'] = Command('Get version number of the CANBUS hardware', 0, '', self.cmd_version, True)
+        self.commands['N'] = Command('Get serial number of the CANBUS hardware', 0, '', self.cmd_serial, True)
+        self.commands['O'] = Command('Open communication channel with the CANBUS hardware', 0, '', self.cmd_open, True)
+        self.commands['L'] = Command('Open communication channel in read only with the CANBUS hardware', 0, '', self.cmd_ropen, True)
+        self.commands['C'] = Command('Close communication channel with the CANBUS hardware', 0, '', self.cmd_close, True)
+        self.commands['Speed'] = Command('Set speed of CAN bus (e.g. 500KBPS)', 1, '<speed>', self.cmd_speed, True)
+        self.commands['F'] = Command('Get status flag from the CANBUS hardware', 0, '', self.cmd_status, True)
+        self.commands['Z'] = Command('Switch on/off the timestamp on the CAN frames', 1, '<True/False>', self.cmd_timestamp, True)
+        self.commands['t'] = Command('Transmit a standard (11bit) frame (format iiiLDD..DD; e.g. 10021133)', 1, '<cmd>', self.cmd_transmit_std, True)
+        self.commands['T'] = Command('Transmit an extended (29bit) frame (format iiiiiiiiLDD..DD; e.g. 0000010021133)', 1, '<cmd>', self.cmd_transmit_ext, True)
+        self.commands['r'] = Command('Transmit a remote standard (11bit) frame (format iiiL; e.g. 1002)', 1, '<cmd>', self.cmd_transmit_rtr_std, True)
+        self.commands['R'] = Command('Transmit a remote extended (29bit) frame (format iiiiiiiiL; e.g. 000001002)', 1, '<cmd>', self.cmd_transmit_rtr_ext, True)
         return 0
 
     def init_port(self):
@@ -184,30 +184,30 @@ class hw_CAN232(CANModule):
     def cmd_open(self, def_in):
         """Open CAN232 channel."""
         self._C232.open()
-        self._cmdList['t'].is_enabled = True
-        self._cmdList['T'].is_enabled = True
-        self._cmdList['r'].is_enabled = True
-        self._cmdList['R'].is_enabled = True
+        self.commands['t'].is_enabled = True
+        self.commands['T'].is_enabled = True
+        self.commands['r'].is_enabled = True
+        self.commands['R'].is_enabled = True
         return 'CAN232 channel opened'
 
     def cmd_ropen(self, def_in):
         """Open CAN232 channel in read only."""
         self._C232.ropen()
         # Not possible to send CAN frames when channel in read-only.
-        self._cmdList['t'].is_enabled = False
-        self._cmdList['T'].is_enabled = False
-        self._cmdList['r'].is_enabled = False
-        self._cmdList['R'].is_enabled = False
+        self.commands['t'].is_enabled = False
+        self.commands['T'].is_enabled = False
+        self.commands['r'].is_enabled = False
+        self.commands['R'].is_enabled = False
         return 'CAN232 channel opened in read only'
 
     def cmd_close(self, def_in):
         """Close CAN232 channel."""
         self._C232.close()
         # Not possible to send CAN frames when channel closed.
-        self._cmdList['t'].is_enabled = False
-        self._cmdList['T'].is_enabled = False
-        self._cmdList['r'].is_enabled = False
-        self._cmdList['R'].is_enabled = False
+        self.commands['t'].is_enabled = False
+        self.commands['T'].is_enabled = False
+        self.commands['r'].is_enabled = False
+        self.commands['R'].is_enabled = False
         return 'CAN232 channel close'
 
     def cmd_speed(self, def_in, data):

@@ -212,8 +212,8 @@ class hw_USBtin(CANModule):
         self.dprint(1, "Speed: " + str(self._currentSpeed))
         self.dprint(1, "USBtin device found!")
 
-        self._cmdList['speed'] = Command("Set device speed (kBaud) and SJW level(optional)", 1, " <speed>,<SJW> ", self.set_speed, True)
-        self._cmdList['t'] = Command("Send direct command to the device, like t001411223344", 1, " <cmd> ", self.dev_write, True)
+        self.commands['speed'] = Command("Set device speed (kBaud) and SJW level(optional)", 1, " <speed>,<SJW> ", self.set_speed, True)
+        self.commands['t'] = Command("Send direct command to the device, like t001411223344", 1, " <cmd> ", self.dev_write, True)
 
     def dev_write(self, def_in, data):
         self.dprint(2, "CMD: " + data + " try: " + str(def_in))

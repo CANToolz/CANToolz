@@ -75,41 +75,41 @@ class analyze(CANModule):
         if 'meta_file' in params:
             self.dprint(1, self.do_load_meta(0, params['meta_file']))
 
-        self._cmdList['p'] = Command("Print current table", 1, "[index]", self.do_print, True)
+        self.commands['p'] = Command("Print current table", 1, "[index]", self.do_print, True)
 
-        self._cmdList['a'] = Command("Analysis of captured traffic", 1, "<UDS|ISO|FRAG|ALL(defaut)>,[buffer index]", self.do_anal, True)
-        self._cmdList['u'] = Command("    - UDS shift value", 1, "[shift value]", self.change_shift, True)
+        self.commands['a'] = Command("Analysis of captured traffic", 1, "<UDS|ISO|FRAG|ALL(defaut)>,[buffer index]", self.do_anal, True)
+        self.commands['u'] = Command("    - UDS shift value", 1, "[shift value]", self.change_shift, True)
 
-        self._cmdList['D'] = Command("Switch sniffing to a new buffer", 1, "[name]", self.new_diff, True)
-        self._cmdList['I'] = Command("Print Diff between two buffers", 1, "[buffer index 1], [buffer index 2], [uniq values max]", self.print_diff, True)
-        self._cmdList['N'] = Command("Print Diff between two buffers (new ID only)", 1, "[buffer index 1], [buffer index 2]", self.print_diff_id, True)
+        self.commands['D'] = Command("Switch sniffing to a new buffer", 1, "[name]", self.new_diff, True)
+        self.commands['I'] = Command("Print Diff between two buffers", 1, "[buffer index 1], [buffer index 2], [uniq values max]", self.print_diff, True)
+        self.commands['N'] = Command("Print Diff between two buffers (new ID only)", 1, "[buffer index 1], [buffer index 2]", self.print_diff_id, True)
 
-        self._cmdList['Y'] = Command("Dump Diff in replay format", 1, "<filename>,[buffer index ,buffer index], [uniq values max]", self.print_dump_diff, True)
-        self._cmdList['y'] = Command("Dump Diff in replay format (new ID)", 1, "<filename>,[buffer index 1] , [buffer index 2]", self.print_dump_diff_id, True)
-        self._cmdList['F'] = Command("Search ID in all buffers", 1, "<ID>", self.search_id, True)
+        self.commands['Y'] = Command("Dump Diff in replay format", 1, "<filename>,[buffer index ,buffer index], [uniq values max]", self.print_dump_diff, True)
+        self.commands['y'] = Command("Dump Diff in replay format (new ID)", 1, "<filename>,[buffer index 1] , [buffer index 2]", self.print_dump_diff_id, True)
+        self.commands['F'] = Command("Search ID in all buffers", 1, "<ID>", self.search_id, True)
 
-        self._cmdList['train'] = Command("STATCHECK: profiling on normal traffic (EXPEREMENTAL)", 1, "[buffer index]", self.train, True)
-        self._cmdList['check'] = Command("STATCHECK: find abnormalities on 'event' traffic  (EXPEREMENTAL)", 1, "[buffer index]", self.find_ab, True)
-        self._cmdList['act'] = Command("STATCHECK: find action frame  (EXPEREMENTAL)", 0, "", self.act_detect, False)
-        self._cmdList['dump_st'] = Command("STATCHECK: dump abnormalities in Replay format  (EXPEREMENTAL)", 1, "<filename>", self.dump_ab, False)
+        self.commands['train'] = Command("STATCHECK: profiling on normal traffic (EXPEREMENTAL)", 1, "[buffer index]", self.train, True)
+        self.commands['check'] = Command("STATCHECK: find abnormalities on 'event' traffic  (EXPEREMENTAL)", 1, "[buffer index]", self.find_ab, True)
+        self.commands['act'] = Command("STATCHECK: find action frame  (EXPEREMENTAL)", 0, "", self.act_detect, False)
+        self.commands['dump_st'] = Command("STATCHECK: dump abnormalities in Replay format  (EXPEREMENTAL)", 1, "<filename>", self.dump_ab, False)
 
-        self._cmdList['load'] = Command("Load Replay dumps from files into buffers", 1, "filename1[,filename2,...] ", self.load_rep, True)
+        self.commands['load'] = Command("Load Replay dumps from files into buffers", 1, "filename1[,filename2,...] ", self.load_rep, True)
 
-        self._cmdList['change'] = Command("Detect changes for ECU (EXPEREMENTAL)", 1, "[buffer index][, max uniq. values]", self.show_change, True)
-        self._cmdList['detect'] = Command("Detect changes for ECU by control FRAME (EXPEREMENTAL)", 1, "<ECU ID:HEX_DATA>[,buffer index]", self.show_detect, True)
-        self._cmdList['show'] = Command("Show detected amount of fields for all ECU (EXPEREMENTAL)", 1, "[buffer index]", self.show_fields, True)
-        self._cmdList['fields'] = Command("Show values in fields for chosen ECU (EXPEREMENTAL)", 1, "<ECU ID>[, hex|bin|int [, buffer index ]]", self.show_fields_ecu, True)
+        self.commands['change'] = Command("Detect changes for ECU (EXPEREMENTAL)", 1, "[buffer index][, max uniq. values]", self.show_change, True)
+        self.commands['detect'] = Command("Detect changes for ECU by control FRAME (EXPEREMENTAL)", 1, "<ECU ID:HEX_DATA>[,buffer index]", self.show_detect, True)
+        self.commands['show'] = Command("Show detected amount of fields for all ECU (EXPEREMENTAL)", 1, "[buffer index]", self.show_fields, True)
+        self.commands['fields'] = Command("Show values in fields for chosen ECU (EXPEREMENTAL)", 1, "<ECU ID>[, hex|bin|int [, buffer index ]]", self.show_fields_ecu, True)
 
-        self._cmdList['c'] = Command("Clean table, remove buffers", 0, "", self.do_clean, True)
+        self.commands['c'] = Command("Clean table, remove buffers", 0, "", self.do_clean, True)
 
-        self._cmdList['i'] = Command("Meta-data: add description for frames", 1, "<ID>, <data regex ASCII HEX>, <description>", self.do_add_meta_descr_data, True)
-        self._cmdList['bits'] = Command("Meta-data: bits fields description", 1, "<ID>, <LEN>, <TYPE>:<LAST BIT INDEX>:<DESCRIPTION>[,...]", self.do_add_meta_bit_data, True)
-        self._cmdList['l'] = Command("Load meta-data", 1, "<filename>", self.do_load_meta, True)
-        self._cmdList['z'] = Command("Save meta-data", 1, "<filename>", self.do_save_meta, True)
-        self._cmdList['r'] = Command("Dump buffer (if index is empty then all) in replay format", 1, " <filename>, [index]", self.do_dump_replay, True)
-        self._cmdList['d2'] = Command("Dump buffer (if index is empty then all) in CSV format", 1, " <filename>, [index]", self.do_dump_csv2, True)
-        self._cmdList['d'] = Command("Dump STATS for buffer (if index is empty then all) in CSV format", 1, " <filename>, [index]", self.do_dump_csv, True)
-        self._cmdList['g'] = Command("Get DELAY value for ping/fuzz (EXPERIMENTAL)", 1, "<Bus SPEED in Kb/s>", self.get_delay, True)
+        self.commands['i'] = Command("Meta-data: add description for frames", 1, "<ID>, <data regex ASCII HEX>, <description>", self.do_add_meta_descr_data, True)
+        self.commands['bits'] = Command("Meta-data: bits fields description", 1, "<ID>, <LEN>, <TYPE>:<LAST BIT INDEX>:<DESCRIPTION>[,...]", self.do_add_meta_bit_data, True)
+        self.commands['l'] = Command("Load meta-data", 1, "<filename>", self.do_load_meta, True)
+        self.commands['z'] = Command("Save meta-data", 1, "<filename>", self.do_save_meta, True)
+        self.commands['r'] = Command("Dump buffer (if index is empty then all) in replay format", 1, " <filename>, [index]", self.do_dump_replay, True)
+        self.commands['d2'] = Command("Dump buffer (if index is empty then all) in CSV format", 1, " <filename>, [index]", self.do_dump_csv2, True)
+        self.commands['d'] = Command("Dump STATS for buffer (if index is empty then all) in CSV format", 1, " <filename>, [index]", self.do_dump_csv, True)
+        self.commands['g'] = Command("Get DELAY value for ping/fuzz (EXPERIMENTAL)", 1, "<Bus SPEED in Kb/s>", self.get_delay, True)
 
     def get_delay(self, def_in, speed):
         _speed = float(speed) * 1024
@@ -737,8 +737,8 @@ class analyze(CANModule):
         self._train_buffer = -1
         self._index = 0
         self.data_set = {}
-        self._cmdList['act'].is_enabled = False
-        self._cmdList['dump_st'].is_enabled = False
+        self.commands['act'].is_enabled = False
+        self.commands['dump_st'].is_enabled = False
         return "Buffers cleaned!"
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
@@ -1293,8 +1293,8 @@ class analyze(CANModule):
         result2 += "\n"
 
         self._rep_index = _index
-        self._cmdList['act'].is_enabled = True
-        self._cmdList['dump_st'].is_enabled = True
+        self.commands['act'].is_enabled = True
+        self.commands['dump_st'].is_enabled = True
 
         if not self._action.is_set():
                     self._action.set()

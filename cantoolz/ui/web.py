@@ -35,7 +35,7 @@ def get_conf():
 @app.route('/api/help/<path:module>')
 def help(module):
     try:
-        help_list = app.can_engine.actions[app.can_engine.find_module(module)][1]._cmdList
+        help_list = app.can_engine.actions[app.can_engine.find_module(module)][1].commands
         response_help = collections.OrderedDict()
         for key, cmd in help_list.items():
             response_help[key] = {'descr': cmd.description, 'descr_param': cmd.desc_params, 'param_count': cmd.num_params}
@@ -73,7 +73,7 @@ def status():
         modz3 = {}
         for name, module, params in modz2:
             btns = {}
-            for key, cmd in module._cmdList.items():
+            for key, cmd in module.commands.items():
                 btns[key] = cmd.is_enabled
             sts = module.get_status_bar()
             modz3[name] = {

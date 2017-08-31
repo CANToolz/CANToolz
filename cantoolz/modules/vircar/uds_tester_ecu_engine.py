@@ -30,9 +30,9 @@ class uds_tester_ecu_engine(CANModule):
         self.record_status = False
         self.wait_for_auth = False
 
-        self._cmdList['auth'] = Command("UDS Auth", 0, "", self.control_auth, True)
-        self._cmdList['set_key'] = Command("Set UDS access key", 1, "<key>", self.set_key, True)
-        self._cmdList['write_id'] = Command("Write parameter (HEX)", 1, "<ident>, <data>", self.write_param, True)
+        self.commands['auth'] = Command("UDS Auth", 0, "", self.control_auth, True)
+        self.commands['set_key'] = Command("Set UDS access key", 1, "<key>", self.set_key, True)
+        self.commands['write_id'] = Command("Write parameter (HEX)", 1, "<ident>, <data>", self.write_param, True)
 
     def write_param(self, arg, key):
         uds_msg = UDSMessage()

@@ -43,27 +43,27 @@ class can_control(CANModule):
         self._commands = params.get('commands', [])
         self._frames = []
 
-        cmd_list = [chr(i) for i in (list(range(0x41, 0x41 + 26)) + list(range(0x61, 0x61 + 26))) if i not in self._cmdList.keys()]
+        cmd_list = [chr(i) for i in (list(range(0x41, 0x41 + 26)) + list(range(0x61, 0x61 + 26))) if i not in self.commands.keys()]
         index = 0
 
         for command in self._commands:
-            if 'cmd' in command and command['cmd'] not in self._cmdList.keys():
+            if 'cmd' in command and command['cmd'] not in self.commands.keys():
                 cmd = command['cmd']
                 if cmd in cmd_list:
                     cmd_list.remove(cmd)
             else:
                 cmd = cmd_list.pop()
-            self._cmdList[cmd] = Command('Action: ' + list([x for x in list(command.keys()) if x not in ['cmd']])[0], 0, '', self.send_command, True, index)
+            self.commands[cmd] = Command('Action: ' + list([x for x in list(command.keys()) if x not in ['cmd']])[0], 0, '', self.send_command, True, index)
             index += 1
         index = 0
         for status in self._statuses:
-            if 'cmd' in status and status['cmd'] not in self._cmdList.keys():
+            if 'cmd' in status and status['cmd'] not in self.commands.keys():
                 cmd = status['cmd']
                 if cmd in cmd_list:
                     cmd_list.remove(cmd)
             else:
                 cmd = cmd_list.pop()
-            self._cmdList[cmd] = Command("Status: " + list([x for x in list(status.keys()) if x not in ["id_list_can_toolz_system", "cmd", "current_status"]])[0], 0, '', self.get_statuses, True, index)
+            self.commands[cmd] = Command("Status: " + list([x for x in list(status.keys()) if x not in ["id_list_can_toolz_system", "cmd", "current_status"]])[0], 0, '', self.get_statuses, True, index)
             index += 1
             fid_list = []
             for name, data in status.items():
