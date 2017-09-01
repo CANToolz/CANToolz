@@ -41,11 +41,13 @@ class CANSploit:
         if level <= self.DEBUG:
             print('{}: {}'.format(self.__class__.__name__, msg))
 
-    def __init__(self):
+    def __init__(self, path_modules=None):
         # List of actions with their parameters to perform during the scenario.
         self._actions = []
-        # Dictionary of initialized modules for the scenario
+        # Dictionary of initialized modules for the scenario.
         self._modules = {}
+        # Path to the CANToolz modules directory.
+        self._path_modules = path_modules
         # Thread reference
         self._thread = None
         self._stop = threading.Event()
@@ -194,29 +196,46 @@ class CANSploit:
         self._actions[index][2] = self._validate_action_params(params)
         return True
 
+    def _get_load_paths(self):
+        """Creates the paths where to look for modules based on CANToolz's strategy.
+
+        :return: List of paths where to start looking for modules
+        :rtype: list
+        """
+        strats = []
+        # See: https://github.com/CANToolz/CANToolz/issues/16
+        # 1. From user specified directory
+        if self._path_modules:
+            strats.append(self._path_modules)
+        # 2. From dotfile directory
+        strats.append(os.path.join(os.path.expanduser('~'), '.cantoolz', 'modules'))
+        # 3. From package directory (stock modules)
+        strats.append(os.path.join(os.path.dirname(__file__), 'modules'))
+        return strats
+
     def list_modules(self):
         """List the available modules that can be loaded by the user.
 
         :return: Dictionaries of module, with {name: description} for each module existing.
         :rtype: collections.OrderedDict
         """
-        # Search all python modules under the package's 'modules' directory.
-        search_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'modules'))
-        search_path = os.path.join(search_path, '**', '*.py')
         modules = collections.OrderedDict()
-        for fullpath in glob.iglob(search_path, recursive=True):
-            if fullpath.endswith('__init__.py'):
-                continue
-            path, filename = os.path.split(fullpath)
-            subdir = os.path.split(os.path.dirname(fullpath))[1]  # Get the one-level up directory
-            filename = os.path.splitext(filename)[0]
-            sys.path.append(path)
-            module = __import__(filename)
-            if subdir != 'modules':  # If the module is under a subdirectory (e.g. io, vircar)
-                new_module = {os.path.join(subdir, filename): getattr(module, filename).name}
-            else:
-                new_module = {filename: getattr(module, filename).name}
-            modules.update(new_module)
+        # Searching modules in reversed strategy so that user specified modules override stock modules
+        for search_path in self._get_load_paths()[::-1]:
+            search_path = os.path.join(search_path, '**', '*.py')
+            for fullpath in glob.iglob(search_path, recursive=True):
+                if fullpath.endswith('__init__.py'):
+                    continue
+                path, filename = os.path.split(fullpath)
+                subdir = os.path.split(os.path.dirname(fullpath))[1]  # Get the one-level up directory
+                filename = os.path.splitext(filename)[0]
+                sys.path.append(path)
+                module = __import__(filename)
+                if subdir != 'modules':  # If the module is under a subdirectory (e.g. io, vircar)
+                    new_module = {os.path.join(subdir, filename): (getattr(module, filename).name, path)}
+                else:
+                    new_module = {filename: (getattr(module, filename).name, path)}
+                modules.update(new_module)
         return modules
 
     def load_config(self, fullpath):
@@ -238,15 +257,25 @@ class CANSploit:
         elif hasattr(config, 'load_modules'):
             logging.warning('The configuration `load_modules` has been deprecated in favor of `modules`.')
             modules = config.load_modules.items()
+
         for module, init_params in modules:
-            self._init_module(module, init_params)
+            for path in self._get_load_paths():
+                if not os.path.exists(path):
+                    continue
+                try:
+                    logging.debug('Searching module {} from {}'.format(module, path))
+                    self._init_module(path, module, init_params)
+                    break
+                except ImportError:
+                    logging.debug('Module {} not found in {}'.format(module, path))
+                    continue
 
         for action in config.actions:
             for module, parameters in action.items():
                 validated_parameters = self._validate_action_params(parameters)
                 self._actions.append([module, self._modules[module], validated_parameters])
 
-    def _init_module(self, mod, params):
+    def _init_module(self, path, mod, params):
         """Dynamically initialize a module.
 
         Dynamically find and load the module from `modules/`. If the module is not found under `modules/`, then it
@@ -259,6 +288,7 @@ class CANSploit:
             The module must contain a class with the same name as the module itself. For instance, module `my_Module`
             must contain a class named `my_Module`
 
+        :param str path: Path to the modules directory from where to load the modules.
         :param str mod: Name of the module to dynamically load.
         :param list params: Parameters to pass to the module class when instanciating the module class.
 
@@ -269,8 +299,10 @@ class CANSploit:
         subdir = ''
         if os.sep in mod:
             subdir, mod = mod.rsplit(os.sep, 1)
-        search_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'modules'))
+        search_path = os.path.abspath(path)
         search_path = os.path.join(search_path, subdir)
+        if not os.path.exists(search_path):
+            raise ImportError('Could not import module. Path {} does not exist...'.format(search_path))
         mod_name = mod.split('~')[0]
         # Now ready to dynamically search the module.
         try:
