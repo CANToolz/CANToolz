@@ -200,21 +200,23 @@ class CANSploit:
         :return: Dictionaries of module, with {name: description} for each module existing.
         :rtype: collections.OrderedDict
         """
+        # Search all python modules under the package's 'modules' directory.
         search_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'modules'))
         search_path = os.path.join(search_path, '**', '*.py')
         modules = collections.OrderedDict()
         for fullpath in glob.iglob(search_path, recursive=True):
-            if not fullpath.endswith('__init__.py'):
-                path, filename = os.path.split(fullpath)
-                subdir = os.path.split(os.path.dirname(fullpath))[1]
-                filename = os.path.splitext(filename)[0]
-                sys.path.append(path)
-                module = __import__(filename)
-                if subdir != 'modules':
-                    new_module = {os.path.join(subdir, filename): getattr(module, filename).name}
-                else:
-                    new_module = {filename: getattr(module, filename).name}
-                modules.update(new_module)
+            if fullpath.endswith('__init__.py'):
+                continue
+            path, filename = os.path.split(fullpath)
+            subdir = os.path.split(os.path.dirname(fullpath))[1]  # Get the one-level up directory
+            filename = os.path.splitext(filename)[0]
+            sys.path.append(path)
+            module = __import__(filename)
+            if subdir != 'modules':  # If the module is under a subdirectory (e.g. io, vircar)
+                new_module = {os.path.join(subdir, filename): getattr(module, filename).name}
+            else:
+                new_module = {filename: getattr(module, filename).name}
+            modules.update(new_module)
         return modules
 
     def load_config(self, fullpath):
