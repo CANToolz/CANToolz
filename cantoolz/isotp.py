@@ -10,17 +10,24 @@ class ISOTPMessage:
     https://en.wikipedia.org/wiki/ISO_15765-2
     """
 
-    # PCI
-    SingleFrame = 0
-    FirstFrame = 1
-    ConsecutiveFrame = 2
-    FlowControl = 3
+    # Protocol Control Information
+    #: int -- The frame is self-contained
+    SINGLE_FRAME = 0
+    #: int -- The frame is the first frame of a series of frames
+    FIRST_FRAME = 1
+    #: int -- The frame is the following frame after a first frame
+    CONSECUTIVE_FRAME = 2
+    #: int -- Acknowledge frame
+    FLOW_CONTROL = 3
 
-    ClearToSend = 10
-    Wait = 11
-    OverflowAbort = 12
+    def __init__(self, id=0, length=0, data=[], finished=False):
+        """Initialize an empty ISO TP CAN message.
 
-    def __init__(self, id=0, length=0, data=[], finished=False):  # Init EMPTY message
+        :param int id: The CAN message ID
+        :param int length: Length of the CAN message data
+        :param list data: The CAN message data
+        :param bool finished: True if there is no more data to add to the message. False otherwise.
+        """
         self.message_id = id
         self.message_data = data
         self.message_length = length
@@ -30,7 +37,14 @@ class ISOTPMessage:
         self._flow = -1
         self.padded = False
 
-    def get_pad(self, array):
+    def _get_padding(self, array):
+        """Get the ISO TP padding from the CAN frames.
+
+        :param list array: TODO
+
+        :return: Padding of the ISO TP message.
+        :rtype: int
+        """
         array2 = array + []
         array2.reverse()
         cnt = 1
@@ -43,73 +57,118 @@ class ISOTPMessage:
 
         return cnt
 
-    def add_can(self, can_msg):  # Init
-        # The initial field is four bits indicating the frame type,
-        pciType = (can_msg.frame_data[0] & 0xF0) >> 4
-        sz = (can_msg.frame_data[0] & 0x0F)
+    # TODO: Use custom exception instead of int error codes
+    def _add_frame_single(self, can):
+        """Convert a CAN message into a single ISO TP frame.
 
-        if pciType == self.SingleFrame:  # Single frame
-            if 0 < sz < 8:
-                if can_msg.frame_length != 8:
-                    if sz + 1 == can_msg.frame_length:
-                        self.message_data = can_msg.frame_data[1:sz + 1]
-                        self.message_length = sz
-                        self.message_finished = True
-                        return 1
-                else:
-                    padded = self.get_pad(can_msg.frame_data)
-                    if padded > 0:
-                        if sz + 1 == 8 - padded:
-                            self.message_data = can_msg.frame_data[1:sz + 1]
-                            self.message_length = sz
-                            self.message_finished = True
-                            self.padded = True
-                            return 1
-                return -7
-            else:
-                return -1
-        elif pciType == self.FirstFrame:  # First frame
-            message_length = (sz << 8) + can_msg.frame_data[1]
-            if message_length > 4095:
-                return -6
-            if self._counterSize == 0:
-                self.message_length = message_length
-                self._counterSize = 6
-                self.message_data = can_msg.frame_data[2:8]
-                self._seq = 1  # Wait for first packet
-                return 2
-            else:
-                return -2
-        elif pciType == self.ConsecutiveFrame and self._seq > 0:  # All next frames until last one
-            if sz != self._seq:  # Wrong seq
-                return -3
-            _left = self.message_length - self._counterSize
-            _add = min(_left, 7)
-            self.message_data.extend(can_msg.frame_data[1:_add + 1])
+        :param cantoolz.can.CANMessage: CAN Message to convert
 
-            self._counterSize += _add
-
-            if self._counterSize == self.message_length:
+        :return: Error code (>= 0 for success, < 0 otherwise)
+        :rtype: int
+        """
+        length = can.frame_data[0] & 0x0F
+        if not 0 < length < 8:
+            return -1
+        if can.frame_length != 8:
+            if length + 1 == can.frame_length:
+                self.message_data = can.frame_data[1:length + 1]
+                self.message_length = length
                 self.message_finished = True
                 return 1
-            elif self._counterSize > self.message_length:
-                return -4
-
-            self._seq += 1
-
-            if self._seq > 0xF:
-                self._seq = 0
-
-            return 2
-
-        elif pciType == self.FlowControl:
-            self._flow = sz
-            return -9
         else:
-            return -5
+            padded = self._get_padding(can.frame_data)
+            if padded > 0 and length + 1 == 8 - padded:
+                self.message_data = can.frame_data[1:length + 1]
+                self.message_length = length
+                self.message_finished = True
+                self.padded = True
+                return 1
+        return -7
+
+    # TODO: Use custom exception instead of int error codes
+    def _add_frame_first(self, can):
+        """Convert a CAN message into the first frame of an ISO TP message.
+
+        :param cantoolz.can.CANMessage: CAN Message to convert
+
+        :return: Error code (>= 0 for success, < 0 otherwise)
+        :rtype: int
+        """
+        length = can.frame_data[0] & 0x0F
+        message_length = (length << 8) + can.frame_data[1]
+        if message_length > 4095:
+            return -6
+        if self._counterSize == 0:
+            self.message_length = message_length
+            self._counterSize = 6
+            self.message_data = can.frame_data[2:8]
+            self._seq = 1  # Wait for first packet
+            return 2
+        return -2
+
+    # TODO: Use custom exception instead of int error codes
+    def _add_frame_consecutive(self, can):
+        """Convert a CAN message into the consecutive frame of an ISO TP message.
+
+        :param cantoolz.can.CANMessage: CAN Message to convert
+
+        :return: Error code (>= 0 for success, < 0 otherwise)
+        :rtype: int
+        """
+        length = can.frame_data[0] & 0x0F
+        if length != self._seq:  # Wrong seq
+            return -3
+
+        _left = self.message_length - self._counterSize
+        _add = min(_left, 7)
+        self.message_data.extend(can.frame_data[1:_add + 1])
+        self._counterSize += _add
+
+        if self._counterSize == self.message_length:
+            self.message_finished = True
+            return 1
+        elif self._counterSize > self.message_length:
+            return -4
+
+        self._seq += 1
+        if self._seq > 0xF:
+            self._seq = 0
+
+        return 2
+
+    # TODO: Use custom exception instead of int error codes
+    def add_can(self, can):  # Init
+        """Convert a CAN frame to the ISO TP format.
+
+        :param cantoolz.can.CANMessage can: CAN message
+
+        :return: Error code (>= 0 for success, < 0 otherwise)
+        :rtype: int
+        """
+        ret = -5
+        # The initial field is four bits indicating the frame type
+        frame_type = (can.frame_data[0] & 0xF0) >> 4
+        if frame_type == self.SINGLE_FRAME:
+            ret = self._add_frame_single(can)
+        elif frame_type == self.FIRST_FRAME:
+            ret = self._add_frame_first(can)
+        elif frame_type == self.CONSECUTIVE_FRAME and self._seq > 0:
+            ret = self._add_frame_consecutive(can)
+        elif frame_type == self.FLOW_CONTROL:
+            ret = self._flow = can.frame_data[0] & 0x0F
+        return ret
 
     @classmethod
     def generate_can(self, fid, data, padding=None):  # generate CAN messages seq
+        """Generate a CAN message in ISO TP format.
+
+        :param int fid: CAN ID for the message
+        :param list data: CAN message data
+        :param int padding: Value of the padding, e.g. 0x00 (if padding is required)
+
+        :return: List of cantoolz.can.CANMessage messages in ISO TP format representing the data.
+        :rtype: list
+        """
         _length = len(data)
         can_msg_list = []
 
