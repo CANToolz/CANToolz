@@ -86,7 +86,7 @@ class hw_CAN232(CANModule):
             self._COM_port = serial.Serial(self._COM_port_name, baudrate=self._COM_speed, timeout=0.5)
         self._C232 = can232.CAN232(self._COM_port, speed=self._CAN_speed, delay=self._COM_delay, debug=self.DEBUG)
 
-    def get_status(self, def_in):
+    def get_status(self):
         return 'Current status: {0}\nSpeed: {1}\nPort: {2}'.format(self._active, self._COM_speed, self._COM_port_name)
 
     def do_start(self, params):
@@ -171,17 +171,17 @@ class hw_CAN232(CANModule):
             self.dprint(0, 'Action {0} not implemented'.format(action))
         return can
 
-    def cmd_version(self, def_in):
+    def cmd_version(self):
         """Get CAN232 version number."""
         version = self._C232.version()
         return 'CAN232 Version number: {0}. Error: {1}'.format(version.decode('ISO-8859-1'), self._C232.error)
 
-    def cmd_serial(self, def_in):
+    def cmd_serial(self):
         """Get CAN232 serial number."""
         serial = self._C232.serial()
         return 'CAN232 Serial number: {0}. Error: {1}'.format(serial.decode('ISO-8859-1'), self._C232.error)
 
-    def cmd_open(self, def_in):
+    def cmd_open(self):
         """Open CAN232 channel."""
         self._C232.open()
         self.commands['t'].is_enabled = True
@@ -190,7 +190,7 @@ class hw_CAN232(CANModule):
         self.commands['R'].is_enabled = True
         return 'CAN232 channel opened'
 
-    def cmd_ropen(self, def_in):
+    def cmd_ropen(self):
         """Open CAN232 channel in read only."""
         self._C232.ropen()
         # Not possible to send CAN frames when channel in read-only.
@@ -200,7 +200,7 @@ class hw_CAN232(CANModule):
         self.commands['R'].is_enabled = False
         return 'CAN232 channel opened in read only'
 
-    def cmd_close(self, def_in):
+    def cmd_close(self):
         """Close CAN232 channel."""
         self._C232.close()
         # Not possible to send CAN frames when channel closed.
@@ -210,12 +210,12 @@ class hw_CAN232(CANModule):
         self.commands['R'].is_enabled = False
         return 'CAN232 channel close'
 
-    def cmd_speed(self, def_in, data):
+    def cmd_speed(self, data):
         """Configure speed of CAN232 channel."""
         self._C232.speed(speed=data).decode('ISO-8859-1')
         return 'CAN232 Speed: {0}. Error: {1}'.format(data, self._C232.error)
 
-    def cmd_status(self, def_in):
+    def cmd_status(self):
         """Get status CAN232 channel."""
         status = self._C232.status()
         self.dprint(1, 'Status: {0} (hex: {1})'.format(status, self.get_hex(status)))
@@ -225,27 +225,27 @@ class hw_CAN232(CANModule):
                     self.dprint(1, flag[b'key'])
         return 'CAN232 Status flags: {0}. Error: {1}'.format(status.decode('ISO-8859-1'), self._C232.error)
 
-    def cmd_timestamp(self, def_in, data):
+    def cmd_timestamp(self, data):
         """Enable/disable timestamps on CAN frame."""
         self._C232.timestamp(flag=data)
         return 'CAN232 timestamp switched on/off. Error: {0}'.format(self._C232.error)
 
-    def cmd_transmit_std(self, def_in, data):
+    def cmd_transmit_std(self, data):
         """Send a standard CAN frame on the CAN232 channel."""
         self._C232.transmit(data, mode=can232.CAN_STANDARD)
         return 'CAN232 standard frame sent {0} (hex: {1}). Error: {2}'.format(data, self.get_hex(str.encode(data)), self._C232.error)
 
-    def cmd_transmit_ext(self, def_in, data):
+    def cmd_transmit_ext(self, data):
         """Send an extended CAN frame on the CAN232 channel."""
         self._C232.transmit(data, mode=can232.CAN_EXTENDED)
         return 'CAN232 extended frame sent {0} (hex: {1}). Error: {2}'.format(data, self.get_hex(str.encode(data)), self._C232.error)
 
-    def cmd_transmit_rtr_std(self, def_in, data):
+    def cmd_transmit_rtr_std(self, data):
         """Send a standard RTR CAN frame on the CAN232 channel."""
         self._C232.transmit(data, mode=can232.CAN_RTR_STANDARD)
         return 'CAN232 RTR standard frame sent {0} (hex: {1}). Error: {2}'.format(data, self.get_hex(str.encode(data)), self._C232.error)
 
-    def cmd_transmit_rtr_ext(self, def_in, data):
+    def cmd_transmit_rtr_ext(self, data):
         """Send an extended RTR CAN frame on the CAN232 channel."""
         self._C232.transmit(data, mode=can232.CAN_RTR_EXTENDED)
         return 'CAN232 RTR extended frame sent {0} (hex: {1}). Error: {2}'.format(data, self.get_hex(str.encode(data)), self._C232.error)

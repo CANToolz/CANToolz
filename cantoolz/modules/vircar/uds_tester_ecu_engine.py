@@ -34,7 +34,7 @@ class uds_tester_ecu_engine(CANModule):
         self.commands['set_key'] = Command("Set UDS access key", 1, "<key>", self.set_key, True)
         self.commands['write_id'] = Command("Write parameter (HEX)", 1, "<ident>, <data>", self.write_param, True)
 
-    def write_param(self, arg, key):
+    def write_param(self, key):
         uds_msg = UDSMessage()
         (ids, data) = key.split(',')
         ids = list(bytes.fromhex(ids.strip()))
@@ -46,14 +46,14 @@ class uds_tester_ecu_engine(CANModule):
             ids[1:] + data))
         return ""
 
-    def get_status(self, def_in=0):
+    def get_status(self):
         return "Current status: " + str(self._active) + "\nKEY: " + self._status2['uds_key'] + "\nResponse AUTH: " + str(self.auth_resp_byte)
 
-    def set_key(self, arg, key):
+    def set_key(self, key):
         self._status2.update({'uds_key': key.strip()})
         return ""
 
-    def control_auth(self, arg):
+    def control_auth(self):
         uds_msg = UDSMessage()
         self.frames.extend(uds_msg.add_request(
             self._status2['id_uds'],  # ID

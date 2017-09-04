@@ -40,7 +40,7 @@ class hw_USBtin(CANModule):
 
     _bus = "USBTin"
 
-    def get_status(self, def_in):
+    def get_status(self):
         return "Current status: " + str(self._active) + "\nCurrent SPEED: " + str(self._currentSpeed) + "\nPORT: " + self._COMPort + "\nLost frames: " + str(self._lost_frames)
 
     def get_info(self):  # Read info
@@ -58,12 +58,12 @@ class hw_USBtin(CANModule):
 
     def do_stop(self, params):  # disable reading
         if self._run:
-            self.dev_write(0, "C")
+            self.dev_write("C")
             self._run = False
         time.sleep(1)
         self.read_all()
 
-    def set_speed(self, def_in, speed):
+    def set_speed(self, speed):
         sjw_user = 3
         # This code ported from https://www.kvaser.com/wp-content/themes/kvaser/inc/vc/js/bittiming.js
         again = False
@@ -150,9 +150,9 @@ class hw_USBtin(CANModule):
 
         if not self._run:
             if not self._usbtin_loop:
-                self.dev_write(0, "O")
+                self.dev_write("O")
             else:
-                self.dev_write(0, "l")
+                self.dev_write("l")
             self._run = True
             self.wait_for = False
             self.last = time.clock()
@@ -180,6 +180,7 @@ class hw_USBtin(CANModule):
         self.dprint(1, "Init phase started...")
         self._bus = (params.get('bus', "USBTin"))
         self._lost_frames = 0
+        self._dev_write_try = 0
         if 'port' in params:
             self._COMPort = params['port']
             if params['port'] == 'auto':
@@ -206,7 +207,7 @@ class hw_USBtin(CANModule):
         self.wait_for = False
         self._run = True
         self.do_stop({})
-        self.set_speed(0, str(params.get('speed', '500')) + ", " + str(params.get('sjw', '3')))
+        self.set_speed(str(params.get('speed', '500')) + ", " + str(params.get('sjw', '3')))
         # print str(self._serialPort)
         self.dprint(1, "PORT: " + self._COMPort)
         self.dprint(1, "Speed: " + str(self._currentSpeed))
@@ -215,13 +216,13 @@ class hw_USBtin(CANModule):
         self.commands['speed'] = Command("Set device speed (kBaud) and SJW level(optional)", 1, " <speed>,<SJW> ", self.set_speed, True)
         self.commands['t'] = Command("Send direct command to the device, like t001411223344", 1, " <cmd> ", self.dev_write, True)
 
-    def dev_write(self, def_in, data):
-        self.dprint(2, "CMD: " + data + " try: " + str(def_in))
+    def dev_write(self, data):
+        self.dprint(2, "CMD: " + data + " try: " + str(self._dev_write_try))
         try:
             self._serialPort.write(data.encode("ISO-8859-1") + b"\r")
         except Exception as e:
             self.dprint(2, "USBTin ERROR: can't write...")
-            if int(def_in) < 6:
+            if self._dev_write_try < 6:
                 self.dprint(1, "USBTin restart")
                 try:
                     self._serialPort.close()
@@ -229,14 +230,17 @@ class hw_USBtin(CANModule):
                     self._serialPort = serial.Serial(self._COMPort, 57600, timeout=0.5, write_timeout=1, writeTimeout=1, parity=serial.PARITY_EVEN, rtscts=1)
                     time.sleep(1)
                     self.do_start({})
-                    self.dev_write(int(def_in) + 1, data)
+                    self._dev_write_try += 1
+                    self.dev_write(data)
                 except Exception as e2:
-                    self.dev_write(0, "USBTIn ERROR: can't reopen - \n\t" + str(e) + "\n\t" + str(e2))
+                    self._dev_write_try = 0
+                    self.dev_write("USBTIn ERROR: can't reopen - \n\t" + str(e) + "\n\t" + str(e2))
                     self.set_error_text("USBTIn ERROR: can't reopen - \n\t" + str(e) + "\n\t" + str(e2))
                     traceback.print_exc()
 
             else:
-                self.dev_write(0, "USBTIn ERROR")
+                self._dev_write_try = 0
+                self.dev_write("USBTIn ERROR")
                 self.set_error_text('USBTIn ERROR I/O')
         return ""
 
@@ -246,7 +250,7 @@ class hw_USBtin(CANModule):
         elif args.get('action') == 'write':
             # KOSTYL: workaround for BMW f10 bus
             # if self._restart and self._run and (time.clock() - self.last) >= self.act_time:
-            #     self.dev_write(0, "O")
+            #     self.dev_write("O")
             #     self.last = time.clock()
             self.do_write(can_msg)
         else:
@@ -259,16 +263,16 @@ class hw_USBtin(CANModule):
                     error = int(can_msg.debugText['text'][1:3],16)
                     self.dprint(1,"BUS ERROR:" + hex(error))
                     if error & 8: # Fix for BMW CAN where it could be overloaded
-                       self.dev_write(0, "C")
+                       self.dev_write("C")
                        time.sleep(0.4)
-                       self.dev_write(0, "O")
+                       self.dev_write("O")
                        can_msg.debugText['do_not_send'] = True
                     else:
                        can_msg.debugText['please_send'] = True
                     self.wait_for = False
 
                 elif time.clock() - self.last >= self.act_time and not self.wait_for:
-                    self.dev_write(0, "F")
+                    self.dev_write("F")
                     self.wait_for = True
                     self.last = time.clock()
         """
@@ -351,6 +355,7 @@ class hw_USBtin(CANModule):
             if cmd_byte:
                 write_buf = cmd_byte + id_f + str(can_msg.CANFrame.frame_length).encode('ISO-8859-1') + self.get_hex(can_msg.CANFrame.frame_raw_data).encode('ISO-8859-1') + b"\r"
                 self.dprint(2, "Try to write: " + write_buf.decode('ISO-8859-1'))
-                self.dev_write(2, write_buf.decode('ISO-8859-1')[:-1])
+                self._dev_write_try = 2
+                self.dev_write(write_buf.decode('ISO-8859-1')[:-1])
                 self.dprint(2, "WRITE: " + write_buf.decode('ISO-8859-1'))
         return can_msg

@@ -48,15 +48,15 @@ class control_ecu_engine(CANModule):
         self.commands['start'] = Command("Start engine", 0, "", self.control_start_engine, True)
         self.commands['stop'] = Command("Stop engine", 0, "", self.control_stop_engine, True)
 
-    def control_rpm_up(self, flag):
+    def control_rpm_up(self):
         self.frames.append(CANMessage(self._status2['id_command'], 2, bytes.fromhex(self._status2['commands']['rpm_up'] + '20'), False, CANMessage.DataFrame))
         return ""
 
-    def control_rpm_down(self, flag):
+    def control_rpm_down(self):
         self.frames.append(CANMessage(self._status2['id_command'], 2, bytes.fromhex(self._status2['commands']['rpm_down'] + '20'), False, CANMessage.DataFrame))
         return ""
 
-    def control_start_engine(self, flag):
+    def control_start_engine(self):
         i = 0
         key_x = ""
         for byte_k in self._vin:
@@ -66,11 +66,11 @@ class control_ecu_engine(CANModule):
         self.frames.extend(ISOTPMessage.generate_can(self._status2['id_command'], [ord(byt) for byt in list(key_x)]))
         return ""
 
-    def control_stop_engine(self, flag):
+    def control_stop_engine(self):
         self.frames.append(CANMessage(self._status2['id_command'], 1, bytes.fromhex(self._status2['commands']['stop']), False, CANMessage.DataFrame))
         return ""
 
-    def control_get_status(self, flag):
+    def control_get_status(self):
         st = "Turned OFF"
         if self._status_engine == 0x03:
             st = "Turned OFF"

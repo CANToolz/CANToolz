@@ -1,7 +1,7 @@
 modules = {
     'io/hw_USBtin':    {'port':'auto', 'debug':2, 'speed':500},  # IO hardware module
 
-    'vircar/ecu_controls':
+    'ecu_controls':
         {'bus':'BMW_F10',
 
         'commands':[

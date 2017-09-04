@@ -28,10 +28,10 @@ class simple_io(CANModule):
         self.commands['r'] = Command("Read message", 0, "", self.cmd_read, True)
         self.commands['w'] = Command("Write message", 1, "[0x]ID[:len]:HEX_DATA", self.cmd_write, True)
 
-    def get_status(self, def_in=0):
+    def get_status(self):
         return "Current status: " + str(self._active) + "\nFrames to read: " + str(len(self.can_buffer_read)) + "\nFrames to write: " + str(len(self.can_buffer_write))
 
-    def cmd_write(self, def_p, frame):
+    def cmd_write(self, frame):
         frame = frame.strip().split(":")
         fid = frame[0].strip()
 
@@ -49,7 +49,7 @@ class simple_io(CANModule):
         self.can_buffer_write.append(CANMessage.init_data(fid, length, data))
         return "Added to queue"
 
-    def cmd_read(self, def_p=0):
+    def cmd_read(self):
         ret = "None"
         if len(self.can_buffer_read) > 0:
             msg = self.can_buffer_read.pop(0)

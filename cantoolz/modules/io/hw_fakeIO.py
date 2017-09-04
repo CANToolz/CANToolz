@@ -37,7 +37,7 @@ class hw_fakeIO(CANModule):
         self.CANList = []
         return 1
 
-    def dev_write(self, def_in, line):
+    def dev_write(self, line):
         self.dprint(0, "CMD: " + line)
         fid = line.split(":")[0]
         length = line.split(":")[1]

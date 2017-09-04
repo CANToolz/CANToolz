@@ -219,7 +219,7 @@ class hw_TCP2CAN(CANModule):
 
     """
 
-    def get_status(self, def_in=0):
+    def get_status(self):
         return "Current status: IN: " + str(len(self.server.CANList_in)) + str(self.server._access_in.is_set()) + " OUT: " + str(len(self.server.CANList_out)) + str(self.server._access_out.is_set())
 
     def do_start_x(self):
@@ -266,7 +266,7 @@ class hw_TCP2CAN(CANModule):
 
         return 1
 
-    def dev_write(self, def_in, line):
+    def dev_write(self, line):
         self.dprint(0, "CMD: " + line)
         fid = line.split(":")[0]
         length = line.split(":")[1]

@@ -8,18 +8,18 @@ class Command(object):
 
     """Command class helper to easily identify command attributes."""
 
-    def __init__(self, description, num_params, desc_params, callback, is_enabled, index=0):
-        #: Description of what the command does.
+    def __init__(self, description, num_params, desc_params, callback, is_enabled, index=None):
+        #: str -- Description of what the command does.
         self.description = description
-        #: Number of parameters.
+        #: int -- Number of parameters.
         self.num_params = num_params
-        #: Description of the parameters if any.
+        #: str -- Description of the parameters if any.
         self.desc_params = desc_params
-        #: Function to call when executing the command.
+        #: function -- Function to call when executing the command.
         self.callback = callback
-        #: Command is enabled (or not).
+        #: bool -- Command is enabled (or not).
         self.is_enabled = is_enabled
-        #: index
+        #: int -- Call command by index instead of parameter. None if using parameter.
         self.index = index
 
 
@@ -74,14 +74,14 @@ class CANModule:
         """
         return self._active
 
-    def get_status(self, def_in=0):
+    def get_status(self):
         """Human-representation of the module status.
 
         :returns: str -- Human-readable status of the module.
         """
         return 'Current status: {0}'.format(self._active)
 
-    def do_activate(self, def_in=0, mode=-1):
+    def do_activate(self, mode=-1):
         """Force the status of the module to `mode`.
 
         :param int mode: Mode the module should be switched to (default: `-1`)
@@ -105,8 +105,8 @@ class CANModule:
         if level <= self.DEBUG:
             print(str_msg)
 
-    def raw_write(self, string):  # Used for direct input
-        """Call the command specified in `string` and return its result.
+    def raw_write(self, string):
+        """Call the command specified in `string` and return its result. Used for direct input.
 
         :param str string: The full command with its paramaters (e.g. 's' to stop the module)
 
@@ -125,9 +125,18 @@ class CANModule:
             cmd = self.commands[in_cmd]
             if cmd.is_enabled:
                 try:
-                    if parameters:
-                        ret = cmd.callback(cmd.index, parameters)
-                    else:
+                    # TODO: Clean the logic once we get rid of call-by-index completely
+                    if cmd.num_params == 0 or (cmd.num_params == 1 and parameters is None):
+                        if cmd.index is None:
+                            ret = cmd.callback()
+                        else:
+                            ret = cmd.callback(cmd.index)
+                    elif cmd.num_params == 1:
+                        if cmd.index is None:
+                            ret = cmd.callback(parameters)
+                        else:
+                            ret = cmd.callback(cmd.index, parameters)
+                    else:  # For command called by index (see CANMusic example).
                         ret = cmd.callback(cmd.index)
                 except Exception as e:
                     ret = "ERROR: " + str(e)

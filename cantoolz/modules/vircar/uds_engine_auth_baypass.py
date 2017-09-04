@@ -26,7 +26,7 @@ class uds_engine_auth_baypass(CANModule):
         self.commands['set_vin'] = Command("Set VIN", 1, "<VIN>", self.set_vin, True)
         self.commands['exploit'] = Command("Exploit", 0, "", self.exploit, True)
 
-    def exploit(self, arg):
+    def exploit(self):
         i = 0
         key_x = ""
         for byte_k in self._status2.get('vin', '12345678901234567'):
@@ -35,11 +35,11 @@ class uds_engine_auth_baypass(CANModule):
         self.frames.extend(ISOTPMessage.generate_can(self._status2['id_command'], [ord(byt) for byt in list(key_x)]))
         return ""
 
-    def set_key(self, arg, key):
+    def set_key(self, key):
         self._status2.update({'key': key.strip()})
         return ""
 
-    def set_vin(self, arg, vin):
+    def set_vin(self, vin):
         self._status2.update({'vin': vin.strip()})
         return ""
 

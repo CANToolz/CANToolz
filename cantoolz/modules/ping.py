@@ -31,7 +31,7 @@ class ping(CANModule):
         self._last = 0
         self._full = 1
 
-    def get_status(self, def_in):
+    def get_status(self):
         return "Current status: " + str(self._active) + "\nFrames in queue: " + str(len(self.queue_messages))
 
     def do_ping(self, params):

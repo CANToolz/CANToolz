@@ -37,7 +37,7 @@ class analyze(CANModule):
     _active = True
     version = 1.0
 
-    def do_activate(self, def_in=0, mode=-1):
+    def do_activate(self, mode=-1):
         if mode == -1:
             self._active = not self._active
         elif mode == 0:
@@ -48,7 +48,7 @@ class analyze(CANModule):
 
         return "Active status: " + str(self._active)
 
-    def get_status(self, def_in=0):
+    def get_status(self):
         return "Current status: " + "\nActive STATCHECK running:" + str(self._active_check) + "\nSniffed frames (overall): " + str(self.get_num(-1)) + "\nCurrent BUFF: index - " + str(self._index) + " name - " + self.all_frames[self._index]['name'] + \
                "\nAll buffers: \n\t" + \
             '\n\t'.join([buf['name'] + "\n\t\tindex: " + str(cnt) + ' sniffed: ' + str(len(buf['buf'])) for buf, cnt in zip(self.all_frames, range(0, len(self.all_frames)))])
@@ -73,7 +73,7 @@ class analyze(CANModule):
         self._active_check = False
 
         if 'meta_file' in params:
-            self.dprint(1, self.do_load_meta(0, params['meta_file']))
+            self.dprint(1, self.do_load_meta(params['meta_file']))
 
         self.commands['p'] = Command("Print current table", 1, "[index]", self.do_print, True)
 
@@ -111,7 +111,7 @@ class analyze(CANModule):
         self.commands['d'] = Command("Dump STATS for buffer (if index is empty then all) in CSV format", 1, " <filename>, [index]", self.do_dump_csv, True)
         self.commands['g'] = Command("Get DELAY value for ping/fuzz (EXPERIMENTAL)", 1, "<Bus SPEED in Kb/s>", self.get_delay, True)
 
-    def get_delay(self, def_in, speed):
+    def get_delay(self, speed):
         _speed = float(speed) * 1024
         curr_1 = len(self.all_frames[self._index]['buf'])
         time.sleep(3)
@@ -121,12 +121,12 @@ class analyze(CANModule):
         delay = 1 / int((_speed - speed) / 80)
         return "Avrg. delay: " + str(delay)
 
-    def change_shift(self, def_in, val):
+    def change_shift(self, val):
         value = int(val.strip(), 0)  # Auto detect the base.
         self.shift = value
         return "UDS shift: " + hex(self.shift)
 
-    def do_add_meta_bit_data(self, def_in, input_params):
+    def do_add_meta_bit_data(self, input_params):
         try:
             fid, leng = input_params.split(',')[0:2]
             descr = input_params.split(',')[2:]
@@ -142,7 +142,7 @@ class analyze(CANModule):
         except Exception as e:
             return "Fields data META error: " + str(e)
 
-    def do_add_meta_descr_data(self, def_in, input_params):
+    def do_add_meta_descr_data(self, input_params):
         try:
             fid, body, descr = input_params.split(',')
             num_fid = int(fid.strip(), 0)  # Auto detect the base.
@@ -163,13 +163,13 @@ class analyze(CANModule):
                     return str(descrs[(key, body)])
         return "  "
 
-    def get_meta_bits(self, fid, len):
-        return self.meta_data.get('bits', {}).get((fid, len), None)
+    def get_meta_bits(self, fid, length):
+        return self.meta_data.get('bits', {}).get((fid, length), None)
 
     def get_meta_all_bits(self):
         return self.meta_data.get('bits', {})
 
-    def do_load_meta(self, def_in, filename):
+    def do_load_meta(self, filename):
         try:
             data = ""
             with open(filename.strip(), "r") as ins:
@@ -181,7 +181,7 @@ class analyze(CANModule):
             return "Can't load META: " + str(e)
         return "Loaded META from " + filename
 
-    def do_save_meta(self, def_in, filename):
+    def do_save_meta(self, filename):
         try:
             _file = open(filename.strip(), 'w')
             _file.write(str(self.meta_data))
@@ -387,7 +387,7 @@ class analyze(CANModule):
                 result += '\n'
         return result
 
-    def do_anal(self, def_in, format='ALL'):
+    def do_anal(self, format='ALL'):
         """Perform analysis of the captured format to detect UDS, ISO TP and fragmented CAN frames.
 
         :param str format: Format to detect ('ALL', 'UDS', 'ISO', 'FRAG'). Could be 'UDS, ISO'
@@ -433,7 +433,7 @@ class analyze(CANModule):
             ret_str += self._anal_iso(_iso_tbl)
         return ret_str
 
-    def search_id(self, def_in, idf):
+    def search_id(self, idf):
         idf = int(idf.strip(), 0)  # Auto detect the base
         table = "Search for " + hex(idf) + "\n"
         rows = []
@@ -456,10 +456,10 @@ class analyze(CANModule):
         table += "\n"
         return table
 
-    def print_dump_diff(self, def_in, name):
+    def print_dump_diff(self, name):
         return self.print_dump_diff_(name, 0)
 
-    def print_dump_diff_id(self, def_in, name):
+    def print_dump_diff_id(self, name):
         return self.print_dump_diff_(name, 1)
 
     def print_dump_diff_(self, name, mode=0):
@@ -509,7 +509,7 @@ class analyze(CANModule):
             return str(e)
         return "Saved into " + name
 
-    def do_dump_replay(self, def_in, name):
+    def do_dump_replay(self, name):
         inp = name.split(",")
         if len(inp) == 2:
             name = inp[0].strip()
@@ -535,7 +535,7 @@ class analyze(CANModule):
     def esacpe_csv(self, _string):
         return '"' + _string.replace('"', '""') + '"'
 
-    def do_dump_csv2(self, def_in, name):
+    def do_dump_csv2(self, name):
         inp = name.split(",")
         if len(inp) == 2:
             name = inp[0].strip()
@@ -602,7 +602,7 @@ class analyze(CANModule):
             return str(e)
         return "Saved into " + name.strip()
 
-    def do_dump_csv(self, def_in, name):
+    def do_dump_csv(self, name):
         inp = name.split(",")
         if len(inp) == 2:
             name = inp[0].strip()
@@ -652,7 +652,7 @@ class analyze(CANModule):
             return str(e)
         return "Saved into " + name.strip()
 
-    def print_diff(self, def_in, inp=""):
+    def print_diff(self, inp=""):
         inp = inp.split(",")
         if len(inp) == 3:
             idx1 = int(inp[0])
@@ -669,7 +669,7 @@ class analyze(CANModule):
 
         return self.print_diff_orig(0, idx1, idx2, rang)
 
-    def print_diff_id(self, def_in, inp=""):
+    def print_diff_id(self, inp=""):
         inp = inp.split(",")
         if len(inp) != 2:
             idx2 = self._index
@@ -712,7 +712,7 @@ class analyze(CANModule):
         table += "\n"
         return table
 
-    def new_diff(self, def_in, name=""):
+    def new_diff(self, name=""):
         _name = name.strip()
         _name = _name if _name != "" else "buffer_" + str(len(self.all_frames))
         self._index += 1
@@ -720,7 +720,7 @@ class analyze(CANModule):
         self.all_frames[-1]['buf'].add_timestamp()
         return "New buffer  " + _name + ", index: " + str(self._index) + " enabled and active"
 
-    def do_print(self, def_in, index="-1"):
+    def do_print(self, index="-1"):
         _index = int(index)
         temp_buf = Replay()
         if _index == -1:
@@ -761,7 +761,7 @@ class analyze(CANModule):
         table += ""
         return table
 
-    def do_clean(self, def_in):
+    def do_clean(self):
         self.all_frames = [{'name': 'start_buffer', 'buf': Replay()}]
         self.dump_stat = Replay()
         self._train_buffer = -1
@@ -806,7 +806,7 @@ class analyze(CANModule):
         else:
             return selected_value_hex.hex
 
-    def show_fields_ecu(self, zd, ecu_id):
+    def show_fields_ecu(self, ecu_id):
 
         _index = -1
         format = "bin"
@@ -822,7 +822,7 @@ class analyze(CANModule):
         table = "Data by fields in ECU: " + hex(ecu_id) + "\n\n"
         temp_buf = Replay()
 
-        self.show_fields(0, str(_index))
+        self.show_fields(str(_index))
 
         if _index == -1:
             for buf in self.all_frames:
@@ -857,7 +857,7 @@ class analyze(CANModule):
 
         return table
 
-    def show_fields(self, zd=0, _index="-1"):
+    def show_fields(self, _index="-1"):
         table = ""
 
         _index = int(_index)
@@ -885,7 +885,7 @@ class analyze(CANModule):
 
         return table
 
-    def show_change(self, zd=0, _index="-1"):
+    def show_change(self, _index="-1"):
         table = ""
         pars = _index.split(",")
         depth = 31337
@@ -926,7 +926,7 @@ class analyze(CANModule):
 
         return table
 
-    def show_detect(self, zd=0, args='-1'):
+    def show_detect(self, args='-1'):
         """Detect changes in ECU due to control frame.
 
         :param str args: <ECU ID:HEX_DATA>[,buffer index]
@@ -988,7 +988,7 @@ class analyze(CANModule):
                     table += ''.join('\t\t{}\n'.format(self.get_hex(x)) for x in after)
         return table
 
-    def train(self, zn, args="-1"):
+    def train(self, args="-1"):
         """Profile normal CAN traffic.
 
         :param str args: [buffer index]
@@ -1080,7 +1080,7 @@ class analyze(CANModule):
             self._action.clear()
         return 'Profiling finished: {} uniq. arb. ID'.format(len(self.data_set[_index]))
 
-    def find_ab(self, bred_kakoi_to, _index):
+    def find_ab(self, _index):
         _index = int(_index.strip())
 
         if self._train_buffer < 0:
@@ -1313,11 +1313,10 @@ class analyze(CANModule):
 
         return result2 + result
 
-    def dump_ab(self, fn, file):
-        file = file.strip()
-        return self.dump_stat.save_dump(file)
+    def dump_ab(self, filename):
+        return self.dump_stat.save_dump(filename.strop())
 
-    def act_detect(self, fn):
+    def act_detect(self):
         curr = 0
         weigths = {"Not found": 0}
         self._active_check = True
@@ -1332,7 +1331,7 @@ class analyze(CANModule):
                     if test_frame:
                         key = test_frame.get_text()
                         idg = test_frame.frame_id
-                        self.new_diff(0, "STAT_CHECK_ACT_" + key)
+                        self.new_diff("STAT_CHECK_ACT_" + key)
                         self.dprint(1, " Sending test frame: " + key)
                         tmp_w = weigths.get(key, 0)
                         while self._action.is_set():
@@ -1390,18 +1389,17 @@ class analyze(CANModule):
             self._active_check = False
             return "module is not active"
 
-    def load_rep(self, sh, files):
+    def load_rep(self, files):
         files = [fl.strip() for fl in files.split(',')]
         ret = "Loaded buffers:\n"
         for fl in files:
-            self.new_diff(0, fl + "_buffer")
+            self.new_diff(fl + "_buffer")
             self.all_frames[-1]['buf'].parse_file(fl, self._bus)
             ret += "\t" + fl + ", index: " + str(len(self.all_frames) - 1) + " with " + str(len(self.all_frames[-1]['buf'].stream)) + " frames\n"
             self.dprint(0, ret)
         return ret
 
     def do_start(self, params):
-
         if len(self.all_frames[-1]['buf'].stream) == 0:
             self.all_frames[-1]['buf'].add_timestamp()
             self.dprint(2, "TIME ADDED")
