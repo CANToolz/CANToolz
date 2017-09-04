@@ -88,17 +88,17 @@ class analyze(CANModule):
         self.commands['y'] = Command("Dump Diff in replay format (new ID)", 1, "<filename>,[buffer index 1] , [buffer index 2]", self.print_dump_diff_id, True)
         self.commands['F'] = Command("Search ID in all buffers", 1, "<ID>", self.search_id, True)
 
-        self.commands['train'] = Command("STATCHECK: profiling on normal traffic (EXPEREMENTAL)", 1, "[buffer index]", self.train, True)
-        self.commands['check'] = Command("STATCHECK: find abnormalities on 'event' traffic  (EXPEREMENTAL)", 1, "[buffer index]", self.find_ab, True)
-        self.commands['act'] = Command("STATCHECK: find action frame  (EXPEREMENTAL)", 0, "", self.act_detect, False)
-        self.commands['dump_st'] = Command("STATCHECK: dump abnormalities in Replay format  (EXPEREMENTAL)", 1, "<filename>", self.dump_ab, False)
+        self.commands['train'] = Command("STATCHECK: profiling on normal traffic (EXPERIMENTAL)", 1, "[buffer index]", self.train, True)
+        self.commands['check'] = Command("STATCHECK: find abnormalities on 'event' traffic  (EXPERIMENTAL)", 1, "[buffer index]", self.find_ab, True)
+        self.commands['act'] = Command("STATCHECK: find action frame  (EXPERIMENTAL)", 0, "", self.act_detect, False)
+        self.commands['dump_st'] = Command("STATCHECK: dump abnormalities in Replay format  (EXPERIMENTAL)", 1, "<filename>", self.dump_ab, False)
 
         self.commands['load'] = Command("Load Replay dumps from files into buffers", 1, "filename1[,filename2,...] ", self.load_rep, True)
 
-        self.commands['change'] = Command("Detect changes for ECU (EXPEREMENTAL)", 1, "[buffer index][, max uniq. values]", self.show_change, True)
-        self.commands['detect'] = Command("Detect changes for ECU by control FRAME (EXPEREMENTAL)", 1, "<ECU ID:HEX_DATA>[,buffer index]", self.show_detect, True)
-        self.commands['show'] = Command("Show detected amount of fields for all ECU (EXPEREMENTAL)", 1, "[buffer index]", self.show_fields, True)
-        self.commands['fields'] = Command("Show values in fields for chosen ECU (EXPEREMENTAL)", 1, "<ECU ID>[, hex|bin|int [, buffer index ]]", self.show_fields_ecu, True)
+        self.commands['change'] = Command("Detect changes for ECU (EXPERIMENTAL)", 1, "[buffer index][, max uniq. values]", self.show_change, True)
+        self.commands['detect'] = Command("Detect changes for ECU by control FRAME (EXPERIMENTAL)", 1, "<ECU ID:HEX_DATA>[,buffer index]", self.show_detect, True)
+        self.commands['show'] = Command("Show detected amount of fields for all ECU (EXPERIMENTAL)", 1, "[buffer index]", self.show_fields, True)
+        self.commands['fields'] = Command("Show values in fields for chosen ECU (EXPERIMENTAL)", 1, "<ECU ID>[, hex|bin|int [, buffer index ]]", self.show_fields_ecu, True)
 
         self.commands['c'] = Command("Clean table, remove buffers", 0, "", self.do_clean, True)
 
@@ -943,80 +943,77 @@ class analyze(CANModule):
 
         return table
 
-    def show_detect(self, zd=0, _index="0"):
-        table = ""
+    def show_detect(self, zd=0, args='-1'):
+        """Detect changes in ECU due to control frame.
 
-        pars = _index.split(",")
-        num_fid = 0
+        :param str args: <ECU ID:HEX_DATA>[,buffer index]
 
-        if len(pars) == 2:
-            _index = pars[1].strip()
+        :return: String table showing the detected differences.
+        :rtype: str
+        """
+        table = ''
+        parts = args.split(',')
+        fid = 0
+        if len(parts) == 2:
+            ecu_data, index = map(str.strip, parts)
+            index = int(index)
         else:
-            _index = "-1"
+            ecu_data = parts[0].strip()
 
-        if pars[0].strip().find('0x') == 0:
-            num_fid = int(pars[0].split(":")[0], 16)
-        else:
-            num_fid = int(pars[0].split(":")[0])
-
-        if len(pars[0].split(":")) == 3:
-            body = bytes.fromhex(pars[0].split(":")[2].strip())
-        else:
-            body = bytes.fromhex(pars[0].split(":")[1].strip())
-
-        _index = int(_index)
+        fid, body = map(str.strip, ecu_data.split(':'))
+        fid = int(fid, 0)  # Auto detect the base.
+        body = bytes.fromhex(body)
 
         temp_buf = Replay()
-        if _index == -1:
+        if index == -1:
             for buf in self.all_frames:
                 temp_buf = temp_buf + buf['buf']
         else:
-            temp_buf = self.all_frames[_index]['buf']
+            temp_buf = self.all_frames[index]['buf']
 
         messages = collections.OrderedDict()
         status = False
         for timestmp, can_msg in temp_buf:
-            if can_msg.CANData:
-                if can_msg.CANFrame.frame_id == num_fid and can_msg.CANFrame.frame_raw_data == body:
-                    status = True
+            if not can_msg.CANData:
+                continue
+            if can_msg.CANFrame.frame_id == fid and can_msg.CANFrame.frame_raw_data == body:
+                status = True
+            else:
+                if not status:
+                    if can_msg.CANFrame.frame_id not in messages:
+                        messages[can_msg.CANFrame.frame_id] = [[can_msg.CANFrame.frame_raw_data], []]
+                    elif can_msg.CANFrame.frame_raw_data not in messages[can_msg.CANFrame.frame_id][0]:
+                        messages[can_msg.CANFrame.frame_id][0].append(can_msg.CANFrame.frame_raw_data)
                 else:
+                    if can_msg.CANFrame.frame_id not in messages:
+                        messages[can_msg.CANFrame.frame_id] = [[], [can_msg.CANFrame.frame_raw_data]]
+                    elif can_msg.CANFrame.frame_raw_data not in messages[can_msg.CANFrame.frame_id][1]:
+                        messages[can_msg.CANFrame.frame_id][1].append(can_msg.CANFrame.frame_raw_data)
 
-                    if not status:
-
-                        if can_msg.CANFrame.frame_id not in messages:
-                            messages[can_msg.CANFrame.frame_id] = [[can_msg.CANFrame.frame_raw_data], []]
-                        else:
-                            if can_msg.CANFrame.frame_raw_data not in messages[can_msg.CANFrame.frame_id][0]:
-                                messages[can_msg.CANFrame.frame_id][0].append(can_msg.CANFrame.frame_raw_data)
-
-                    else:
-                        if can_msg.CANFrame.frame_id not in messages:
-                            messages[can_msg.CANFrame.frame_id] = [[], [can_msg.CANFrame.frame_raw_data]]
-                        else:
-                            if can_msg.CANFrame.frame_raw_data not in messages[can_msg.CANFrame.frame_id][1]:
-                                messages[can_msg.CANFrame.frame_id][1].append(can_msg.CANFrame.frame_raw_data)
-
-        table += "Detected changes (by ID " + hex(num_fid) + " ):\n"
+        table += 'Detected changes (by ID {} ):\n'.format(hex(fid))
         if status:
             for fid, data in messages.items():
-                before = data[0]
-                after = data[1]
+                before, after = data[0:1]
                 diff_not = False
-                if after != [] and before != [] and len(before) <= 10 and len(after) <= 10:
+                if 0 < len(before) <= 10 and 0 < len(after) <= 10:
                     diff_not = bool([x for x in after if x not in before] != [])
                 if diff_not:
-                    table += "\n\t ID: " + hex(fid)
-                    table += "\n\t\t Changed from: " + "\n"
-                    for (st) in [("\t\t" + self.get_hex(x) + "\n") for x in before]:
-                        table += st
-                    table += "\n\t\t Changed to: " + "\n"
-                    for (st) in [("\t\t" + self.get_hex(x) + "\n") for x in after]:
-                        table += st
-
+                    table += '\n\t ID: {}'.format(hex(fid))
+                    table += '\n\t\t Changed from: \n'
+                    table += ''.join('\t\t{}\n'.format(self.get_hex(x)) for x in before)
+                    table += '\n\t\t Changed to: \n'
+                    table += ''.join('\t\t{}\n'.format(self.get_hex(x)) for x in after)
         return table
 
-    def train(self, zn, _index="-1"):
-        _index = int(_index.strip())
+    def train(self, zn, args="-1"):
+        """Profile normal CAN traffic.
+
+        :param str args: [buffer index]
+
+        :return: Result of the profiling.
+        :rtype: str
+        """
+        _index = int(args.strip())
         temp_buf = Replay()
         if _index == -1:
             for buf in self.all_frames:
@@ -1033,33 +1030,25 @@ class analyze(CANModule):
         self._full = len(temp_buf)
 
         if not self._action.is_set():
-                    self._action.set()
-                    self._need_status = True
-                    self._action.clear()
+            self._action.set()
+            self._need_status = True
+            self._action.clear()
         # Prepare DataSet
         for timestmp, can_msg in temp_buf:
             if can_msg.CANData:
                 if can_msg.CANFrame.frame_id not in self.data_set[_index]:
-
                     self.data_set[_index][can_msg.CANFrame.frame_id] = {
-
                         'values_array': [can_msg.CANFrame.get_bits()],
                         'count': 1,
                         'changes': 0,
                         'last': can_msg.CANFrame.get_bits(),
-
                         'ch_last_time': round(timestmp, 4),
                         'ch_max_time': 0,
                         'ch_min_time': 0,
-
                         'last_time': round(timestmp, 4),
                         'min_time': 0,
                         'max_time': 0,
-
-                        'change_bits': bitstring.BitArray('0b' + ('0' * 64), length=64)
-
-                    }
-
+                        'change_bits': bitstring.BitArray('0b' + ('0' * 64), length=64)}
                 else:
                     self.data_set[_index][can_msg.CANFrame.frame_id]['count'] += 1
                     new_arr = can_msg.CANFrame.get_bits()
@@ -1103,11 +1092,10 @@ class analyze(CANModule):
 
         time.sleep(1)
         if not self._action.is_set():
-                    self._action.set()
-                    self._need_status = False
-                    self._action.clear()
-
-        return "Profiling finished: " + str(len(self.data_set[_index])) + " uniq. arb. ID"
+            self._action.set()
+            self._need_status = False
+            self._action.clear()
+        return 'Profiling finished: {} uniq. arb. ID'.format(len(self.data_set[_index]))
 
     def find_ab(self, bred_kakoi_to, _index):
         _index = int(_index.strip())
