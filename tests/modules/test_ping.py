@@ -90,7 +90,7 @@ class TestPing(TestCANToolz):
                 'services': [
                     {"service": 1, "sub": [1, 2]},
                     {"service": [2, 3], "sub": 3},
-                    {"service": "0x4-6", "sub": "0x4-6"}],
+                    {"service": "0x4-0x6", "sub": "0x4-0x6"}],
                 'mode': 'UDS',
                 'range': [1, 2]
             })

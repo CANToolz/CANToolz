@@ -42,78 +42,90 @@ class ping(CANModule):
 
         return self.queue_messages.pop()
 
+    @staticmethod
+    def _get_iso_mode(args):
+        """Get the ISO mode from the action parameters.
+
+        :param dict args: Actions parameters
+
+        :return: ISO mode. 0: CAN; 1: ISO-TP; 2: UDS
+        :rtype: int
+        """
+        ret = 0
+        mode = args.get('mode', '').lower()
+        if mode.startswith('iso'):
+            ret = 1
+        elif mode.startswith('uds'):
+            ret = 2
+        return ret
+
+    # FIXME: This should be moved to a util function somewhere else (like util.py) or moved to the parent class since
+    # it will always be used to process range user-supplied parameter.
+    @staticmethod
+    def _get_range(data):
+        """Get the lower and upper bounds of the range.
+
+        :param object data: Data to convert to a range. Could be int, str or list.
+
+        :return: Tuple of (start, end).
+        :rtype: tuple
+        """
+        new_range = []
+        if isinstance(data, int):
+            new_range = [data]
+        # Could be '0-2000' or '0x0 - 0x700', where in the second case the range is specified in hexa.
+        elif isinstance(data, str):
+            boundaries = []
+            for boundary in map(str.strip, data.split('-')):
+                if boundary.startswith('0x'):
+                    boundaries.append(int(boundary, 16))
+                else:
+                    boundaries.append(int(boundary, 10))
+            new_range = range(*boundaries)
+        elif isinstance(data, list):
+            new_range = data
+        return new_range
+
     def do_start(self, args):
         self.queue_messages = []
         self.last = time.clock()
-        if 'body' in args:
-            try:
-                _data = list(bytes.fromhex(args['body']))
-            except:
-                _data = [0, 0, 0, 0, 0, 0, 0, 0]
-        else:
-            _data = [0, 0, 0, 0, 0, 0, 0, 0]
 
-        # 0 - CAN, 1 - ISO-TP, 2 - UDS
-        iso_mode = 1 if args.get('mode') in ['ISO', 'iso', 'ISOTP', 'isotp'] else\
-            2 if args.get('mode') in ['uds', 'UDS'] else 0
+        data = [0, 0, 0, 0, 0, 0, 0, 0]
+        if 'body' in args:
+            data = list(bytes.fromhex(args['body']))
+
+        iso_mode = self._get_iso_mode(args)
 
         padding = args.get('padding', None)
         shift = int(args.get('shift', 0x8))
 
-        if 'range' in args and int(args['range'][0]) < int(args['range'][1]):
-            for i in range(int(args['range'][0]), int(args['range'][1])):
-                if iso_mode == 1:
-                    iso_list = ISOTPMessage.generate_can(i, _data, padding)
-                    iso_list.reverse()
-                    self.queue_messages.extend(iso_list)
-                elif iso_mode == 0:
-                    self.queue_messages.append(CANMessage.init_data(i, len(_data), _data[:8]))
-                elif iso_mode == 2:
-
-                    if 'services' in args:
-                        for service in args['services']:
-                            if 'service' in service:
-                                uds_m = UDSMessage(shift, padding)
-
-                                if 'sub' in service:
-                                    sub = service['sub']
-
-                                else:
-                                    sub = [None]
-
-                            if 'data' in service:
-                                dat = service['data']
-                            else:
-                                dat = []
-
-                            if isinstance(sub, int):
-                                sub = [sub]
-                            elif isinstance(sub, str):
-                                x1 = 16 if sub.split("-")[0].strip()[0:2] == "0x" else 10
-                                x2 = 16 if sub.split("-")[1].strip()[0:2] == "0x" else 10
-                                sub = range(int(sub.split("-")[0], x1), int(sub.split("-")[1], x2))
-                            # https://github.com/eik00d/CANToolz/issues/93 by @DePierre
-                            elif not isinstance(sub, list):
-                                sub = [None]
-
-                            serv = service['service']
-
-                            if isinstance(serv, int):
-                                serv = [serv]
-                            elif isinstance(serv, str):
-                                x1 = 16 if serv.split("-")[0].strip()[0:2] == "0x" else 10
-                                x2 = 16 if serv.split("-")[1].strip()[0:2] == "0x" else 10
-                                serv = range(int(serv.split("-")[0], x1), int(serv.split("-")[1], x2))
-
-                            for sv in serv:
-                                for sb in sub:
-                                    iso_list = uds_m.add_request(i, sv, sb, dat)
-                                    iso_list.reverse()
-                                    self.queue_messages.extend(iso_list)
-        else:
+        if 'range' not in args:
             self.dprint(1, "No range specified")
             self._active = False
             self.set_error_text("ERROR: No range specified")
+            return
+        start, end = args.get('range', [0, 0])
+        for i in range(int(start), int(end)):
+            if iso_mode == 1:
+                iso_list = ISOTPMessage.generate_can(i, data, padding)
+                iso_list.reverse()
+                self.queue_messages.extend(iso_list)
+            elif iso_mode == 0:
+                self.queue_messages.append(CANMessage.init_data(i, len(data), data[:8]))
+            elif iso_mode == 2:
+                for service in args.get('services', []):
+                    uds_m = UDSMessage(shift, padding)
+                    for service_id in self._get_range(service['service']):
+                        # https://github.com/eik00d/CANToolz/issues/93 by @DePierre
+                        subservice_ids = service.get('sub', None)
+                        if subservice_ids is None:
+                            subservice_ids = [None]
+                        else:
+                            subservice_ids = self._get_range(subservice_ids)
+                        for subservice_id in subservice_ids:
+                            iso_list = uds_m.add_request(i, service_id, subservice_id, service.get('data', []))
+                            iso_list.reverse()
+                            self.queue_messages.extend(iso_list)
         self._full = len(self.queue_messages)
         self._last = 0
 
