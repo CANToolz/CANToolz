@@ -309,17 +309,107 @@ class analyze(CANModule):
 
         return frg_list
 
-    def do_anal(self, def_in, format="ALL"):
+    # TODO: Split View from Controller. IMO it should return a data structure that would then be properly formated by
+    # the User Interface (console or web).
+    def _anal_uds(self, uds):
+        """Perform UDS analysis on the CAN messages.
 
-        format.upper()
+        :param dict uds: Dictionary of UDS messagess
 
-        params = format.split(",")
-        if len(params) == 1:
-            _format = params[0].strip()
-            _index = -1
-        else:
-            _format = params[0].strip()
+        :return: Analysis of the CAN messages.
+        :rtype: str
+        """
+        result = 'UDS Detected:\n\n'
+        for fid, services in uds.sessions.items():
+            for service, sub in services.items():
+                for sub_id, body in sub.items():
+                    text = '(UNKNOWN)'
+                    # Well-known and defined UDS service (e.g. Diagnostic Session Control)
+                    if service in UDSMessage.services_base:
+                        subservice_name = UDSMessage.services_base[service].get(None, 'UNKNOWN')
+                        service_name = UDSMessage.services_base[service].get(sub_id, subservice_name)
+                        text = '({})'.format(service_name)
+                    if body['status'] == 1:
+                        data = body['response']['data']
+                        data2 = body['data']
+                        data_ascii = ''
+                        data_ascii2 = ''
+                        if self.is_ascii(data2):
+                            data_ascii2 = '\n\t\tASCII: {}\n'.format(self.ret_ascii(data2))
+                        if self.is_ascii(body['response']['data']):
+                            data_ascii = '\n\t\tASCII: {}\n'.format(self.ret_ascii(data))
+                        result += '\n\tID: {} Service: {} Sub: {} {}'.format(
+                            hex(fid), hex(service), hex(sub_id) if sub_id < 0x100 else 'NO SUB', text)
+                        result += '\n\t\tRequest: {}'.format(self.get_hex(bytes(data2)) + data_ascii2)
+                        result += '\n\t\tResponse: {}\n'.format(self.get_hex(bytes(data)) + data_ascii)
+                    elif body['status'] == 2:
+                        data2 = body['data']
+                        data_ascii2 = ''
+                        if self.is_ascii(data2):
+                            data_ascii2 = '\n\t\tASCII: {}\n'.format(self.ret_ascii(data2))
+                        result += '\n\tID: {} Service: {} Sub: {} {}'.format(
+                            hex(fid), hex(service), hex(sub_id) if sub_id < 0x100 else '(ALTERNATIVE INTERPRETATION if NO SUB)', text)
+                        result += '\n\t\tRequest: {}'.format(self.get_hex(bytes(data2)) + data_ascii2)
+                        result += '\n\t\tError: {}\n'.format(body['response']['error'])
+        return result
+
+    # TODO: Split View from Controller. IMO it should return a data structure that would then be properly formated by
+    # the User Interface (console or web).
+    def _anal_frag(self, loops):
+        """Perform defragmented packet analysis on the CAN messages.
+
+        :param dict loops: Dictionary of the messagess
+
+        :return: Analysis of the CAN messages.
+        :rtype: str
+        """
+        result = "\n\nDe-Fragmented frames (using loop-based detection):\n"
+        local_temp = {}
+        for fid, data in loops.items():
+            data.clean_build_loop()
+            for message in data.messages:
+                if (fid, bytes(message['message_data'])) not in local_temp:
+                    result += '\n\tID {} and length {}\n'.format(hex(fid), message['message_length'])
+                    result += '\t\tData: {}'.format(self.get_hex(bytes(message['message_data'])))
+                    if self.is_ascii(message['message_data']):
+                        result += '\n\t\tASCII: {}\n\n'.format(self.ret_ascii(bytes(message['message_data'])))
+                    local_temp[(fid, bytes(message['message_data']))] = None
+        return result
+
+    # TODO: Split View from Controller. IMO it should return a data structure that would then be properly formated by
+    # the User Interface (console or web).
+    def _anal_iso(self, iso):
+        """Perform ISO TP analysis on the CAN messages.
+
+        :param dict iso: Dictionary of the messagess
+
+        :return: Analysis of the CAN messages.
+        :rtype: str
+        """
+        result = '\nISO TP Messages:\n\n'
+        for fid, lst in iso.items():
+            result += '\tID: {}\n'.format(hex(fid))
+            for (_, msg), _ in lst.items():
+                result += '\t\tDATA: ' + self.get_hex(msg)
+                if self.is_ascii(msg):
+                    result += '\n\t\tASCII: {}'.format(self.ret_ascii(msg))
+                result += '\n'
+        return result
+
+    def do_anal(self, def_in, format='ALL'):
+        """Perform analysis of the captured format to detect UDS, ISO TP and fragmented CAN frames.
+
+        :param str format: Format to detect ('ALL', 'UDS', 'ISO', 'FRAG'). Could be 'UDS, ISO'
+
+        :return: Information about the analyzed traffic.
+        :rtype: str
+        """
+        params = format.upper().split(',')
+        _format = params[0].strip()
+        _index = -1
+        if len(params) > 1:
             _index = int(params[1])
+
         temp_buf = Replay()
         if _index == -1:
             for buf in self.all_frames:
@@ -344,63 +434,12 @@ class analyze(CANModule):
                 else:
                     _iso_tbl[msg.message_id][(msg.message_length, bytes(msg.message_data))] = 1
 
-        if _format.strip() not in ["ISO", "FRAG"]:
-            # Print out UDS
-            ret_str += "UDS Detected:\n\n"
-            for fid, services in uds_list.sessions.items():
-                for service, sub in services.items():
-                    for sub_id, body in sub.items():
-                        text = " (UNKNOWN) "
-                        if service in UDSMessage.services_base:
-                            serv_name = UDSMessage.services_base[service].get(sub_id, UDSMessage.services_base[service].get(None, 'UNKNOWN'))
-                            text = " (" + serv_name + ") "
-
-                        if body['status'] == 1:
-                            data = body['response']['data']
-                            data2 = body['data']
-                            data_ascii = ""
-                            data_ascii2 = ""
-                            if self.is_ascii(data2):
-                                data_ascii2 = "\n\t\tASCII: " + self.ret_ascii(data2) + "\n"
-                            if self.is_ascii(body['response']['data']):
-                                data_ascii = "\n\t\tASCII: " + self.ret_ascii(data) + "\n"
-                            ret_str += "\n\tID: " + hex(fid) + " Service: " + str(hex(service)) + " Sub: " + ((str(
-                                hex(sub_id))) if sub_id < 0x100 else " NO SUB ") + text + "\n\t\tRequest: " + self.get_hex(bytes(data2)) + data_ascii2 +\
-                                "\n\t\tResponse: " + self.get_hex(bytes(data)) + data_ascii + "\n"
-                        elif body['status'] == 2:
-                            data2 = body['data']
-                            data_ascii2 = ""
-                            if self.is_ascii(data2):
-                                data_ascii2 = "\n\t\tASCII: " + self.ret_ascii(data2) + "\n"
-                            ret_str += "\n\tID: " + hex(fid) + " Service: " + str(hex(service)) + " Sub: " + ((str(
-                                hex(sub_id))) if sub_id < 0x100 else " (ALTERNATIVE INTERPRETATION if NO SUB) ") + text + "\n\t\tRequest: " + self.get_hex(bytes(data2)) + data_ascii2 +\
-                                "\n\t\tError: " + body['response']['error'] + "\n"
-
-        if _format.strip() not in ["ISO", "UDS"]:
-            # Print detected loops
-            ret_str += "\n\nDe-Fragmented frames (using loop-based detection):\n"
-            local_temp = {}
-            for fid, data in loops_list.items():
-                data.clean_build_loop()
-                for message in data.messages:
-                    if (fid, bytes(message['message_data'])) not in local_temp:
-                        ret_str += "\n\tID " + hex(fid) + " and length " + str(message['message_length']) + "\n"
-                        ret_str += "\t\tData: " + self.get_hex(bytes(message['message_data']))
-                        if self.is_ascii(message['message_data']):
-                            ret_str += "\n\t\tASCII: " + self.ret_ascii(bytes(message['message_data'])) + "\n\n"
-                        local_temp[(fid, bytes(message['message_data']))] = None
-
-        if _format.strip() not in ["UDS", "FRAG"]:
-            # Print out ISOTP messages
-            ret_str += "\nISO TP Messages:\n\n"
-            for fid, lst in _iso_tbl.items():
-                ret_str += "\tID: " + hex(fid) + "\n"
-                for (lenX, msg), cnt in lst.items():
-                    ret_str += "\t\tDATA: " + self.get_hex(msg)
-                    if self.is_ascii(msg):
-                        ret_str += "\n\t\tASCII: " + self.ret_ascii(msg)
-                    ret_str += "\n"
-
+        if _format in ['UDS', 'ALL']:
+            ret_str += self._anal_uds(uds_list)
+        if _format in ['FRAG', 'ALL']:
+            ret_str += self._anal_frag(loops_list)
+        if _format in ['ISO', 'ALL']:
+            ret_str += self._anal_iso(_iso_tbl)
         return ret_str
 
     def search_id(self, def_in, idf):
