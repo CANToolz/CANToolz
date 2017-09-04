@@ -122,10 +122,7 @@ class analyze(CANModule):
         return "Avrg. delay: " + str(delay)
 
     def change_shift(self, def_in, val):
-        if val.strip()[0:2] == '0x':
-            value = int(val, 16)
-        else:
-            value = int(val)
+        value = int(val.strip(), 0)  # Auto detect the base.
         self.shift = value
         return "UDS shift: " + hex(self.shift)
 
@@ -133,10 +130,7 @@ class analyze(CANModule):
         try:
             fid, leng = input_params.split(',')[0:2]
             descr = input_params.split(',')[2:]
-            if fid.strip().find('0x') == 0:
-                num_fid = int(fid, 16)
-            else:
-                num_fid = int(fid)
+            num_fid = int(fid.strip(), 0)  # Auto detect the base.
             if 'bits' not in self.meta_data:
                 self.meta_data['bits'] = {}
             bitsX = []
@@ -151,10 +145,7 @@ class analyze(CANModule):
     def do_add_meta_descr_data(self, def_in, input_params):
         try:
             fid, body, descr = input_params.split(',')
-            if fid.strip().find('0x') == 0:
-                num_fid = int(fid, 16)
-            else:
-                num_fid = int(fid)
+            num_fid = int(fid.strip(), 0)  # Auto detect the base.
             if 'description' not in self.meta_data:
                 self.meta_data['description'] = {}
 
@@ -443,7 +434,7 @@ class analyze(CANModule):
         return ret_str
 
     def search_id(self, def_in, idf):
-        idf = int(idf) if not idf.strip()[0:2] == '0x' else int(idf, 16)
+        idf = int(idf.strip(), 0)  # Auto detect the base
         table = "Search for " + hex(idf) + "\n"
         rows = []
         for buf in self.all_frames:
@@ -826,11 +817,7 @@ class analyze(CANModule):
             format = ecu_id.strip().split(",")[1].strip()
 
         ecu_id = ecu_id.strip().split(",")[0]
-
-        if ecu_id.strip()[0:2] == '0x':
-            ecu_id = int(ecu_id, 16)
-        else:
-            ecu_id = int(ecu_id)
+        ecu_id = int(ecu_id, 0)
 
         table = "Data by fields in ECU: " + hex(ecu_id) + "\n\n"
         temp_buf = Replay()
@@ -846,11 +833,7 @@ class analyze(CANModule):
         _bodyList = self.create_short_table(temp_buf)
         list_idx = {}
         for key, value in self.subnet._devices.items():
-
-            if str(key).split(":")[0][0:2] == '0x':
-                _ecu_id = int(str(key).split(":")[0], 16)
-            else:
-                _ecu_id = int(str(key).split(":")[0])
+            _ecu_id = int(str(key).split(':')[0], 0)
             if _ecu_id == ecu_id:
                 list_idx[int(str(key).split(":")[1])] = [value._indexes()]
 

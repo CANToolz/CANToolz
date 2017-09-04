@@ -73,15 +73,9 @@ class ping(CANModule):
         new_range = []
         if isinstance(data, int):
             new_range = [data]
-        # Could be '0-2000' or '0x0 - 0x700', where in the second case the range is specified in hexa.
         elif isinstance(data, str):
-            boundaries = []
-            for boundary in map(str.strip, data.split('-')):
-                if boundary.startswith('0x'):
-                    boundaries.append(int(boundary, 16))
-                else:
-                    boundaries.append(int(boundary, 10))
-            new_range = range(*boundaries)
+            # Could be '0-2000' or '0x0 - 0x700', where in the second case the range is specified in hexa.
+            new_range = range(*[int(boundary, 0) for boundary in map(str.strip, data.split('-'))])
         elif isinstance(data, list):
             new_range = data
         return new_range

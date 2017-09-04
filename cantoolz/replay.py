@@ -164,10 +164,7 @@ class Replay:
                         else:
                             time_stamp = -1.0
 
-                        if fid.find('0x') == 0:
-                            num_fid = int(fid, 16)
-                        else:
-                            num_fid = int(fid)
+                        num_fid = int(fid, 0)
 
                         length = line[:].split(":")[1]
                         data = line[:].split(":")[2]

@@ -70,10 +70,7 @@ class ecu_controls(CANModule):
                 if name not in ['cmd', 'id_list_can_toolz_system', 'current_status']:
                     for act, frame in data.items():
                         fid = frame.split("#")[0].strip()
-                        if fid[0:2] == '0x':
-                            fid = int(fid, 16)
-                        else:
-                            fid = int(fid)
+                        fid = int(fid, 0)
                         if fid not in fid_list:
                             fid_list.append(fid)
             status['id_list_can_toolz_system'] = fid_list
@@ -91,10 +88,7 @@ class ecu_controls(CANModule):
         length = int(length)
         data_hex = data_hex.strip()
 
-        if fid[0:2] == '0x':
-            fid = int(fid, 16)
-        else:
-            fid = int(fid)
+        fid = int(fid, 0)
 
         data_hex = bytes.fromhex(data_hex)[:8]
 

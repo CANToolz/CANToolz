@@ -35,10 +35,7 @@ class simple_io(CANModule):
         frame = frame.strip().split(":")
         fid = frame[0].strip()
 
-        if fid[0:2] == '0x':
-            fid = int(fid, 16)
-        else:
-            fid = int(fid)
+        fid = int(fid, 0)
 
         if len(frame) == 2:
             length = len(bytes.fromhex(frame[1].strip()))
