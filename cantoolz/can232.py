@@ -242,7 +242,7 @@ class CAN232:
         ret = b''
         # TODO: Expose maximum number of retries in a configuration variable.
         retries = 1
-        while not ret or retries <= 10:
+        while not ret and retries < 10:
             self.write(CR)
             ret = self.read_line()
             retries += 1
