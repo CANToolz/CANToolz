@@ -51,7 +51,10 @@ class hw_CAN232(CANModule):
     _C232 = None
 
     def do_init(self, params):
-        """Initialize the serial communication with the CAN hardware."""
+        """Initialize the serial communication with the CAN hardware.
+
+        :raise: IOError when an error occured during CAN232 intialization.
+        """
         self.DEBUG = int(params.get('debug', 0))
         self.dprint(1, 'Initializating hardware starting...')
 
@@ -79,12 +82,17 @@ class hw_CAN232(CANModule):
         return 0
 
     def init_port(self):
-        """Initialize the serial communication with the hardware device."""
+        """Initialize the serial communication with the hardware device.
+
+        :raise: IOError when an error occured during CAN232 initialization.
+        """
         if self._COM_port_name is 'loop':  # Useful for debugging without hardware but not perfect.
             self._COM_port = serial.serial_for_url('loop://', timeout=0.5)
         else:
             self._COM_port = serial.Serial(self._COM_port_name, baudrate=self._COM_speed, timeout=0.5)
         self._C232 = can232.CAN232(self._COM_port, speed=self._CAN_speed, delay=self._COM_delay, debug=self.DEBUG)
+        if self._C232.error:
+            raise IOError(0, 'Error during CAN232 initialization...')
 
     def get_status(self):
         return 'Current status: {0}\nSpeed: {1}\nPort: {2}'.format(self._active, self._COM_speed, self._COM_port_name)

@@ -130,6 +130,8 @@ class CAN232:
         :param int debug: Level of debug (default: 0)
         """
         self.DEBUG = self.DEBUG or debug
+        #: Status of the last command (True for error, False for success)
+        self.error = False
         #: Queue of CAN frames received from the serial communication
         self.queue = queue.Queue()
         #: Queue of invalid data received from the serial communication
@@ -148,8 +150,6 @@ class CAN232:
         self.close()
         #: Status of the CAN channel (opened or not)
         self.opened = False
-        #: Status of the last command (True for error, False for success)
-        self.error = False
         self.speed()
         self.timestamp(self.timestamped)
 
@@ -240,9 +240,15 @@ class CAN232:
     def _flush_queue(self):
         """Flush the CAN232 queue with empty commands as recommended in http://www.can232.com/docs/canusb_manual.pdf."""
         ret = b''
-        while not ret:
+        # TODO: Expose maximum number of retries in a configuration variable.
+        retries = 1
+        while not ret or retries <= 10:
             self.write(CR)
             ret = self.read_line()
+            retries += 1
+        if not ret:
+            self.error = True
+            self.dprint(1, 'Error when flushing the queue. Received nothing (empty response) after %d retries...' % retries)
         if BELL in ret or ret != CR:
             self.error = True
             self.dprint(1, 'Error when flushing the queue. Received: {0} (hex: {1})'.format(ret, self.get_hex(ret)))
