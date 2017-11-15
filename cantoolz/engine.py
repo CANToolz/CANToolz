@@ -269,6 +269,9 @@ class CANSploit:
                 except ImportError:
                     logging.debug('Module {} not found in {}'.format(module, path))
                     continue
+            else:
+                raise ImportError(
+                    "Could not find the module named '{}'. Check that your configuration '{}' is valid.".format(module, filename))
 
         for action in config.actions:
             for module, parameters in action.items():
