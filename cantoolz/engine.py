@@ -299,6 +299,9 @@ class CANSploit:
         subdir = ''
         if os.sep in mod:
             subdir, mod = mod.rsplit(os.sep, 1)
+        # TODO: Find a nicer way to handle configuration containing '/' under Windows
+        if not subdir and '/' in mod:
+            subdir, mod = mod.rsplit('/', 1)
         search_path = os.path.abspath(path)
         search_path = os.path.join(search_path, subdir)
         if not os.path.exists(search_path):
