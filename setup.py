@@ -22,7 +22,7 @@ setup(
         'flask',
         'pyserial',
         'mido',
-        #'numpy',
+        'numpy',
         'bitstring'
     ],
 )
