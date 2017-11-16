@@ -1,11 +1,12 @@
 import os
 import sys
-import imp
 import glob
 import time
 import logging
 import threading
 import collections
+
+from importlib.machinery import SourceFileLoader
 
 from cantoolz.can import CANSploitMessage
 
@@ -312,20 +313,19 @@ class CANSploit:
         mod_name = mod.split('~')[0]
         # Now ready to dynamically search the module.
         try:
-            loaded_module = imp.load_module(mod_name, *imp.find_module(mod_name, path=[search_path]))
+            loaded_module = SourceFileLoader(mod_name, os.path.join(search_path, mod_name + '.py')).load_module()
             logging.info('Loaded {} from directory {}'.format(mod_name, search_path))
-        except ImportError:
-            # Now have to try to find module in subdirectories.
+        except FileNotFoundError:  # Module not found in directory; let's try subdirectories now.
             for subdir in os.listdir(search_path):
                 if os.path.isdir(os.path.join(os.path.abspath(search_path), subdir)):
+                    new_search_path = os.path.join(search_path, subdir)
                     try:
-                        new_search_path = os.path.join(search_path, subdir)
-                        loaded_module = imp.load_module(mod_name, *imp.find_module(mod_name, path=[new_search_path]))
+                        loaded_module = SourceFileLoader(mod_name, os.path.join(new_search_path, mod_name + '.py')).load_module()
                         logging.info('Loaded {} from subdirectory {}'.format(mod_name, new_search_path))
-                        break
-                    except ImportError:
+                        break  # Module found in a subdirectory; no need to look further.
+                    except FileNotFoundError:
                         continue
-            else:  # No module found anywhere under modules/*
+            else:  # Module could not be found in any subdirectories; giving up now.
                 raise ImportError('Could not find {}, even in subdirectories...'.format(mod_name))
         # Dynamically instanciate the module class.
         self._modules[mod] = getattr(loaded_module, mod_name)(params)
