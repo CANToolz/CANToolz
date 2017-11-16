@@ -258,6 +258,8 @@ class CANSploit:
         elif hasattr(config, 'load_modules'):
             logging.warning('The configuration `load_modules` has been deprecated in favor of `modules`.')
             modules = config.load_modules.items()
+        else:
+            raise AttributeError("Missing 'modules' attribute in your configuration '{}'.".format(filename))
 
         for module, init_params in modules:
             for path in self._get_load_paths():
