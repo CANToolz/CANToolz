@@ -75,7 +75,8 @@ class hw_CANBusTriple(CANModule):
         self._serialPort.write(b"\x03\x03\x01\x00\x00\x00\x00")
         time.sleep(1)
 
-    def read_json(self, string):
+    @staticmethod
+    def read_json(string):
         json1_data = json.loads(string)
         return json1_data
 

@@ -159,7 +159,7 @@ class analyze(CANModule):
         descrs = self.meta_data.get('description', {})
         for (key, body) in list(descrs.keys()):
             if fid == key:
-                if(re.match(body, self.get_hex(msg), re.IGNORECASE)):
+                if re.match(body, self.get_hex(msg), re.IGNORECASE):
                     return str(descrs[(key, body)])
         return "  "
 
@@ -266,10 +266,11 @@ class analyze(CANModule):
                             can_msg.CANFrame.frame_ext)] += 1
         return _bodyList
 
-    def find_iso_tp(self, in_list):
+    @staticmethod
+    def find_iso_tp(in_list):
         message_iso = {}
         iso_list = []
-        for timestmp, can_msg in in_list:
+        for _, can_msg in in_list:
             if can_msg.CANData:
                 if can_msg.CANFrame.frame_id not in message_iso:
                     message_iso[can_msg.CANFrame.frame_id] = ISOTPMessage(can_msg.CANFrame.frame_id)
@@ -532,7 +533,8 @@ class analyze(CANModule):
             return str(e)
         return "Saved into " + name.strip()
 
-    def esacpe_csv(self, _string):
+    @staticmethod
+    def escape_csv(_string):
         return '"' + _string.replace('"', '""') + '"'
 
     def do_dump_csv2(self, name):
@@ -566,7 +568,7 @@ class analyze(CANModule):
                 if not msg.debugData and msg.CANData:
                     data = msg.CANFrame.frame_data[:msg.CANFrame.frame_length] + ([0] * (8 - msg.CANFrame.frame_length))
 
-                    data_ascii = self.esacpe_csv(self.ret_ascii(msg.CANFrame.frame_raw_data)) if self.is_ascii(msg.CANFrame.frame_raw_data) else "  "
+                    data_ascii = self.escape_csv(self.ret_ascii(msg.CANFrame.frame_raw_data)) if self.is_ascii(msg.CANFrame.frame_raw_data) else "  "
 
                     format_ = self.get_meta_bits(msg.CANFrame.frame_id, msg.CANFrame.frame_length)
 
@@ -628,12 +630,12 @@ class analyze(CANModule):
                     format_ = self.get_meta_bits(fid, lenX)
                     if not format_:
                         if self.is_ascii(msg):
-                            data_ascii = self.esacpe_csv(self.ret_ascii(msg))
+                            data_ascii = self.escape_csv(self.ret_ascii(msg))
                         else:
                             data_ascii = "  "
                         _name.write(
                             str(bus) + "," + hex(fid) + "," + str(lenX) + "," + self.get_hex(msg) + ',' + data_ascii + ',' +
-                            "\"" + self.esacpe_csv(self.get_meta_descr(fid, msg)) + "\"" + ',' + str(cnt) + "\n")
+                            "\"" + self.escape_csv(self.get_meta_descr(fid, msg)) + "\"" + ',' + str(cnt) + "\n")
                     else:
                         idx_0 = 0
                         msg_s = ""
@@ -645,7 +647,7 @@ class analyze(CANModule):
                             idx_0 = idx
                         _name.write(
                             str(bus) + "," + hex(fid) + "," + str(lenX) + "," + msg_s + ',' + " " + ',' +
-                            "\"" + self.esacpe_csv(self.get_meta_descr(fid, msg)) + "\"" + ',' + str(cnt) + "\n")
+                            "\"" + self.escape_csv(self.get_meta_descr(fid, msg)) + "\"" + ',' + str(cnt) + "\n")
             _name.close()
         except Exception as e:
             self.dprint(2, "can't open log")
@@ -936,7 +938,6 @@ class analyze(CANModule):
         """
         table = ''
         parts = args.split(',')
-        fid = 0
         if len(parts) == 2:
             ecu_data, index = map(str.strip, parts)
             index = int(index)

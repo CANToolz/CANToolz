@@ -332,7 +332,8 @@ class CANSploit:
         # Dynamically instanciate the module class.
         self._modules[mod] = getattr(loaded_module, mod_name)(params)
 
-    def _validate_action_params(self, params):
+    @staticmethod
+    def _validate_action_params(params):
         """Validate the required parameters for an action.
 
         :param dict params: Parameters to validate.

@@ -59,11 +59,11 @@ class Replay:
 
         for x in self._stream:
             if cnt == curr_can and x[1].CANData:
-                return (x[0], x[1].CANFrame)
+                return x[0], x[1].CANFrame
             elif x[1].CANData:
                 curr_can += 1
 
-        return (None, None)
+        return None, None
 
     def add_timestamp(self, def_time=None):
         msg = CANSploitMessage()
@@ -114,7 +114,7 @@ class Replay:
                     self.restart_time(self._stream[self._curr][0])
                     self._curr += 1
                     return copy.deepcopy(ret)
-                elif (self._stream[self._curr][0] < 0):
+                elif self._stream[self._curr][0] < 0:
                     time.sleep(offset)
                     self.restart_time()
                     self._pre_last = 0.0

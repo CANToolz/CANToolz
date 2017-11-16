@@ -101,7 +101,7 @@ class hw_USBtin(CANModule):
             if btq >= 4 and btq <= 32:
                 err = - (tmp2 / btq - 1)
                 err = round(err * 10000) / 10000.0
-                if (abs(err) > 0):
+                if abs(err) > 0:
                     continue
 
                 for t1 in range(3, 18):

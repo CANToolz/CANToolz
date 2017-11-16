@@ -20,7 +20,7 @@ class ISOTPMessage:
     #: int -- Acknowledge frame
     FLOW_CONTROL = 3
 
-    def __init__(self, id=0, length=0, data=[], finished=False):
+    def __init__(self, id=0, length=0, data=None, finished=False):
         """Initialize an empty ISO TP CAN message.
 
         :param int id: The CAN message ID
@@ -29,7 +29,7 @@ class ISOTPMessage:
         :param bool finished: True if there is no more data to add to the message. False otherwise.
         """
         self.message_id = id
-        self.message_data = data
+        self.message_data = [] or data
         self.message_length = length
         self.message_finished = finished
         self._counterSize = 0
@@ -37,7 +37,8 @@ class ISOTPMessage:
         self._flow = -1
         self.padded = False
 
-    def _get_padding(self, array):
+    @staticmethod
+    def _get_padding(array):
         """Get the ISO TP padding from the CAN frames.
 
         :param list array: TODO
@@ -54,7 +55,6 @@ class ISOTPMessage:
                 cnt += 1
             else:
                 break
-
         return cnt
 
     # TODO: Use custom exception instead of int error codes
@@ -158,8 +158,8 @@ class ISOTPMessage:
             ret = self._flow = can.frame_data[0] & 0x0F
         return ret
 
-    @classmethod
-    def generate_can(self, fid, data, padding=None):  # generate CAN messages seq
+    @staticmethod
+    def generate_can(fid, data, padding=None):  # generate CAN messages seq
         """Generate a CAN message in ISO TP format.
 
         :param int fid: CAN ID for the message

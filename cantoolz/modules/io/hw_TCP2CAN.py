@@ -9,7 +9,7 @@ from cantoolz.can import CANMessage
 from cantoolz.module import CANModule, Command
 
 
-class CustomTCPClient():
+class CustomTCPClient:
 
     def __init__(self, conn):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -24,7 +24,7 @@ class CustomTCPClient():
         self._access_out = threading.Event()
 
     def handle(self):
-        while(1):
+        while True:
             try:
                 self.socket.sendall(b'c\x01\x00\x00')  # Request for frames
                 inc_header = self.socket.recv(4)  # Get header first
@@ -144,7 +144,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         self.server._access_in.clear()
         self.server._access_out.clear()
 
-        while(1):
+        while True:
             # Get header first
             data = self.request.recv(4)
 

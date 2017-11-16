@@ -48,7 +48,7 @@ class CANModule:
     def __init__(self, params):
         """Initialize the module.
 
-        :param dict param: Parameters of the module.
+        :param dict params: Parameters of the module.
         """
         self.DEBUG = int(params.get('debug', 0))
         self._bus = params.get('bus', self.__class__.__name__)

@@ -76,8 +76,8 @@ class CANMessage:
         data = binascii.hexlify(bytes(self.frame_data)).zfill(self.frame_length * 2)
         return id + length + data
 
-    @classmethod
-    def init_data(self, fid, length, data):  # Init
+    @staticmethod
+    def init_data(fid, length, data):  # Init
         if length > 8:
             length = 8
         if 0 <= fid <= 0x7FF:
