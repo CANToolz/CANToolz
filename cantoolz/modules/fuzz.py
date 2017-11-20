@@ -1,6 +1,6 @@
 import time
 
-from cantoolz.can import CANMessage
+from cantoolz.can import CAN
 from cantoolz.isotp import ISOTPMessage
 from cantoolz.module import CANModule
 
@@ -54,7 +54,7 @@ class fuzz(CANModule):
                     iso_list.reverse()
                     messages.extend(iso_list)
                 else:
-                    messages.append(CANMessage.init_data(idf, len(x_data), x_data[:8]))
+                    messages.append(CAN(id=idf, length=len(x_data), data=x_data[:8]))
         return messages
 
     def do_start(self, args):
@@ -93,26 +93,24 @@ class fuzz(CANModule):
         self._last = 0
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
-    def do_effect(self, can_msg, args):
+    def do_effect(self, can, args):
         if not self.queue_messages:
             self._active = False
             self.do_start(args)
-        elif not can_msg.CANData:
+        elif can.data is None:
             d_time = float(args.get('delay', 0))
             if d_time > 0:
                 if time.clock() - self.last >= d_time:
                     self.last = time.clock()
-                    can_msg.CANFrame = self.queue_messages.pop()
-                    can_msg.CANData = True
-                    can_msg.bus = self._bus
+                    can = self.queue_messages.pop()
+                    can.bus = self._bus
                     self._last += 1
                     self._status = self._last / (self._full / 100.0)
 
             else:
-                can_msg.CANFrame = self.queue_messages.pop()
-                can_msg.CANData = True
-                can_msg.bus = self._bus
+                can = self.queue_messages.pop()
+                can.bus = self._bus
                 self._last += 1
                 self._status = self._last / (self._full / 100.0)
 
-        return can_msg
+        return can

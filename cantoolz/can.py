@@ -1,105 +1,196 @@
 import struct
-import binascii
 import bitstring
 
-from cantoolz.module import CANModule
 
+class CAN:
 
-class CANMessage:
+    """Class representing a CAN frame on the bus."""
 
-    """
-    Generic class for CAN message.
-    """
+    # CAN frame mode, from standard to remote extended CAN frame.
+    #: Standard CAN frame with 11-bit ID
+    STANDARD = 0x00
+    #: Extended CAN frame with 29-bit ID
+    EXTENDED = 0x01
+    # CAN frame type, from data to overload CAN frame.
+    #: Data CAN frame
+    DATA = 0x10
+    #: Remote CAN frame
+    REMOTE = 0x20
+    #: Error CAN frame
+    ERROR = 0x30
+    #: Overload CAN frame
+    OVERLOAD = 0x40
 
-    DataFrame = 1
-    RemoteFrame = 2
-    ErrorFrame = 3
-    OverloadFrame = 4
+    def __init__(self, id=0, length=None, data=None, mode=STANDARD, type=DATA, bus='Default', debug=None):
+        """Initialize a CAN frame.
 
-    def __init__(self, fid, length, data, extended, type):  # Init EMPTY message
-        self.frame_id = min(0x1FFFFFFF, int(fid))  # Message ID
-        self.frame_length = min(8, int(length))  # DATA length
-        self.frame_data = list(data)[0:self.frame_length]  # DATA
-        self.frame_ext = bool(extended)  # 29 bit message ID - boolean flag
-
-        self.frame_type = type
-
-    def __bytes__(self):
-        return self.frame_raw_data
+        :param int id: ID of the CAN frame (from 0 to 0x1FFFFFFF).
+        :param int length: Length of the data in the CAN frame (from 0 to 8).
+        :param list data: CAN data in the frame (from 0 to 8 elements).
+        :param int mode: CAN frame mode (STANDARD or EXTENDED).
+        :param int type: CAN frame type (DATA, REMOTE, ERROR or OVERLOAD).
+        :param str bus: CAN bus where the frame comes from/goes to.
+        :param dict debug: Debug message in case of debug frame.
+        """
+        self._id = 0
+        self._length = None
+        self._data = None
+        self._mode = self.STANDARD
+        self._type = self.DATA
+        self.bus = ''
+        self.debug = None
+        self.init(id=id, length=length, data=data, mode=mode, type=type, bus=bus, debug=debug)
 
     def __len__(self):
-        return self.frame_length
+        if self._length is None:
+            return 0
+        return self._length
 
     def __int__(self):
-        return self.frame_id
+        return self._id
+
+    def __repr__(self):
+        return '<CAN(id={}, length={}, data={})>'.format(self._id, self._length, self._data)
 
     def __str__(self):
-        return hex(self.frame_id)
+        if self._data is None:
+            return '{}:{}:{}'.format(hex(self._id), self._length, self._data)
+        return '{}:{}:{}'.format(hex(self._id), self._length, self.raw_data.hex())
 
-    def get_bits(self):
-        fill = 8 - self.frame_length
-        bits_array = '0b'
-        bits_array += '0' * fill * 8
-        for byte in self.frame_data:
+    def __bytes__(self):
+        if self._data is None:
+            return b''
+        return bytes(self._data)
+
+    @property
+    def id(self):
+        return self._id
+
+    @id.setter
+    def id(self, value):
+        if 0 <= value <= 0x7FF:
+            self._id = value
+            if self._mode is not self.EXTENDED:
+                self._mode = self.STANDARD
+        elif 0x7FF < value <= 0x1FFFFFFF:
+            self._id = value
+            self._mode = self.EXTENDED
+        else:
+            raise ValueError("Invalid CAN frame ID '{}'. Must be >= 0 and <= 0x1FFFFFFF".format(value))
+
+    @property
+    def raw_id(self):
+        if self._mode == self.STANDARD:
+            return struct.pack('!H', self._id)  # 2-byte ID
+        return struct.pack('!I', self._id)  # 4-byte ID
+
+    @property
+    def data(self):
+        if self._data is None:
+            return None
+        length = self._length
+        if length is None:
+            length = len(self._data)
+        return self._data[:length]
+
+    @data.setter
+    def data(self, value):
+        if value is not None:
+            if isinstance(value, (str, bytes)):
+                value = list(value)
+            if not isinstance(value, list):
+                raise TypeError("Invalid CAN frame data '{}'. Must be of type list or None".format(value))
+        self._data = value
+
+    @property
+    def raw_data(self):
+        if self._data is None:
+            return None
+        length = self._length
+        if length is None:
+            length = len(self._data)
+        return bytes(self._data[:length])
+
+    @property
+    def length(self):
+        return self._length
+
+    @length.setter
+    def length(self, value):
+        self._length = min(max(0, value), 8)
+
+    @property
+    def raw_length(self):
+        return struct.pack('!B', self._length)
+
+    @property
+    def raw(self):
+        """"Representation of CAN data in bits.
+
+        :return: Byte array representing the CAN frame
+        :rtype: bytearray"""
+        if self._data is None:
+            return self.raw_id + self.raw_length
+        return self.raw_id + self.raw_length + self.raw_data
+
+    @property
+    def mode(self):
+        return self._mode
+
+    @mode.setter
+    def mode(self, value):
+        if value == self.STANDARD or value == self.EXTENDED:
+            self._mode = value
+        else:
+            raise ValueError("Invalid CAN frame mode '{}'. Must be STANDARD or EXTENDED.".format(value))
+
+    @property
+    def type(self):
+        return self._type
+
+    @type.setter
+    def type(self, value):
+        if value in [self.DATA, self.REMOTE, self.ERROR, self.OVERLOAD]:
+            self._type = value
+            if value == self.REMOTE:
+                self._data = []
+        else:
+            raise ValueError("Invalid CAN frame type '{}'. Must be DATA, REMOTE, ERROR or OVERLOAD.".format(value))
+
+    @property
+    def bits(self):
+        """"Representation of CAN data in bits.
+
+        :return: Bits representation of CAN data
+        :rtype: bitstring.BitArray"""
+        fill = 8 - self._length
+        bits_array = '0b' + '0' * fill * 8
+        for byte in self._data:
             bits_array += bin(byte)[2:].zfill(8)
         return bitstring.BitArray(bits_array, length=64)
 
-    def get_text(self):
-        return hex(self.frame_id) + ":" + str(self.frame_length) + ":" + CANModule.get_hex(self.frame_raw_data)
+    def init(self, **kwargs):
+        """Re-initialize the CAN class attributes.
 
-    @property
-    def frame_raw_id(self):
-        if not self.frame_ext:
-            return struct.pack("!H", self.frame_id)
-        else:
-            return struct.pack("!I", self.frame_id)
+        :param int id: ID of the CAN frame (from 0 to 0x1FFFFFFF).
+        :param int length: Length of the data in the CAN frame (from 0 to 8).
+        :param list data: CAN data in the frame (from 0 to 8 elements).
+        :param int mode: CAN frame mode (STANDARD or EXTENDED).
+        :param int type: CAN frame type (DATA, REMOTE, ERROR or OVERLOAD).
+        :param str bus: CAN bus where the frame comes from/goes to.
+        :param str debug: Debug message in case of debug frame.
 
-    @property
-    def frame_raw_length(self):
-        return struct.pack("!B", self.frame_length)
-
-    @property
-    def frame_raw_data(self):
-        return bytes(self.frame_data)
-
-    @frame_raw_data.setter
-    def frame_raw_data(self, value):
-        self.frame_data = list(value)[0:self.frame_length]  # DATA
-
-    def to_hex(self):
-        """CAN frame in HEX format ready to be sent (include ID, length and data)"""
-        if not self.frame_ext:
-            id = binascii.hexlify(struct.pack('!H', self.frame_id))[1:].zfill(3)
-        else:
-            id = binascii.hexlify(struct.pack('!I', self.frame_id)).zfill(8)
-        length = binascii.hexlify(struct.pack('!B', self.frame_length))[1:].zfill(1)
-        data = binascii.hexlify(bytes(self.frame_data)).zfill(self.frame_length * 2)
-        return id + length + data
-
-    @staticmethod
-    def init_data(fid, length, data):  # Init
-        if length > 8:
-            length = 8
-        if 0 <= fid <= 0x7FF:
-            extended = False
-        elif 0x7FF < fid <= 0x1FFFFFFF:
-            extended = True
-        else:
-            fid = 0
-            extended = False
-
-        return CANMessage(fid, length, data, extended, 1)
-
-
-class CANSploitMessage:
-
-    """
-    Class to handle CAN messages and other data.
-    """
-
-    def __init__(self):  # Init EMPTY message
-        self.debugText = ""
-        self.CANFrame = None
-        self.debugData = False
-        self.CANData = False
-        self.bus = "Default"
+        :raises AttributeError: When the attribute is not known.
+        """
+        # Order matters:
+        # - CAN.id updated last to force CAN.mode to be updated.
+        # - CAN.type updated last to force CAN.data to be updated.
+        id = kwargs.pop('id', None)
+        type = kwargs.pop('type', None)
+        for key, value in kwargs.items():
+            if value is not None:
+                setattr(self, key, value)
+        if id is not None:
+            setattr(self, 'id', id)
+        if type is not None:
+            setattr(self, 'type', type)

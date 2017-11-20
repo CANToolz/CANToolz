@@ -31,11 +31,11 @@ class pipe_switch(CANModule):
         self.can_buffer = None
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
-    def do_effect(self, can_msg, args):
-        if args.get('action') == 'read' and can_msg.CANData:
-            self.can_buffer = copy.deepcopy(can_msg)
+    def do_effect(self, can, args):
+        if args.get('action') == 'read' and can.data is not None:
+            self.can_buffer = copy.deepcopy(can)
         elif args.get('action') == 'write' and self.can_buffer:
-            can_msg = copy.deepcopy(self.can_buffer)
+            can = copy.deepcopy(self.can_buffer)
             self.can_buffer = None
 
-        return can_msg
+        return can

@@ -5,7 +5,7 @@ import threading
 import traceback
 import socketserver
 
-from cantoolz.can import CANMessage
+from cantoolz.can import CAN
 from cantoolz.module import CANModule, Command
 
 
@@ -51,9 +51,8 @@ class CustomTCPClient:
                                 while self._access_in.is_set():
                                     time.sleep(0.0001)
                                 self._access_in.set()
-                                self.CANList_in.append(
-                                    CANMessage.init_data(int(fid), flen, fdata)
-                                )
+                                can = CAN(id=int(fid), length=flen, data=fdata)
+                                self.CANList_in.append(can)
                                 self._access_in.clear()
 
                             idx += 16
@@ -68,9 +67,11 @@ class CustomTCPClient:
                     send_msg = b'c\x04' + sz
                     self.socket.sendall(send_msg)
                     send_msg = b''
-                    for can_msg in self.CANList_out:
-                        # 16 byte
-                        send_msg += b'ct\x05' + (b'\x00' * (4 - len(can_msg.frame_raw_id))) + can_msg.frame_raw_id + can_msg.frame_raw_length + can_msg.frame_raw_data + (b'\x00' * (8 - can_msg.frame_length))
+                    for can in self.CANList_out:
+                        send_msg += b'ct\x05'
+                        send_msg += b'\x00' * (4 - len(can.raw_id)) + can.raw_id
+                        send_msg += can.raw_length + can.raw_data
+                        send_msg += b'\x00' * (8 - can.length)
                     if ready > 0:
                         self.socket.sendall(send_msg)
                         self.CANList_out = []
@@ -80,11 +81,11 @@ class CustomTCPClient:
                 self.selfx.set_error_text('TCPClient: recv response error:' + str(e))
                 traceback.print_exc()
 
-    def write_can(self, can_frame):
+    def write_can(self, can):
         while self._access_out.is_set():
             time.sleep(0.0001)
         self._access_out.set()
-        self.CANList_out.append(can_frame)
+        self.CANList_out.append(can)
         self._access_out.clear()
 
     def read_can(self):
@@ -92,9 +93,9 @@ class CustomTCPClient:
             while self._access_in.is_set():
                 time.sleep(0.0001)
             self._access_in.set()
-            msg = self.CANList_in.pop(0)
+            can = self.CANList_in.pop(0)
             self._access_in.clear()
-            return msg
+            return can
         else:
             return None
 
@@ -114,11 +115,11 @@ class CustomTCPServer(socketserver.TCPServer):
         self.socket.settimeout(5.0)
         self.prt = ""
 
-    def write_can(self, can_frame):
+    def write_can(self, can):
         while self._access_out.is_set():
             time.sleep(0.0001)
         self._access_out.set()
-        self.CANList_out.append(can_frame)
+        self.CANList_out.append(can)
 
         self._access_out.clear()
 
@@ -127,9 +128,9 @@ class CustomTCPServer(socketserver.TCPServer):
             while self._access_in.is_set():
                 time.sleep(0.0001)
             self._access_in.set()
-            msg = self.CANList_in.pop(0)
+            can = self.CANList_in.pop(0)
             self._access_in.clear()
-            return msg
+            return can
         else:
             return None
 
@@ -160,9 +161,12 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     send_msg = b'c\x02' + sz
                     self.request.sendall(send_msg)
                     send_msg = b''
-                    for can_msg in self.server.CANList_out:
+                    for can in self.server.CANList_out:
                         # 16 byte
-                        send_msg += b'ct\x03' + (b'\x00' * (4 - len(can_msg.frame_raw_id))) + can_msg.frame_raw_id + can_msg.frame_raw_length + can_msg.frame_raw_data + (b'\x00' * (8 - can_msg.frame_length))
+                        send_msg += b'ct\x03'
+                        send_msg += b'\x00' * (4 - len(can.raw_id)) + can.raw_id
+                        send_msg += can.raw_length + can.raw_data
+                        send_msg += b'\x00' * (8 - can.length)
                     if ready > 0:
                         self.request.sendall(send_msg)
                         self.server.CANList_out = []
@@ -187,9 +191,8 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                                 while self.server._access_in.is_set():
                                     time.sleep(0.0001)
                                 self.server._access_in.set()
-                                self.server.CANList_in.append(
-                                    CANMessage.init_data(int(fid), flen, fdata)
-                                )
+                                can = CAN(id=int(fid), length=flen, data=fdata)
+                                self.server.CANList_in.append(can)
                                 self.server._access_in.clear()
 
                             idx += 16
@@ -257,7 +260,7 @@ class hw_TCP2CAN(CANModule):
         self.server = None
         if not self.mode or self.mode not in ['server', 'client']:
             self.dprint(0, 'Can\'t get mode!')
-            exit()
+            exit(-1)
 
         self.HOST = params.get('address', 'localhost')
         self.PORT = int(params.get('port', 6550))
@@ -271,29 +274,29 @@ class hw_TCP2CAN(CANModule):
         fid = line.split(":")[0]
         length = line.split(":")[1]
         data = line.split(":")[2]
-        self.server.write_can(CANMessage.init_data(int(fid), int(length), bytes.fromhex(data)[:int(length)]))
-        return "Sent!"
+        can = CAN(id=int(fid), length=int(length), data=data[:int(length)])
+        self.server.write_can(can)
+        return 'Sent: {}!'.format(can)
 
-    def do_effect(self, can_msg, args):  # read full packet from serial port
+    def do_effect(self, can, args):  # read full packet from serial port
         if args.get('action') == 'read':
-            can_msg = self.do_read(can_msg)
+            can = self.do_read(can)
         elif args.get('action') == 'write':
-            self.do_write(can_msg)
+            can = self.do_write(can)
         else:
             self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
             self.set_error_text('Command ' + args['action'] + ' not implemented 8(')
-        return can_msg
+        return can
 
-    def do_write(self, can_msg):
-        if can_msg.CANData:
-            self.server.write_can(can_msg.CANFrame)
-        return can_msg
+    def do_write(self, can):
+        if can.data is not None:
+            self.server.write_can(can)
+        return can
 
-    def do_read(self, can_msg):
-        if not can_msg.CANData:
-            can_frame = self.server.read_can()
-            if can_frame:
-                can_msg.CANData = True
-                can_msg.CANFrame = can_frame
-                can_msg.bus = self._bus
-        return can_msg
+    def do_read(self, can):
+        if can.data is None:
+            new_can = self.server.read_can()
+            if new_can:
+                can = new_can
+                can.bus = self._bus
+        return can

@@ -39,24 +39,24 @@ class FragmentedCAN:
                 if p_x > 0:
                     self.messages.append(message)
 
-    def add_can_loop(self, can_msg):  # Check if there is INDEX byte in first byte
-        if can_msg.frame_length > 0:
-            if can_msg.frame_id not in self.temp_msg:
-                self.temp_msg[can_msg.frame_id] = collections.OrderedDict()
-                self.temp_msg[can_msg.frame_id]['idx'] = {}
-                self.temp_msg[can_msg.frame_id]['length'] = 0
-                self.temp_msg[can_msg.frame_id]['elements'] = 0
+    def add_can_loop(self, can):  # Check if there is INDEX byte in first byte
+        if can.length > 0:
+            if can.id not in self.temp_msg:
+                self.temp_msg[can.id] = collections.OrderedDict()
+                self.temp_msg[can.id]['idx'] = {}
+                self.temp_msg[can.id]['length'] = 0
+                self.temp_msg[can.id]['elements'] = 0
 
-            curr_elems = self.temp_msg[can_msg.frame_id]["elements"]
-            in_idx = can_msg.frame_data[0]
+            curr_elems = self.temp_msg[can.id]["elements"]
+            in_idx = can.data[0]
 
-            if curr_elems == 0 and not self.temp_msg[can_msg.frame_id]['elements'] < 0:
-                self.temp_msg[can_msg.frame_id]["elements"] += 1
-                self.temp_msg[can_msg.frame_id]["idx"][in_idx] = can_msg.frame_data[1:]
-                self.temp_msg[can_msg.frame_id]['length'] += len(can_msg.frame_data[1:])
-            elif in_idx in list(self.temp_msg[can_msg.frame_id]['idx'].keys()) and not self.temp_msg[can_msg.frame_id]['elements'] < 0:
-                self.temp_msg[can_msg.frame_id]["elements"] = -1
-            elif not self.temp_msg[can_msg.frame_id]['elements'] < 0:
-                self.temp_msg[can_msg.frame_id]["elements"] += 1
-                self.temp_msg[can_msg.frame_id]["idx"][in_idx] = can_msg.frame_data[1:]
-                self.temp_msg[can_msg.frame_id]['length'] += len(can_msg.frame_data[1:])
+            if curr_elems == 0 and not self.temp_msg[can.id]['elements'] < 0:
+                self.temp_msg[can.id]["elements"] += 1
+                self.temp_msg[can.id]["idx"][in_idx] = can.data[1:]
+                self.temp_msg[can.id]['length'] += len(can.data[1:])
+            elif in_idx in list(self.temp_msg[can.id]['idx'].keys()) and not self.temp_msg[can.id]['elements'] < 0:
+                self.temp_msg[can.id]["elements"] = -1
+            elif not self.temp_msg[can.id]['elements'] < 0:
+                self.temp_msg[can.id]["elements"] += 1
+                self.temp_msg[can.id]["idx"][in_idx] = can.data[1:]
+                self.temp_msg[can.id]['length'] += len(can.data[1:])

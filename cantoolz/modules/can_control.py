@@ -1,6 +1,6 @@
 import re
 
-from cantoolz.can import CANMessage
+from cantoolz.can import CAN
 from cantoolz.module import CANModule, Command
 
 
@@ -91,14 +91,13 @@ class can_control(CANModule):
         fid = int(fid, 0)
 
         data_hex = bytes.fromhex(data_hex)[:8]
-
-        self._frames.append(CANMessage.init_data(fid, length, data_hex))
+        self._frames.append(CAN(id=fid, length=length, data=data_hex))
         return name + " has been added to queue!"
 
-    def read_statuses(self, can_msg):
+    def read_statuses(self, can):
         for status in self._statuses:
-            if can_msg.CANFrame.frame_id in status.get('id_list_can_toolz_system', []):
-                data_hex = self.get_hex(can_msg.CANFrame.frame_raw_data)
+            if can.id in status.get('id_list_can_toolz_system', []):
+                data_hex = self.get_hex(can.raw_data)
                 for stat, options in list(status.items()):
                     if stat not in ['id_list_can_toolz_system', 'current_status', 'cmd']:
                         for value, reg in list(options.items()):
@@ -107,12 +106,11 @@ class can_control(CANModule):
                                 status['current_status'] = value
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
-    def do_effect(self, can_msg, args):
-        if can_msg.CANData:
-            self.read_statuses(can_msg)
+    def do_effect(self, can, args):
+        if can.data is not None:
+            self.read_statuses(can)
         else:
             if len(self._frames) > 0:
-                can_msg.CANFrame = self._frames.pop()
-                can_msg.CANData = True
-                can_msg.bus = self._bus
-        return can_msg
+                can = self._frames.pop()
+                can.bus = self._bus
+        return can

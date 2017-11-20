@@ -2,7 +2,7 @@ import socket
 import struct
 import traceback
 
-from cantoolz.can import CANMessage, CANSploitMessage
+from cantoolz.can import CAN
 from cantoolz.module import CANModule, Command
 
 
@@ -43,10 +43,8 @@ class hw_CANSocket(CANModule):
                 dataf = bytes.fromhex(dataf)
                 idf = int(idf, 16)
                 lenf = min(8, len(dataf))
-                message = CANSploitMessage()
-                message.CANData = True
-                message.CANFrame = CANMessage.init_data(idf, lenf, dataf[0:lenf])
-                self.do_write(message)
+                can = CAN(id=id, length=lenf, data=data[:lenf])
+                self.do_write(can)
             except Exception as e:
                 traceback.print_exc()
                 ret = str(e)
@@ -78,38 +76,37 @@ class hw_CANSocket(CANModule):
                 self.set_error_text("ERROR: " + str(e))
                 traceback.print_exc()
 
-    def do_effect(self, can_msg, args):  # read full packet from serial port
+    def do_effect(self, can, args):  # read full packet from serial port
         if args.get('action') == 'read':
-            can_msg = self.do_read(can_msg)
+            can = self.do_read(can)
         elif args.get('action') == 'write':
-            self.do_write(can_msg)
+            can = self.do_write(can)
         else:
             self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
-        return can_msg
+        return can
 
-    def do_read(self, can_msg):
-        if self._run and not can_msg.CANData:
+    def do_read(self, can):
+        if self._run and can.data is None:
             try:
                 can_frame = self.socket.recv(16)
                 self.dprint(2, "READ: " + self.get_hex(can_frame))
                 if len(can_frame) == 16:
-
                     idf = struct.unpack("I", can_frame[0:4])[0]
                     if idf & 0x80000000:
                         idf &= 0x7FFFFFFF
-                    can_msg.CANFrame = CANMessage.init_data(idf, can_frame[4], can_frame[8:8 + can_frame[4]])
-                    can_msg.bus = self._bus
-                    can_msg.CANData = True
-            except:
-                return can_msg
-        return can_msg
+                    length = can_frame[4]
+                    can.init(id=idf, length=length, data=can_frame[8:8 + length], bus=self._bus)
+            except:  # FIXME: Remove catch/all and instead catch only what needs to be caught!
+                return can
+        return can
 
-    def do_write(self, can_msg):
-        if can_msg.CANData:
-            idf = can_msg.CANFrame.frame_id
-            if can_msg.CANFrame.frame_ext:
+    def do_write(self, can):
+        if can.type == CAN.DATA:
+            idf = can.id
+            if can.mode == CAN.EXTENDED:
                 idf |= 0x80000000
-            data = struct.pack("I", idf) + struct.pack("B", can_msg.CANFrame.frame_length) + b"\xff\xff\xff" + can_msg.CANFrame.frame_raw_data[0:can_msg.CANFrame.frame_length] + b"0" * (8 - can_msg.CANFrame.frame_length)
-            self.socket.send(data)
-            self.dprint(2, "WRITE: " + self.get_hex(data))
-        return can_msg
+            buf = struct.pack('I', idf) + can.raw_length
+            buf += b'\xff\xff\xff' + can.raw_data
+            buf += b'0' * (8 - can.length)
+            self.socket.send(buf)
+            self.dprint(2, "WRITE: " + self.get_hex(buf))

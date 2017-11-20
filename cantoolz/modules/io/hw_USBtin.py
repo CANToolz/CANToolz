@@ -4,7 +4,7 @@ import serial
 import traceback
 import serial.tools.list_ports
 
-from cantoolz.can import CANMessage
+from cantoolz.can import CAN
 from cantoolz.module import CANModule, Command
 
 
@@ -243,15 +243,15 @@ class hw_USBtin(CANModule):
                 self.set_error_text('USBTIn ERROR I/O')
         return ""
 
-    def do_effect(self, can_msg, args):  # read full packet from serial port
+    def do_effect(self, can, args):  # read full packet from serial port
         if args.get('action') == 'read':
-            can_msg = self.do_read(can_msg)
+            can = self.do_read(can)
         elif args.get('action') == 'write':
             # KOSTYL: workaround for BMW f10 bus
             # if self._restart and self._run and (time.clock() - self.last) >= self.act_time:
             #     self.dev_write("O")
             #     self.last = time.clock()
-            self.do_write(can_msg)
+            can = self.do_write(can)
         else:
             self.dprint(1, 'Command ' + args.get('action', 'NONE') + ' not implemented 8(')
             self.set_error_text('Command ' + args.get('action', 'NONE') + ' not implemented 8(')
@@ -276,85 +276,74 @@ class hw_USBtin(CANModule):
                     self.last = time.clock()
         """
 
-        return can_msg
+        return can
 
-    def do_read(self, can_msg):
+    def do_read(self, can):
         data = b""
         if self._serialPort.inWaiting() > 0:
-            while not can_msg.CANData and not can_msg.debugData:
+            while can.data is None and not can.debug:
                 byte = self._serialPort.read(1)
                 if byte == b"":
                     break
 
                 data += byte
                 if data[-1:] == b"\r":
-                    can_msg.bus = self._bus  # Bus USBtin
+                    can.bus = self._bus  # Bus USBtin
                     if data[0:1] == b"t":
                         # "t10F81122334455667788"
-                        _length = int(data[4:5])
-                        _id = struct.unpack("!H", bytes.fromhex("0" + data[1:4].decode('ISO-8859-1')))[0]
-                        _data = list(bytes.fromhex(data[5:-1].decode('ISO-8859-1')))
-
-                        can_msg.CANFrame = CANMessage(_id, _length, _data, False, CANMessage.DataFrame)
-
-                        can_msg.CANData = True
-
+                        length = int(data[4:5])
+                        id = struct.unpack("!H", bytes.fromhex("0" + data[1:4].decode('ISO-8859-1')))[0]
+                        data = bytes.fromhex(data[5:-1].decode('ISO-8859-1'))
+                        can.init(id=id, length=length, data=data)
                     elif data[0:1] == b"T":  # Extended
                         # "T0011111181122334455667788"
-                        _length = int(data[9:10])
-                        _id = struct.unpack("!I", bytes.fromhex(data[1:9].decode('ISO-8859-1')))[0]
-                        _data = list(bytes.fromhex(data[10:-1].decode('ISO-8859-1')))
-
-                        can_msg.CANFrame = CANMessage(_id, _length, _data, True, CANMessage.DataFrame)
-                        can_msg.CANData = True
-
+                        length = int(data[9:10])
+                        id = struct.unpack("!I", bytes.fromhex(data[1:9].decode('ISO-8859-1')))[0]
+                        data = bytes.fromhex(data[10:-1].decode('ISO-8859-1'))
+                        can.init(id=id, length=length, data=data, mode=CAN.EXTENDED)
                     elif data[0:1] == b"r":  # RTR
-                        _length = int(data[4:5])
-                        _id = struct.unpack("!H", bytes.fromhex("0" + data[1:4].decode('ISO-8859-1')))[0]
-
-                        can_msg.CANFrame = CANMessage(_id, _length, [], False, CANMessage.RemoteFrame)
-                        can_msg.CANData = True
-
+                        length = int(data[4:5])
+                        id = struct.unpack("!H", bytes.fromhex("0" + data[1:4].decode('ISO-8859-1')))[0]
+                        can.init(id=id, length=length, data=[], type=CAN.REMOTE)
                     elif data[0:1] == b"R":  # Extended RTR
-                        _length = int(data[9:10])
-                        _id = struct.unpack("!I", bytes.fromhex(data[1:9].decode('ISO-8859-1')))[0]
-
-                        can_msg.CANFrame = CANMessage(_id, _length, [], True, CANMessage.RemoteFrame)
-                        can_msg.CANData = True
-
+                        length = int(data[9:10])
+                        id = struct.unpack("!I", bytes.fromhex(data[1:9].decode('ISO-8859-1')))[0]
+                        can.init(id=id, length=length, data=[], mode=CAN.EXTENDED, type=CAN.REMOTE)
                     elif data[0:1] == b"z" or data[0:1] == b"Z" or data[0:1] == b"\r" or data[0:1] == b"\x07":
                         break
                     else:
-                        can_msg.debugData = True
-                        can_msg.debugText = {'text': data.decode("ISO-8859-1")}
+                        can.debug = {'text': data.decode("ISO-8859-1")}
                         self.dprint(1, "USBtin DREAD: " + data.decode("ISO-8859-1"))
-
                     self.dprint(2, "USBtin READ: " + data.decode("ISO-8859-1"))
+        return can
 
-        return can_msg
-
-    def do_write(self, can_msg):
-
-        if can_msg.CANData:
+    def do_write(self, can):
+        if can.data is not None:
             self.dprint(3, "WRITE")
             cmd_byte = None
             id_f = None
-            if not can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.DataFrame:  # 11 bit format
+            if can.mode == CAN.STANDARD and can.type == CAN.DATA:  # 11 bit format
                 cmd_byte = b"t"
-                id_f = self.get_hex(can_msg.CANFrame.frame_raw_id).zfill(4)[1:4].encode('ISO-8859-1')
-            elif can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.DataFrame:
+                # TODO: Get rid of str().encode(). The raw_id should already be of type bytes.
+                id_f = self.get_hex(can.raw_id).zfill(4)[1:4].encode('ISO-8859-1')
+            elif can.mode == CAN.EXTENDED and can.type == CAN.DATA:
                 cmd_byte = b"T"
-                id_f = self.get_hex(can_msg.CANFrame.frame_raw_id).zfill(8)[0:8].encode('ISO-8859-1')
-            elif not can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.RemoteFrame:
+                # TODO: Get rid of str().encode(). The raw_id should already be of type bytes.
+                id_f = self.get_hex(can.raw_id).zfill(8)[0:8].encode('ISO-8859-1')
+            elif can.mode == CAN.STANDARD and can.type == CAN.REMOTE:
                 cmd_byte = b"r"
-                id_f = self.get_hex(can_msg.CANFrame.frame_raw_id).zfill(4)[1:4].encode('ISO-8859-1')
-            elif can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.RemoteFrame:
+                # TODO: Get rid of str().encode(). The raw_id should already be of type bytes.
+                id_f = self.get_hex(can.raw_id).zfill(4)[1:4].encode('ISO-8859-1')
+            elif can.mode == CAN.EXTENDED and can.type == CAN.REMOTE:
                 cmd_byte = b"R"
-                id_f = self.get_hex(can_msg.CANFrame.frame_raw_id).zfill(8)[0:8].encode('ISO-8859-1')
+                # TODO: Get rid of str().encode(). The raw_id should already be of type bytes.
+                id_f = self.get_hex(can.raw_id).zfill(8)[0:8].encode('ISO-8859-1')
             if cmd_byte:
-                write_buf = cmd_byte + id_f + str(can_msg.CANFrame.frame_length).encode('ISO-8859-1') + self.get_hex(can_msg.CANFrame.frame_raw_data).encode('ISO-8859-1') + b"\r"
+                # TODO: Get rid of str().encode(). The raw_id should already be of type bytes.
+                write_buf = cmd_byte + id_f + str(can.length).encode('ISO-8859-1')
+                write_buf += self.get_hex(can.raw_data).encode('ISO-8859-1') + b'\r'
                 self.dprint(2, "Try to write: " + write_buf.decode('ISO-8859-1'))
                 self._dev_write_try = 2
                 self.dev_write(write_buf.decode('ISO-8859-1')[:-1])
                 self.dprint(2, "WRITE: " + write_buf.decode('ISO-8859-1'))
-        return can_msg
+        return can

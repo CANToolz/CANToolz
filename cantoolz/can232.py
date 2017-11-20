@@ -424,7 +424,7 @@ class CAN232:
     def transmit(self, data, mode=CAN_STANDARD):
         """Transmit a CAN message to the bus.
 
-        :param str data: CAN message to send.
+        :param bytes data: CAN message to send.
         :param int mode: Type of CAN frame (default: CAN_STANDARD)
             - CAN_STANDARD if standard CAN frame (i.e. 11bit)
             - CAN_EXTENDED if extended (e.g. 29bit CAN frame)
