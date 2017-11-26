@@ -1,3 +1,7 @@
+## Version 3.7.0
+
+See https://github.com/CANToolz/CANToolz/releases/tag/v3.7.0
+
 ## Version 3.6.1
 
 ### FIX

@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='CANToolz',
-    version='3.6.1',
+    version='3.7.0',
     description='Framework for black-box Controller Area Network (CAN) bus analysis.',
     author='Alexey Sintsov',
     author_email='alex.sintsov@gmail.com',
