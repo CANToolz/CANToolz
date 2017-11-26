@@ -1,0 +1,7 @@
+[flake8]
+# E501: Max line length
+ignore = E501
+exclude = .git,__pycache__,docs/source/conf.py,old,build,dist,__init__.py
+# Maximum code complexity
+max-complexity = 15
+show-source = True

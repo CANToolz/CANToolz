@@ -6,6 +6,7 @@ from cantoolz.utils import stats
 
 
 class Separator(Processor):
+
     def __init__(self, message_builder: callable):
         self._message_builder = message_builder
         self._distribution = Counter()

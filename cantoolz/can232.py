@@ -126,10 +126,12 @@ class CAN232:
         :param serial.Serial serial: Open serial communication to the hardware.
         :param int speed: Speed of the CAN bus (See CAN_SPEEDS constants) (default: '500BKPS')
         :param boolean timestamp: Enable/disable timestamp (default: False)
-        :param int delay: Time (in seconds) to wait after each serial write (default: 0.2)
+        :param float delay: Time (in seconds) to wait after each serial write (default: 0.2)
         :param int debug: Level of debug (default: 0)
         """
         self.DEBUG = self.DEBUG or debug
+        #: Status of the last command (True for error, False for success)
+        self.error = False
         #: Queue of CAN frames received from the serial communication
         self.queue = queue.Queue()
         #: Queue of invalid data received from the serial communication
@@ -148,8 +150,6 @@ class CAN232:
         self.close()
         #: Status of the CAN channel (opened or not)
         self.opened = False
-        #: Status of the last command (True for error, False for success)
-        self.error = False
         self.speed()
         self.timestamp(self.timestamped)
 
@@ -198,7 +198,6 @@ class CAN232:
                 return c
             else:
                 ret += c
-        return ret
 
     def read_until(self, sentinel=b'', max_tries=-1):
         """Read a new line from the serial connection until finding the expected byte.
@@ -240,9 +239,15 @@ class CAN232:
     def _flush_queue(self):
         """Flush the CAN232 queue with empty commands as recommended in http://www.can232.com/docs/canusb_manual.pdf."""
         ret = b''
-        while not ret:
+        # TODO: Expose maximum number of retries in a configuration variable.
+        retries = 1
+        while not ret and retries < 10:
             self.write(CR)
             ret = self.read_line()
+            retries += 1
+        if not ret:
+            self.error = True
+            self.dprint(1, 'Error when flushing the queue. Received nothing (empty response) after %d retries...' % retries)
         if BELL in ret or ret != CR:
             self.error = True
             self.dprint(1, 'Error when flushing the queue. Received: {0} (hex: {1})'.format(ret, self.get_hex(ret)))
@@ -456,6 +461,9 @@ class CAN232:
     def is_valid_frame_by_type(self, data, mode=CAN_STANDARD):
         """Validate a specific type of CAN frame.
 
+        :param list data: CAN frame data
+        :param int mode: CAN frame mode (standard, extended, etc.)
+
         :returns: boolean -- `True` if the frame is valid. `False` otherwise.
         """
         header_size = 4
@@ -484,11 +492,11 @@ class CAN232:
         if data.startswith(CMD_TRANSMIT_STD):
             return self.is_valid_frame_by_type(data[1:], mode=CAN_STANDARD)
         elif data.startswith(CMD_TRANSMIT_EXT):
-            return self.is_valid_frame_by_type(data[1:], mode=CMD_TRANSMIT_EXT)
+            return self.is_valid_frame_by_type(data[1:], mode=CAN_EXTENDED)
         elif data.startswith(CMD_TRANSMIT_RTR_STD):
-            return self.is_valid_frame_by_type(data[1:], mode=CMD_TRANSMIT_RTR_STD)
+            return self.is_valid_frame_by_type(data[1:], mode=CAN_RTR_STANDARD)
         elif data.startswith(CMD_TRANSMIT_RTR_EXT):
-            return self.is_valid_frame_by_type(data[1:], mode=CMD_TRANSMIT_RTR_EXT)
+            return self.is_valid_frame_by_type(data[1:], mode=CAN_RTR_EXTENDED)
         return False
 
     @staticmethod

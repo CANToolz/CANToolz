@@ -1,12 +1,11 @@
-from cantoolz.can import *
 import collections
-
-'''
-Custom fragmented packets
-'''
 
 
 class FragmentedCAN:
+
+    """
+    Custom fragmented packets
+    """
 
     def __init__(self):  # Init EMPTY message
         self.messages = []
@@ -61,7 +60,3 @@ class FragmentedCAN:
                 self.temp_msg[can_msg.frame_id]["elements"] += 1
                 self.temp_msg[can_msg.frame_id]["idx"][in_idx] = can_msg.frame_data[1:]
                 self.temp_msg[can_msg.frame_id]['length'] += len(can_msg.frame_data[1:])
-
-
-
-

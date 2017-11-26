@@ -1,23 +1,24 @@
-from cantoolz.module import *
 import copy
+
+from cantoolz.module import CANModule
 
 
 class pipe_switch(CANModule):
     name = "Switch between pipes"
     help = """
-    
+
     This module can read /write/store ONE can message.
-    
+
     Init parameters:  None
-    
-    Module parameters: 
-    
+
+    Module parameters:
+
       'action' - read or write
             'read'  - read and store one CAN message to buffer
             'write' - write one CAN message from buffer
-      
+
       Example: {'action':'read'}
-    
+
     """
 
     _active = True

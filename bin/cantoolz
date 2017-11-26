@@ -1,0 +1,103 @@
+#!/usr/bin/env python
+"""
+######################################################
+#                                                    # 
+#          Yet Another Car Hacking Tool              #
+#                   YACHT                            #
+######################################################
+#      Main Code Monkey    Alyosha Sintsov           #
+#                              aka @asintsov         #
+#      alex.sintsov@gmail.com                        #
+######################################################
+#                                                    #
+# Want to be there as contributor?                   #
+# Help us here: https://github.com/eik00d/CANToolz   #
+#                                                    #
+########### MAIN CONTRIBUTORS ########################
+# - Boris Ryutin ( @dukebarman )                     #
+#      Fist supporter and awesome guy                #
+#                                                    #
+#                                                    #
+# - Sergey Kononenko ( @kononencheg )                #
+#        Best developer, front-end ninja             #
+######################################################
+# We need:                                           #
+#    - more hardware to support                      #
+#    - unit tests                                    # 
+#    - new modules!                                  #
+#    - testers!                                      #
+#    - doc writes                                    #
+#    - bug fixers 8)                                 #
+#                                                    #
+#    With support of DEF CON RUSSIA                  #
+#    https://defcon-russia.ru                        #
+#                                                    #
+######################################################
+"""
+
+import sys
+import logging
+
+from argparse import ArgumentParser
+
+from cantoolz.engine import CANSploit
+from cantoolz.ui.cli import CANToolzCLI
+from cantoolz.ui.web import app
+
+
+def main():
+    """CANToolz entry point handling the CLI parameters."""
+    parser = ArgumentParser(usage='%(prog)s [options]')
+
+    parser.add_argument('--config', '-c', action='store', dest='config', type=str, default=None, help='Load config from file')
+    parser.add_argument('--modules', '-m', action='store', dest='modules', type=str, default=None, help='Path to custom modules')
+    parser.add_argument('--list-modules', action='store_true', dest='list_modules', help='List all available modules')
+    parser.add_argument('--gui', '-g', action='store', dest='gui', type=str, default='web', help='GUI mode, c - console or w - web')
+    parser.add_argument('--host', dest='host', type=str, default='localhost', help='Host for the web interface')
+    parser.add_argument('--port', '-p', action='store', dest='port', type=int, default=4444, help='Port for web interface')
+    parser.add_argument('--log', action='store', dest='loglevel', help='Log level (debug, info, warning, error, critical)')
+
+    args = parser.parse_args()
+
+    # From https://docs.python.org/3/howto/logging.html
+    numeric_level = logging.WARNING
+    if args.loglevel:
+        numeric_level = getattr(logging, args.loglevel.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError('Invalid log level: %s' % args.loglevel)
+    logging.basicConfig(level=numeric_level, format='%(levelname)s:%(name)s:%(module)s:%(funcName)s:%(message)s')
+
+    can_engine = CANSploit(path_modules=args.modules)
+    print(can_engine.ascii_logo_c)
+
+    if args.list_modules:
+        modules = can_engine.list_modules()
+        print('List of available modules (total {}):'.format(len(modules)))
+        for name, info in modules.items():
+            description, path = info
+            print('\t{:20} - {} (from: {})'.format(name, description, path))
+        sys.exit(0)
+
+    if args.config:
+        can_engine.load_config(args.config)
+
+    if args.gui.lower().startswith('c'):
+        prompt = CANToolzCLI(can_engine)
+        prompt.cmdloop()
+    else:
+        print('CANtoolz WEB started and bound to: http://{0}:{1}'.format(args.host, args.port))
+        print('\tTo exit CTRL-C...')
+        app.can_engine = can_engine
+        try:
+            app.run(host=args.host, port=args.port)
+        except KeyboardInterrupt:
+            print("Please wait... (do not press ctr-c again!)")
+            can_engine.stop_loop()
+            can_engine.engine_exit()
+            print("gg bb")
+            exit()
+
+
+if __name__ == '__main__':
+    sys.dont_write_bytecode = True
+    main()

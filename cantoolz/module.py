@@ -1,29 +1,25 @@
-"""
-Generic class for modules
-"""
-
-import threading
-import collections
 import codecs
+import threading
 import traceback
+import collections
 
 
 class Command(object):
 
     """Command class helper to easily identify command attributes."""
 
-    def __init__(self, description, num_params, desc_params, callback, is_enabled, index=0):
-        #: Description of what the command does.
+    def __init__(self, description, num_params, desc_params, callback, is_enabled, index=None):
+        #: str -- Description of what the command does.
         self.description = description
-        #: Number of parameters.
+        #: int -- Number of parameters.
         self.num_params = num_params
-        #: Description of the parameters if any.
+        #: str -- Description of the parameters if any.
         self.desc_params = desc_params
-        #: Function to call when executing the command.
+        #: function -- Function to call when executing the command.
         self.callback = callback
-        #: Command is enabled (or not).
+        #: bool -- Command is enabled (or not).
         self.is_enabled = is_enabled
-        #: index
+        #: int -- Call command by index instead of parameter. None if using parameter.
         self.index = index
 
 
@@ -52,15 +48,15 @@ class CANModule:
     def __init__(self, params):
         """Initialize the module.
 
-        :param dict param: Parameters of the module.
+        :param dict params: Parameters of the module.
         """
         self.DEBUG = int(params.get('debug', 0))
         self._bus = params.get('bus', self.__class__.__name__)
         self._active = False if params.get('active') in ["False", "false", "0", "-1"] else True
-        # List of default commands supported by the module.
-        self._cmdList = collections.OrderedDict()  # Command list (doInit section)
-        self._cmdList['S'] = Command('Current status', 0, '', self.get_status, True)
-        self._cmdList['s'] = Command('Stop/Activate current module', 0, '', self.do_activate, True)
+        #: List of commands supported by the module.
+        self.commands = collections.OrderedDict()  # Command list (doInit section)
+        self.commands['S'] = Command('Current status', 0, '', self.get_status, True)
+        self.commands['s'] = Command('Stop/Activate current module', 0, '', self.do_activate, True)
         self._status = 0
         self._error_text = ""
         self.do_init(params)
@@ -78,14 +74,14 @@ class CANModule:
         """
         return self._active
 
-    def get_status(self, def_in=0):
+    def get_status(self):
         """Human-representation of the module status.
 
         :returns: str -- Human-readable status of the module.
         """
         return 'Current status: {0}'.format(self._active)
 
-    def do_activate(self, def_in=0, mode=-1):
+    def do_activate(self, mode=-1):
         """Force the status of the module to `mode`.
 
         :param int mode: Mode the module should be switched to (default: `-1`)
@@ -109,8 +105,8 @@ class CANModule:
         if level <= self.DEBUG:
             print(str_msg)
 
-    def raw_write(self, string):  # Used for direct input
-        """Call the command specified in `string` and return its result.
+    def raw_write(self, string):
+        """Call the command specified in `string` and return its result. Used for direct input.
 
         :param str string: The full command with its paramaters (e.g. 's' to stop the module)
 
@@ -125,16 +121,24 @@ class CANModule:
         else:
             in_cmd = full_cmd
             parameters = None
-        if in_cmd in self._cmdList:
-            cmd = self._cmdList[in_cmd]
+        if in_cmd in self.commands:
+            cmd = self.commands[in_cmd]
             if cmd.is_enabled:
                 try:
-                    if parameters:
-                        ret = cmd.callback(cmd.index, parameters)
-                    else:
+                    # TODO: Clean the logic once we get rid of call-by-index completely
+                    if cmd.num_params == 0 or (cmd.num_params == 1 and parameters is None):
+                        if cmd.index is None:
+                            ret = cmd.callback()
+                        else:
+                            ret = cmd.callback(cmd.index)
+                    elif cmd.num_params == 1:
+                        if cmd.index is None:
+                            ret = cmd.callback(parameters)
+                        else:
+                            ret = cmd.callback(cmd.index, parameters)
+                    else:  # For command called by index (see CANMusic example).
                         ret = cmd.callback(cmd.index)
                 except Exception as e:
-                    #self.set_error_text("ERROR: " + str(e))
                     ret = "ERROR: " + str(e)
                     traceback.print_exc()
             else:
@@ -144,6 +148,9 @@ class CANModule:
 
     def do_effect(self, can_msg, args):
         """Function to override when implementing an effect (fuzzing, sniffer, filtering operations, etc.)
+
+        :param cantoolz.can.CANSploitMessage can_msg: The CAN message in the pipe.
+        :param dict args: The action arguments as configured in the configuration file.
 
         :returns: str -- CAN message after effect has been applied.
         """
@@ -161,7 +168,7 @@ class CANModule:
 
         :returns: str -- Help of the module.
         """
-        return self._cmdList
+        return self.commands
 
     def get_status_bar(self):
         """Get the status of the module.
@@ -177,18 +184,18 @@ class CANModule:
             self._error_text = ""
         self.thr_block.set()
 
-        return {'bar': status,'text': error_text}
+        return {'bar': status, 'text': error_text}
 
     def set_error_text(self, text):
         """Function to set current notification or error
 
         :returns: int -- Status of init.
         """
-        print("!!! "+text)
+        print("!!! " + text)
         self._error_text = self.__class__.name + ": " + text
 
     def do_init(self, params):
-        """Function to perform calculations before doing any actual work.
+        """Function to initialize the module before doing any actual work.
 
         :returns: int -- Status of init.
         """

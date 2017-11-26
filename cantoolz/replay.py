@@ -1,9 +1,11 @@
-import time
-from cantoolz.module import *
-from cantoolz.can import *
 import copy
+import time
+
+from cantoolz.can import CANSploitMessage, CANMessage
+
 
 class Replay:
+
     def __init__(self):
         self._stream = []
         self._last = time.clock()
@@ -25,9 +27,8 @@ class Replay:
     def passed_time(self):
         return time.clock() + self._shift - self._last
 
-    def restart_time(self, shift = 0.0):
+    def restart_time(self, shift=.0):
         self._last = time.clock() - shift
-
 
     def append_time(self, times, can_msg):
         if can_msg.CANData:
@@ -58,14 +59,13 @@ class Replay:
 
         for x in self._stream:
             if cnt == curr_can and x[1].CANData:
-                return (x[0], x[1].CANFrame)
+                return x[0], x[1].CANFrame
             elif x[1].CANData:
                 curr_can += 1
 
-        return (None, None)
+        return None, None
 
-
-    def add_timestamp(self, def_time = None):
+    def add_timestamp(self, def_time=None):
         msg = CANSploitMessage()
         if not def_time:
             msg.debugText = str(time.time())
@@ -77,12 +77,12 @@ class Replay:
         msg.bus = "TIMESTAMP"
         self._pre_last = 0
         self.restart_time()
-        self._stream.append( [0.0, msg] )
+        self._stream.append([0.0, msg])
 
     def __iter__(self):
         return iter(self._stream)
 
-    def next(self, offset = 0, notime = True):
+    def next(self, offset=0, notime=True):
         if self._curr < len(self._stream):
             if notime:
                 if self._stream[self._curr][1].CANData:
@@ -114,7 +114,7 @@ class Replay:
                     self.restart_time(self._stream[self._curr][0])
                     self._curr += 1
                     return copy.deepcopy(ret)
-                elif (self._stream[self._curr][0] < 0):
+                elif self._stream[self._curr][0] < 0:
                     time.sleep(offset)
                     self.restart_time()
                     self._pre_last = 0.0
@@ -132,7 +132,7 @@ class Replay:
         newRep._size = len(self) + len(other)
         new = copy.deepcopy(other)
         if (len(self)) > 0:
-            last_time = self.get_message(len(self)-1)[0]
+            last_time = self.get_message(len(self) - 1)[0]
         else:
             last_time = 0
         for each in new._stream:
@@ -164,10 +164,7 @@ class Replay:
                         else:
                             time_stamp = -1.0
 
-                        if fid.find('0x') == 0:
-                            num_fid = int(fid, 16)
-                        else:
-                            num_fid = int(fid)
+                        num_fid = int(fid, 0)
 
                         length = line[:].split(":")[1]
                         data = line[:].split(":")[2]
@@ -181,8 +178,6 @@ class Replay:
                         msg.bus = _bus
                         self._stream.append([time_stamp, msg])
                         self._size += 1
-
-
         except Exception as e:
             print(str(e))
             return "Can't open files with CAN messages: " + str(e)
@@ -195,6 +190,7 @@ class Replay:
                 self._stream[i][1].CANData = False
                 self._size -= 1
             i += 1
+
     def search_messages_by_id(self, idf):
         i = 0
         ret = []
@@ -204,9 +200,9 @@ class Replay:
             i += 1
         return ret
 
-    def save_dump(self, fname, offset = 0, amount = -1):
+    def save_dump(self, fname, offset=0, amount=-1):
 
-        if amount <= 0 :
+        if amount <= 0:
             amount = len(self)
 
         ret = "Saved to " + fname
@@ -221,7 +217,6 @@ class Replay:
         if len(self) >= _num2 > _num1 >= 0:
             try:
                 _file = open(fname, 'w')
-                #for i in range(_num1, _num2):
                 curr = 0
                 for times, msg in self._stream:
                     if curr < _num1:

@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>VIRCar interface</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+  </head>
+  <style>
+    body { /* just for this demo. */
+    padding: 30px;
+}
+.btn { /* just for this demo. */
+    margin-top: 5px;
+}
+.btn-arrow-right,
+.btn-arrow-left {
+    position: relative;
+    padding-left: 18px;
+    padding-right: 18px;
+}
+.btn-arrow-right {
+    padding-left: 36px;
+}
+.btn-arrow-left {
+    padding-right: 36px;
+}
+.btn-arrow-right:before,
+.btn-arrow-right:after,
+.btn-arrow-left:before,
+.btn-arrow-left:after { /* make two squares (before and after), looking similar to the button */
+    content:"";
+    position: absolute;
+    top: 5px; /* move it down because of rounded corners */
+    width: 22px; /* same as height */
+    height: 22px; /* button_outer_height / sqrt(2) */
+    background: inherit; /* use parent background */
+    border: inherit; /* use parent border */
+    border-left-color: transparent; /* hide left border */
+    border-bottom-color: transparent; /* hide bottom border */
+    border-radius: 0px 4px 0px 0px; /* round arrow corner, the shorthand property doesn't accept "inherit" so it is set to 4px */
+    -webkit-border-radius: 0px 4px 0px 0px;
+    -moz-border-radius: 0px 4px 0px 0px;
+}
+.btn-arrow-right:before,
+.btn-arrow-right:after {
+    transform: rotate(45deg); /* rotate right arrow squares 45 deg to point right */
+    -webkit-transform: rotate(45deg);
+    -moz-transform: rotate(45deg);
+    -o-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+}
+.btn-arrow-left:before,
+.btn-arrow-left:after {
+    transform: rotate(225deg); /* rotate left arrow squares 225 deg to point left */
+    -webkit-transform: rotate(225deg);
+    -moz-transform: rotate(225deg);
+    -o-transform: rotate(225deg);
+    -ms-transform: rotate(225deg);
+}
+.btn-arrow-right:before,
+.btn-arrow-left:before { /* align the "before" square to the left */
+    left: -11px;
+}
+.btn-arrow-right:after,
+.btn-arrow-left:after { /* align the "after" square to the right */
+    right: -11px;
+}
+.btn-arrow-right:after,
+.btn-arrow-left:before { /* bring arrow pointers to front */
+    z-index: 1;
+}
+.btn-arrow-right:before,
+.btn-arrow-left:after { /* hide arrow tails background */
+    background-color: white;
+}
+
+
+
+  </style>
+  <style>
+   table {
+    width: 20%;
+    height: 250px;
+    border-collapse: collapse;
+}
+
+td {
+    padding: 25px;
+    padding-right: 10px;
+
+}
+
+th {
+    padding: 10px;
+
+}
+
+caption {
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+  </style>
+
+  <body class="application" style="background-color: rgb(233, 242, 243);" onload="">
+<img src="{{ url_for('static', filename='img/1.png') }}" class="logo">
+
+<br>
+
+<table>
+<tbody>
+<tr>
+<td><span id="gpGaugeContainer"></span></td>
+<td>
+    <button type="button" class="btn  btn-default" onclick="engine_start();"> START ENGINE </button>
+    <button type="button" class="btn  btn-default" onclick="engine_stop();"> STOP&nbsp; ENGINE </button>
+
+    <button type="button" class="btn  btn-default btn-arrow-right" id="rup">   RPM&nbsp;&nbsp;UP</button>
+    <button type="button" class="btn  btn-default btn-arrow-right"  id="rdw">RPM DOWN</button>
+
+</td>
+<td rowspan="3">
+
+<canvas id="canvas" height="1148" width="4528"></canvas>
+
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
+    <button type="button" class="btn  btn-default" onclick="lock();">CENTRAL &nbsp;&nbsp;LOCK</button>
+    <button type="button" class="btn  btn-default" onclick="ulock();">CENTRAL UNLOCK</button>
+
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
+    <button type="button" class="btn  btn-default" onclick="loff();">Lights OFF</button>
+    <button type="button" class="btn  btn-default" onclick="lon();">Lights ON</button>
+    <button type="button" class="btn  btn-default" onclick="ldl();">Distance lights</button>
+
+</td>
+</tr>
+</tbody>
+</table>
+
+
+<!--<img src="img/vircar/just-car.png">-->
+
+    <script src="{{ url_for('static', filename='js/d3.v3.min.js') }}"></script>
+
+    <script>
+
+    var canvas = document.getElementById('canvas');
+
+
+    var img_front_1 = new Image();
+    var img_front_2 = new Image();
+    var img_front_3 = new Image();
+
+    var img_back_1 = new Image();
+    var img_back_2 = new Image();
+    var img_back_3 = new Image();
+
+    var img_up_1 = new Image();
+    var img_up_2 = new Image();
+
+    var img_down_1 = new Image();
+    var img_down_2 = new Image();
+
+    img_front_1.src = "{{ url_for('static', filename='img/vircar/tiles/front_1.png') }}";
+    img_front_2.src = "{{ url_for('static', filename='img/vircar/tiles/front_2.png') }}";
+    img_front_3.src = "{{ url_for('static', filename='img/vircar/tiles/front_3.png') }}";
+
+    img_back_1.src = "{{ url_for('static', filename='img/vircar/tiles/back_1.png') }}";
+    img_back_2.src = "{{ url_for('static', filename='img/vircar/tiles/back_2.png') }}";
+    img_back_3.src = "{{ url_for('static', filename='img/vircar/tiles/back_3.png') }}";
+
+    img_up_1.src = "{{ url_for('static', filename='img/vircar/tiles/up_1.png') }}";
+    img_up_2.src = "{{ url_for('static', filename='img/vircar/tiles/up_2.png') }}";
+
+    img_down_1.src = "{{ url_for('static', filename='img/vircar/tiles/down_1.png') }}";
+    img_down_2.src = "{{ url_for('static', filename='img/vircar/tiles/down_2.png') }}";
+    var mul = 3;
+    var w = 4528/mul
+    var h = 1148/mul
+    canvas.width = w ;
+    canvas.height = h ;
+    var context = canvas.getContext('2d');
+
+    function draw_front(image1){
+        context.clearRect(0,canvas.height-image1.height/mul,image1.width/mul, image1.height/mul);
+        context.drawImage(image1,0,canvas.height-image1.height/mul,image1.width/mul, image1.height/mul);
+
+    }
+
+    function draw_up(image1){
+        context.clearRect(0,0,image1.width/mul, image1.height/mul)
+        context.drawImage(image1, 0,0,image1.width/mul, image1.height/mul);
+
+    }
+
+    function draw_down(image1){
+         context.clearRect(canvas.width-((image1.width+754)/mul), 0,image1.width/mul, image1.height/mul);
+        context.drawImage(image1, canvas.width-((image1.width+754)/mul), 0,image1.width/mul, image1.height/mul);
+
+    }
+
+    function draw_back(image1){
+        context.clearRect(canvas.width-(image1.width + 2)/mul, 0,image1.width/mul, image1.height/mul);
+        context.drawImage(image1, canvas.width-(image1.width + 2)/mul, 0,image1.width/mul, image1.height/mul);
+
+    }
+
+
+    setTimeout("draw_front(img_front_1)",800);
+    setTimeout("draw_up(img_up_1)",800);
+    setTimeout("draw_down(img_down_1)",800);
+    setTimeout("draw_back(img_back_1)",800);
+
+
+    document.getElementById("rdw").addEventListener("mousedown", rdw_mousedown);
+    document.getElementById("rdw").addEventListener("mouseup", rdw_mouseup);
+    document.getElementById("rup").addEventListener("mousedown", rup_mousedown);
+    document.getElementById("rup").addEventListener("mouseup", rup_mouseup);
+
+    var interval = null;
+
+    function rdw_mousedown(){
+        interval = setInterval( rpm_down, 100 );
+    };
+
+    function rdw_mouseup(){
+        clearInterval(interval)
+    };
+
+
+    function rup_mousedown(){
+        interval = setInterval( rpm_up, 100 );
+    };
+
+    function rup_mouseup(){
+        clearInterval(interval)
+    };
+
+
+
+     function loff(){
+
+       d3.json('/api/cmd/control_ecu_lights').header("Content-Type","application/json").post(
+            JSON.stringify({'cmd': 'off'}))
+
+    }
+     function lon(){
+
+       d3.json('/api/cmd/control_ecu_lights').header("Content-Type","application/json").post(
+            JSON.stringify({'cmd': 'on'}))
+
+    }
+     function ldl(){
+
+       d3.json('/api/cmd/control_ecu_lights').header("Content-Type","application/json").post(
+            JSON.stringify({'cmd': 'distance'}))
+
+    }
+
+
+    function lock(){
+
+       d3.json('/api/cmd/control_ecu_doors').header("Content-Type","application/json").post(
+            JSON.stringify({'cmd': 'central_lock'}))
+
+    }
+
+    function ulock(){
+
+       d3.json('/api/cmd/control_ecu_doors').header("Content-Type","application/json").post(
+            JSON.stringify({'cmd': 'central_unlock'}))
+
+    }
+
+
+
+    function engine_start(){
+
+       d3.json('/api/cmd/control_ecu_engine').header("Content-Type","application/json").post(
+            JSON.stringify({'cmd': 'start'}))
+
+    }
+
+    function engine_stop(){
+
+       d3.json('/api/cmd/control_ecu_engine').header("Content-Type","application/json").post(
+            JSON.stringify({'cmd': 'stop'}))
+
+    }
+
+    function rpm_up(){
+
+       d3.json('/api/cmd/control_ecu_engine').header("Content-Type","application/json").post(
+            JSON.stringify({'cmd': 'rpmup'}))
+
+    }
+
+    function rpm_down(){
+       d3.json('/api/cmd/control_ecu_engine').header("Content-Type","application/json").post(
+            JSON.stringify({'cmd': 'rpmdw'}))
+
+    }
+
+
+    function Gauge(placeholderName, configuration) {
+        this.placeholderName = placeholderName;
+
+        var self = this; // some internal d3 functions do not "like" the "this" keyword, hence setting a local variable
+
+        this.configure = function (configuration) {
+            this.config = configuration;
+
+            this.config.size = this.config.size * 0.9;
+
+            this.config.raduis = this.config.size * 0.97 / 2;
+            this.config.cx = this.config.size / 2;
+            this.config.cy = this.config.size / 2;
+
+            this.config.min = configuration.min || 0;
+            this.config.max = configuration.max || 5000;
+            this.config.range = this.config.max - this.config.min;
+
+            this.config.majorTicks = configuration.majorTicks || 5;
+            this.config.minorTicks = configuration.minorTicks || 2;
+
+            this.config.greenColor = configuration.greenColor || "#109618";
+            this.config.yellowColor = configuration.yellowColor || "#FF9900";
+            this.config.redColor = configuration.redColor || "#DC3912";
+        }
+
+        this.render = function () {
+            this.body = d3.select("#" + this.placeholderName)
+                .append("svg:svg")
+                .attr("class", "gauge")
+                .attr("width", this.config.size)
+                .attr("height", this.config.size);
+
+            this.body.append("svg:circle")
+                .attr("cx", this.config.cx)
+                .attr("cy", this.config.cy)
+                .attr("r", this.config.raduis)
+                .style("fill", "#ccc")
+                .style("stroke", "#000")
+                .style("stroke-width", "0.5px");
+
+            this.body.append("svg:circle")
+                .attr("cx", this.config.cx)
+                .attr("cy", this.config.cy)
+                .attr("r", 0.9 * this.config.raduis)
+                .style("fill", "#fff")
+                .style("stroke", "#e0e0e0")
+                .style("stroke-width", "2px");
+
+            for (var index in this.config.greenZones) {
+                this.drawBand(this.config.greenZones[index].from, this.config.greenZones[index].to, self.config.greenColor);
+            }
+
+            for (var index in this.config.yellowZones) {
+                this.drawBand(this.config.yellowZones[index].from, this.config.yellowZones[index].to, self.config.yellowColor);
+            }
+
+            for (var index in this.config.redZones) {
+                this.drawBand(this.config.redZones[index].from, this.config.redZones[index].to, self.config.redColor);
+            }
+
+            if (undefined != this.config.label) {
+                var fontSize = Math.round(this.config.size / 9);
+                this.body.append("svg:text")
+                    .attr("x", this.config.cx)
+                    .attr("y", this.config.cy / 2 + fontSize / 2)
+                    .attr("dy", fontSize / 2)
+                    .attr("text-anchor", "middle")
+                    .text(this.config.label)
+                    .style("font-size", fontSize + "px")
+                    .style("fill", "#333")
+                    .style("stroke-width", "0px");
+            }
+
+            var fontSize = Math.round(this.config.size / 16);
+            var majorDelta = this.config.range / (this.config.majorTicks - 1);
+            for (var major = this.config.min; major <= this.config.max; major += majorDelta) {
+                var minorDelta = majorDelta / this.config.minorTicks;
+                for (var minor = major + minorDelta; minor < Math.min(major + majorDelta, this.config.max); minor += minorDelta) {
+                    var point1 = this.valueToPoint(minor, 0.75);
+                    var point2 = this.valueToPoint(minor, 0.85);
+
+                    this.body.append("svg:line")
+                        .attr("x1", point1.x)
+                        .attr("y1", point1.y)
+                        .attr("x2", point2.x)
+                        .attr("y2", point2.y)
+                        .style("stroke", "#666")
+                        .style("stroke-width", "1px");
+                }
+
+                var point1 = this.valueToPoint(major, 0.7);
+                var point2 = this.valueToPoint(major, 0.85);
+
+                this.body.append("svg:line")
+                    .attr("x1", point1.x)
+                    .attr("y1", point1.y)
+                    .attr("x2", point2.x)
+                    .attr("y2", point2.y)
+                    .style("stroke", "#333")
+                    .style("stroke-width", "2px");
+
+                if (major == this.config.min || major == this.config.max) {
+                    var point = this.valueToPoint(major, 0.63);
+
+                    this.body.append("svg:text")
+                        .attr("x", point.x)
+                        .attr("y", point.y)
+                        .attr("dy", fontSize / 3)
+                        .attr("text-anchor", major == this.config.min ? "start" : "end")
+                        .text(major)
+                        .style("font-size", fontSize + "px")
+                        .style("fill", "#333")
+                        .style("stroke-width", "0px");
+                }
+            }
+
+            var pointerContainer = this.body.append("svg:g").attr("class", "pointerContainer");
+            this.drawPointer(0);
+            pointerContainer.append("svg:circle")
+                .attr("cx", this.config.cx)
+                .attr("cy", this.config.cy)
+                .attr("r", 0.12 * this.config.raduis)
+                .style("fill", "#4684EE")
+                .style("stroke", "#666")
+                .style("opacity", 1);
+        }
+
+        this.redraw = function (value) {
+            this.drawPointer(value);
+        }
+
+        this.drawBand = function (start, end, color) {
+            if (0 >= end - start) return;
+
+            this.body.append("svg:path")
+                .style("fill", color)
+                .attr("d", d3.svg.arc()
+                .startAngle(this.valueToRadians(start))
+                .endAngle(this.valueToRadians(end))
+                .innerRadius(0.65 * this.config.raduis)
+                .outerRadius(0.85 * this.config.raduis))
+                .attr("transform", function () {
+                return "translate(" + self.config.cx + ", " + self.config.cy + ") rotate(270)"
+            });
+        }
+
+        this.drawPointer = function (value) {
+            var delta = this.config.range / 13;
+
+            var head = this.valueToPoint(value, 0.85);
+            var head1 = this.valueToPoint(value - delta, 0.12);
+            var head2 = this.valueToPoint(value + delta, 0.12);
+
+            var tailValue = value - (this.config.range * (1 / (270 / 360)) / 2);
+            var tail = this.valueToPoint(tailValue, 0.28);
+            var tail1 = this.valueToPoint(tailValue - delta, 0.12);
+            var tail2 = this.valueToPoint(tailValue + delta, 0.12);
+
+            var data = [head, head1, tail2, tail, tail1, head2, head];
+
+            var line = d3.svg.line()
+                .x(function (d) {
+                return d.x
+            })
+                .y(function (d) {
+                return d.y
+            })
+                .interpolate("basis");
+
+            var pointerContainer = this.body.select(".pointerContainer");
+
+            var pointer = pointerContainer.selectAll("path").data([data])
+
+            pointer.enter()
+                .append("svg:path")
+                .attr("d", line)
+                .style("fill", "#dc3912")
+                .style("stroke", "#c63310")
+                .style("fill-opacity", 0.7)
+
+            pointer.transition()
+                .attr("d", line)
+            //.ease("linear")
+            //.duration(5000);
+
+            var fontSize = Math.round(this.config.size / 10);
+            pointerContainer.selectAll("text")
+                .data([value])
+                .text(Math.round(value))
+                .enter()
+                .append("svg:text")
+                .attr("x", this.config.cx)
+                .attr("y", this.config.size - this.config.cy / 4 - fontSize)
+                .attr("dy", fontSize / 2)
+                .attr("text-anchor", "middle")
+                .text(Math.round(value))
+                .style("font-size", fontSize + "px")
+                .style("fill", "#000")
+                .style("stroke-width", "0px");
+        }
+
+        this.valueToDegrees = function (value) {
+            return value / this.config.range * 270 - 45;
+        }
+
+        this.valueToRadians = function (value) {
+            return this.valueToDegrees(value) * Math.PI / 180;
+        }
+
+        this.valueToPoint = function (value, factor) {
+            var point = {
+                x: this.config.cx - this.config.raduis * factor * Math.cos(this.valueToRadians(value)),
+                y: this.config.cy - this.config.raduis * factor * Math.sin(this.valueToRadians(value))
+            }
+
+            return point;
+        }
+
+        // initialization
+        this.configure(configuration);
+    }
+
+
+    var gauges = [];
+
+    function createGauge(name, label) {
+        var config = {
+            size: 180,
+            label: label,
+            minorTicks: 5
+        }
+
+        config.redZones = [];
+        config.redZones.push({
+            from: 4500,
+            to: 5000
+        });
+        config.redZones.push({
+            from: 0,
+            to: 0x150
+        });
+
+        config.yellowZones = [];
+        config.yellowZones.push({
+            from: 3500,
+            to: 4500
+        });
+
+        gauges[name] = new Gauge(name + "GaugeContainer", config);
+        gauges[name].render();
+    }
+
+    function createGauges() {
+        createGauge("gp", "RPM");
+    }
+
+    function updateGauges() {
+        d3.json('/api/cmd/control_ecu_engine').header("Content-Type","application/json").post(
+            JSON.stringify({'cmd': 'status'}),
+            function(error, result) {
+              if (result !== undefined) {
+                var rpm = JSON.parse(result.response).rpm;
+                gauges["gp"].redraw(rpm);
+
+                if  (rpm < 100 || rpm > 4500){
+                    draw_back(img_back_1);
+                }else if (rpm > 200 && rpm < 2000){
+                    draw_back(img_back_2);
+                }else{
+                    draw_back(img_back_3);
+                }
+              } else {
+                console.error(error);
+              }
+            }
+            );
+    }
+
+
+    function updateLock() {
+        d3.json('/api/cmd/control_ecu_doors').header("Content-Type","application/json").post(
+            JSON.stringify({'cmd': 'status'}),
+            function(error, result) {
+              if (result !== undefined) {
+                var Right = JSON.parse(result.response).status.Right;
+                var Left = JSON.parse(result.response).status.Left;
+
+                if  (Right == "Locked"){
+                     draw_up(img_up_1);
+                }else {
+                     draw_up(img_up_2);
+                }
+
+                if  (Left == "Locked"){
+                     draw_down(img_down_1);
+                }else {
+                     draw_down(img_down_2);
+                }
+
+              } else {
+                console.error(error);
+              }
+            }
+            );
+    }
+
+
+    function updateLight() {
+        d3.json('/api/cmd/control_ecu_lights').header("Content-Type","application/json").post(
+            JSON.stringify({'cmd': 'status'}),
+            function(error, result) {
+              if (result !== undefined) {
+                var Right = JSON.parse(result.response).status.Right;
+                var Left = JSON.parse(result.response).status.Left;
+                if  (Right == "Lights OFF"){
+                     draw_front(img_front_1);
+                }else if (Right == "LIGHTS ON") {
+                     draw_front(img_front_2);
+                } else {
+                     draw_front(img_front_3);
+                }
+
+              } else {
+                console.error(error);
+              }
+            }
+            );
+    }
+
+
+        function updateData(){
+
+        }
+
+    function initialize() {
+        createGauges();
+        setInterval(updateGauges, 200);
+        setInterval(updateLock, 500);
+        setInterval(updateLight, 500);
+    }
+
+
+
+    initialize();
+
+    </script>
+
+  </body>
+</html>

@@ -1,12 +1,10 @@
-import math
-import numpy
-
 from collections import Iterable, deque
 
 from cantoolz.stream.processor import Processor
 
 
 class Integrator(Processor):
+
     def __init__(self, size: int, message_builder: callable):
         self._message_builder = message_builder
         self._size = size
@@ -20,5 +18,4 @@ class Integrator(Processor):
 
         self._queue.append(value)
 
-        yield self._message_builder(message, sum(self._queue)/len(self._queue))
-
+        yield self._message_builder(message, sum(self._queue) / len(self._queue))

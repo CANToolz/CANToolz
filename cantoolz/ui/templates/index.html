@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>CANToolz WEB Console</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+  </head>
+
+  <body class="application" style="background-color: rgb(233, 242, 243);" onload="main();">
+<img src="{{ url_for('static', filename='img/1.png') }}" class="logo">
+
+<br>
+
+
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-xs-12">
+          <h1>
+            <a class="loop-action btn btn-lg btn-success">Start/Stop</a>
+          </h1>
+        </div>
+      </div>
+      <br><br>
+      <div class="row">
+        <div class="col-xs-2"><font size="5">Actions and steps</font>
+          <div class="scenario"></div>
+        </div>
+        <div class="col-xs-5"><font size="5">Options</font>
+          <div class="options hide">
+
+            <table class="table">
+              <tbody></tbody>
+              <tfoot>
+                <tr>
+                  <td>
+                    <input class="new-param form-control" placeholder="param" />
+                  </td>
+                  <td>
+                    <input class="new-value form-control" placeholder="value" />
+                  </td>
+                  <td>
+                    <select>
+                      <option>num</option>
+                      <option>str</option>
+                      <option>json</option>
+                    </select>
+                  </td>
+                  <td>
+                    <button class="btn btn-success">+</button>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+
+          </div>
+          <div class="controls"><font size="5">Commands:</font></div>
+          <div class="progress">
+          <div class="progress-bar progress-bar-info progress-bar-striped" role="progressbar" aria-valuenow="0"
+          aria-valuemin="0" aria-valuemax="100" style="width:0%">0%</div>
+          </div>
+        </div>
+        <div class="col-xs-5"><font size="5">Output</font>
+          <div class="output"></div>
+        </div>
+      </div>
+    </div>
+
+
+    <script src="{{ url_for('static', filename='js/d3.v3.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  </body>
+</html>

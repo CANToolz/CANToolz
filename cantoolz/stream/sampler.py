@@ -4,6 +4,7 @@ from cantoolz.stream.processor import Processor
 
 
 class Sampler(Processor):
+
     def __init__(self, stateless: bool = False):
         self._tick = Counter()
         self._state = dict()
@@ -37,7 +38,3 @@ class Sampler(Processor):
 
     def _stream_state(self, stream):
         return self._state[stream]
-
-
-
-

@@ -47,18 +47,21 @@ More hardware could be supported. Feel free to [open a request](https://github.c
 ## Install
 
 Using manual installation (installing missing dependencies as well):
-
 ```bash
-python setup.py install
+$ python setup.py install
 ```
 
-Once the installation is completed, quick start with:
-
+The installation process will create a `cantoolz` alias command in your bin/ folder. To start `cantoolz`, simply run:
 ```bash
-python cantoolz.py -g w -c examples/can_sniff.py
+$ cantoolz -g w -c examples/can_sniff.py
 ```
 
 Then go to CANToolz's web interface at http://localhost:4444
+
+Help is available with:
+```bash
+$ cantoolz -h
+```
 
 *Last stable release for Python 2.7: [https://github.com/eik00d/CANToolz/tree/Python_2.7_last_release](https://github.com/eik00d/CANToolz/tree/Python_2.7_last_release)*
 
@@ -66,13 +69,13 @@ Then go to CANToolz's web interface at http://localhost:4444
 
 VIRCar is a Virtual Car simulated using CANToolz's features and modules:
 
-1. Run VIRCar `python cantoolz.py -g w -p 5555 -c examples/car_config.py`
+1. Run VIRCar `cantoolz -g w -p 5555 -c examples/car_config.py`
 2. Go to http://localhost:5555/index.html and press `START`
 3. Go to http://localhost:5555/vircar.html to see your own Virtual Car!
 
 Now, to start hacking your new virtual car, you can load the existing configuration example:
 
-1. Run CANToolz `python cantoolz.py -g w -c examples/car_hacker.py` to load and start the hacking session
+1. Run CANToolz `cantoolz -g w -c examples/car_hacker.py` to load and start the hacking session
 2. Go to http://localhost:4444/index.html and you are now connected to VIRCar with `car_hacker` configuration, using
    TCP2CAN for I/O hardware and connected to VIRCar's OBD2 and CABIN buses, and ready to start playing around
 
@@ -85,12 +88,12 @@ hw_USBtin | IO module for USBtin
 hw_CANSocket | IO module for CANSocket (Linux only)
 hw_TCP2CAN | client/server IO component for tunnelinc raw CAN traffic over TCP
 hw_CAN232 | IO module for LAWICEL (USB to Serial) CAN devices (e.g. SeeedStudio CAN bus shield)
-mod_firewall | module for blocking CAN message by ID
-mod_fuzz1 | Simple 'Proxy' fuzzer  (1 byte) Can be combined with gen_ping/gen_replay
+firewall | module for blocking CAN message by ID
+fuzz | Simple 'Proxy' fuzzer  (1 byte) Can be combined with ping/replay
 mod_printMessage | printing CAN messages
-mod_stat | CAN messages statistic (with .csv file output) / Analysis option (c mod_stat a) will try to find UDS/ISO TP messages
-gen_ping | generating CAN messages with chosen IDs (ECU/Service discovery)
-gen_replay | save and replay packets
+analyze | CAN messages statistic (with .csv file output) / Analysis option (c analyze a) will try to find UDS/ISO TP messages
+ping | generating CAN messages with chosen IDs (ECU/Service discovery)
+replay | save and replay packets
 
 We are working on supporting other types of I/O hardware and modules. Please join us! With your help, we can create
 modules that can be useful for all of us!

@@ -1,5 +1,3 @@
-
-
 def max_dx_edge(series: iter) -> int:
     prev = None
     max_diff = 0

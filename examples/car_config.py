@@ -1,8 +1,8 @@
-load_modules = {
-    'hw_TCP2CAN':    {'port': 1111, 'mode': 'server', 'address':'127.0.0.1', 'debug':3},
-    'hw_TCP2CAN~1':    {'port': 1112, 'mode': 'server','address':'127.0.0.1', 'debug':3},
+modules = {
+    'io/hw_TCP2CAN':    {'port': 1111, 'mode': 'server', 'address':'127.0.0.1', 'debug':3},
+    'io/hw_TCP2CAN~1':    {'port': 1112, 'mode': 'server','address':'127.0.0.1', 'debug':3},
 
-    'anti_theft_1':{
+    'vircar/anti_theft_1':{
 
         'filter': [0x71],
         'commands': {
@@ -14,7 +14,7 @@ load_modules = {
 
     },
 
-    'anti_theft_2':{
+    'vircar/anti_theft_2':{
         'stop_engine': '0x71:1:00',
         'filter': [0x71],
         'commands': {
@@ -26,7 +26,7 @@ load_modules = {
 
     },
 
-    'control_ecu_doors': {
+    'vircar/control_ecu_doors': {
             'id_report': {0x91:'Left', 0x92:'Right'},
             'id_command': 0x81,
             'commands': {
@@ -41,7 +41,7 @@ load_modules = {
             }
     },
 
-    'control_ecu_lights': {
+    'vircar/control_ecu_lights': {
              'id_report': {0x111:'Left', 0x112:'Right'},
             'id_command': 0x101,
             'commands': {
@@ -57,7 +57,7 @@ load_modules = {
             }
     },
 
-    'control_ecu_engine': {
+    'vircar/control_ecu_engine': {
 
         'id_report': 0x79,
         'id_command': 0x71,
@@ -73,7 +73,7 @@ load_modules = {
     },
 
     ########### CAR
-    'ecu_switch':    {
+    'vircar/ecu_switch':    {
 
             'Cabin': {   # From Cabin interface
 
@@ -112,7 +112,7 @@ load_modules = {
                 }
     },
 
-    'ecu_light~1':{
+    'vircar/ecu_light~1':{
 
         'id_report': 0x111,
             'id_command': 0x101,
@@ -131,7 +131,7 @@ load_modules = {
 
     },
 
-    'ecu_light~2':{
+    'vircar/ecu_light~2':{
 
         'id_report': 0x112,
             'id_command': 0x101,
@@ -150,7 +150,7 @@ load_modules = {
 
     },
 
-    'ecu_door~1':    {
+    'vircar/ecu_door~1':    {
 
         'id_report': 0x91,
             'id_command': 0x81,
@@ -166,7 +166,7 @@ load_modules = {
             },
             'reports_delay': 0.5
         },
-    'ecu_door~2':    {
+    'vircar/ecu_door~2':    {
 
         'id_report': 0x92,
             'id_command': 0x81,
@@ -183,7 +183,7 @@ load_modules = {
             'reports_delay': 0.5
         },
 
-    'ecu_engine':    {
+    'vircar/ecu_engine':    {
 
         'id_report': 0x79,
         'id_uds': 0x701,
@@ -203,8 +203,8 @@ load_modules = {
         'reports_delay': 0.2
 
     },
-    'mod_stat':{},
-    'mod_stat~2': {}
+    'analyze':{},
+    'analyze~2': {}
 }
 
 
