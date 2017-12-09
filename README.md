@@ -44,28 +44,11 @@ CANToolz supports the following hardware to communicate with CAN bus:
 
 More hardware could be supported. Feel free to [open a request](https://github.com/CANToolz/CANToolz/issues).
 
-## Install
+## Installation
 
-Using manual installation (installing missing dependencies as well):
-```bash
-$ python setup.py install
-```
+See: [CANToolz installation guide for Unix/Mac and Windows](https://github.com/CANToolz/CANToolz/wiki/Installation-and-basic-usage#installing-cantoolz-from-github)
 
-The installation process will create a `cantoolz` alias command in your bin/ folder. To start `cantoolz`, simply run:
-```bash
-$ cantoolz -g w -c examples/can_sniff.py
-```
-
-Then go to CANToolz's web interface at http://localhost:4444
-
-Help is available with:
-```bash
-$ cantoolz -h
-```
-
-*Last stable release for Python 2.7: [https://github.com/eik00d/CANToolz/tree/Python_2.7_last_release](https://github.com/eik00d/CANToolz/tree/Python_2.7_last_release)*
-
-## VIRCar starting:
+## VIRCar
 
 VIRCar is a Virtual Car simulated using CANToolz's features and modules:
 
@@ -133,4 +116,4 @@ Therefore, use it as-is!
 
 # With best regards
 
-+ Alexey Sintsov (@asintsov) / alex.sintsov@gmail.com -- Creator of CANtoolz
++ Alexey Sintsov (@asintsov) / alex.sintsov@gmail.com -- Creator of CANToolz

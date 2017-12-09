@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 ######################################################
-#                                                    # 
+#                                                    #
 #          Yet Another Car Hacking Tool              #
 #                   YACHT                            #
 ######################################################
@@ -23,7 +23,7 @@
 ######################################################
 # We need:                                           #
 #    - more hardware to support                      #
-#    - unit tests                                    # 
+#    - unit tests                                    #
 #    - new modules!                                  #
 #    - testers!                                      #
 #    - doc writes                                    #
@@ -47,6 +47,7 @@ from cantoolz.ui.web import app
 
 def main():
     """CANToolz entry point handling the CLI parameters."""
+    sys.dont_write_bytecode = True
     parser = ArgumentParser(usage='%(prog)s [options]')
 
     parser.add_argument('--config', '-c', action='store', dest='config', type=str, default=None, help='Load config from file')
@@ -99,5 +100,4 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.dont_write_bytecode = True
     main()
