@@ -66,17 +66,18 @@ Now, to start hacking your new virtual car, you can load the existing configurat
 
 Module | Description
 ------ | -----------
-hw_CANBusTriple | IO module for CANBus Triple HW
-hw_USBtin | IO module for USBtin
-hw_CANSocket | IO module for CANSocket (Linux only)
-hw_TCP2CAN | client/server IO component for tunnelinc raw CAN traffic over TCP
-hw_CAN232 | IO module for LAWICEL (USB to Serial) CAN devices (e.g. SeeedStudio CAN bus shield)
-firewall | module for blocking CAN message by ID
-fuzz | Simple 'Proxy' fuzzer  (1 byte) Can be combined with ping/replay
-mod_printMessage | printing CAN messages
 analyze | CAN messages statistic (with .csv file output) / Analysis option (c analyze a) will try to find UDS/ISO TP messages
-ping | generating CAN messages with chosen IDs (ECU/Service discovery)
-replay | save and replay packets
+can_control | Control ECU via CAN messages
+firewall | Module for blocking CAN message by ID
+fuzz | Simple 'Proxy' fuzzer  (1 byte) Can be combined with ping/replay
+ping | Generating CAN messages with chosen IDs (ECU/Service discovery)
+pipe_switch | Module to read/write/store one single CAN message
+replay | Save and replay packets
+io/hw_CANBusTriple | IO module for CANBus Triple HW
+io/hw_USBtin | IO module for USBtin
+io/hw_CANSocket | IO module for CANSocket (Linux only)
+io/hw_TCP2CAN | Client/server IO component for tunneling raw CAN traffic over TCP
+io/hw_CAN232 | IO module for LAWICEL (USB to Serial) CAN devices (e.g. SeeedStudio CAN bus shield)
 
 We are working on supporting other types of I/O hardware and modules. Please join us! With your help, we can create
 modules that can be useful for all of us!
