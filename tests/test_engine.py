@@ -1,4 +1,3 @@
-from time import sleep
 from unittest.mock import Mock
 
 from .utils import TestCANToolz
@@ -10,40 +9,38 @@ class TestEngine(TestCANToolz):
         mock_module = Mock()
         self.CANEngine._actions = [['mock_module', mock_module, {'pipe': 42}]]
         self.CANEngine.start_loop()
-        sleep(3)
-        mock_module.do_start.assert_called_once()
+        self.assertTrue(mock_module.do_start.call_count == 1)
 
     def test_start_loop_several(self):
         mock_modules = [Mock() for _ in range(10)]
         self.CANEngine._actions = [['mock_module%d' % i, mock_module, {'pipe': 42}] for i, mock_module in enumerate(mock_modules)]
         self.CANEngine.start_loop()
-        sleep(3)
         for mock_module in mock_modules:
-            mock_module.do_start.assert_called_once()
+            self.assertTrue(mock_module.do_start.call_count == 1)
 
     def test_call_module_valid_id(self):
         mock_module = Mock()
         self.CANEngine._actions = [['mock_module', mock_module, {'pipe': 42}]]
         self.CANEngine.call_module(0, 'mock call')
-        sleep(1)
+        self.assertTrue(mock_module.raw_write.call_count == 1)
         mock_module.raw_write.assert_called_once_with('mock call')
 
     def test_call_module_valid_id_several(self):
         mock_modules = [Mock() for _ in range(10)]
         self.CANEngine._actions = [['mock_module%d' % i, mock_module, {'pipe': 42}] for i, mock_module in enumerate(mock_modules)]
         self.CANEngine.call_module(5, 'mock call')
-        sleep(1)
         for i, mock_module in enumerate(mock_modules):
             if i == 5:
+                self.assertTrue(mock_module.raw_write.call_count == 1)
                 mock_module.raw_write.assert_called_once_with('mock call')
             else:
-                mock_module.raw_write.assert_not_called()
+                self.assertTrue(mock_module.raw_write.call_count == 0)
 
     def test_call_module_invalid_id(self):
         mock_module = Mock()
         self.CANEngine._actions = [['mock_module', mock_module, {'pipe': 42}]]
         res = self.CANEngine.call_module(-1, 'mock call')
-        mock_module.raw_write.assert_not_called()
+        self.assertTrue(mock_module.raw_write.call_count == 0)
         self.assertTrue(res == 'Module -1 not found!')
 
     def test_call_module_invalid_id_several(self):
@@ -51,7 +48,7 @@ class TestEngine(TestCANToolz):
         self.CANEngine._actions = [['mock_module%d' % i, mock_module, {'pipe': 42}] for i, mock_module in enumerate(mock_modules)]
         res = self.CANEngine.call_module(10, 'mock call')
         for mock_module in mock_modules:
-            mock_module.raw_write.assert_not_called()
+            self.assertTrue(mock_module.raw_write.call_count == 0)
         self.assertTrue(res == 'Module 10 not found!')
 
     def test_find_module(self):
@@ -118,13 +115,11 @@ class TestEngine(TestCANToolz):
         mock_module = Mock()
         self.CANEngine._actions = [['mock_module', mock_module, {'pipe': 42}]]
         self.CANEngine.exit()
-        sleep(3)
-        mock_module.do_exit.assert_called_once()
+        self.assertTrue(mock_module.do_exit.call_count == 1)
 
     def test_exit_several(self):
         mock_modules = [Mock() for _ in range(10)]
         self.CANEngine._actions = [['mock_module%d' % i, mock_module, {'pipe': 42}] for i, mock_module in enumerate(mock_modules)]
         self.CANEngine.exit()
-        sleep(3)
         for mock_module in mock_modules:
-            mock_module.do_exit.assert_called_once()
+            self.assertTrue(mock_module.do_exit.call_count == 1)
