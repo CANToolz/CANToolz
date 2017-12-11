@@ -27,12 +27,12 @@ class CANModule:
 
     """Generic class for all modules.
 
-    Defines all default behaviors that must/should be overriden by other modules.
+    Defines all default behaviors that must/should be overridden by other modules.
     """
 
     #: Name of the module.
     name = 'Abstract CANSploit module'
-    #: Help of the module (can be multiline).
+    #: Help of the module (can be multi-line).
     help = 'No help available'
     #: ID of the module.
     id = 0
@@ -108,7 +108,7 @@ class CANModule:
     def raw_write(self, string):
         """Call the command specified in `string` and return its result. Used for direct input.
 
-        :param str string: The full command with its paramaters (e.g. 's' to stop the module)
+        :param str string: The full command with its parameters (e.g. 's' to stop the module)
 
         :returns: str -- Result of the command execution.
         """

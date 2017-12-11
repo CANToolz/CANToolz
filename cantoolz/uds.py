@@ -18,7 +18,7 @@ class UDSMessage:
             None: 'Req Emission-Related Diag. Trb. Codes'
         },
         0x04: {
-            None: 'Clear/Reset Emsission Diag. Trb. Codes'
+            None: 'Clear/Reset Emission Diag. Trb. Codes'
         },
         0x07: {
             None: 'Req Emission-Related Diag. Trb. Codes during last cycle'
@@ -36,98 +36,145 @@ class UDSMessage:
         },
         0x10: {
             None: 'Diagnostic Session Control',
-            0x01: 'Enter diag session',
-            0x03: 'Extended Diag Session'
+            0x01: 'Default Diagnostic Session',
+            0x02: 'Programming Diagnostic Session',
+            0x03: 'Extended Diagnostic Session'
         },
         0x11: {
-            None: 'Reset',
-            0x01: 'ECU HARD Reset',
-            0x03: 'Soft reset',
-            0x02: 'ECU Reset'},
+            None: 'ECU Reset',
+            0x01: 'ECU Hard Reset',
+            0x02: 'ECU Key On-Off Reset',
+            0x03: 'ECU Soft Reset'
+        },
+        0x14: {
+            None: 'Clear Diagnostic Information'
+        },
         0x19: {
-            None: 'DTC unknws',
-            0x01: 'Report num of DTC by status',
-            0x02: 'Report DTC by status',
+            None: 'Read DTC Information',
+            0x01: 'Report Num of DTC by Status',
+            0x02: 'Report DTC by Status',
             0x03: 'Report DTC Snapshot ID'
         },
         0x20: {
-            None: 'Restart communication'
+            None: 'Restart Communication'
+        },
+        0x22: {
+            None: 'Read Data By Identifier'
+        },
+        0x23: {
+            None: 'Read Memory By Address'
+        },
+        0x24: {
+            None: 'Read Scaling Data By Identifier'
         },
         0x27: {
             None: 'Security Access',
-            0x01: 'Seed request',
-            0x02: 'Resposne'
+            0x01: 'Request Seed',
+            0x02: 'Send Key'
         },
-        0x28: {None: 'Communication Control'},
-        0x3E: {None: 'Tester', 0x01: "Tester present"},
-        0x83: {None: 'Access Timing Parameters'},
-        0x84: {None: 'Secured Data Transmission'},
-        0x85: {None: 'Control DTC Settings'},
-        0x86: {None: 'Response On Event'},
-        0x87: {None: 'Link Control'},
-        0x22: {None: 'Read Data By Identifier'},
-        0x23: {None: 'Read Memory By Address'},
-        0x24: {None: 'Read Scaling Data By Identifier'},
-        0x2A: {None: 'Read Data By Identifier Periodic'},
-        0x2C: {None: 'Dynamically Define Data Identifier'},
-        0x2E: {None: 'Write Data By Identifier'},
-        0x3D: {None: 'Write Memory By Address'},
-        0x14: {None: 'Clear Diagnostic Information'},
-        0x2F: {None: 'Input Output Control By Identifier'},
-        0x31: {None: 'Routine Control'},
-        0x34: {None: 'Request Download'},
-        0x35: {None: 'Request Upload'},
-        0x36: {None: 'Transfer Data'},
-        0x37: {None: 'Request Transfer Exit'},
-        0x38: {None: 'Request File Transfer'}
+        0x28: {
+            None: 'Communication Control'
+        },
+        0x2A: {
+            None: 'Read Data By Identifier Periodic'
+        },
+        0x2C: {
+            None: 'Dynamically Define Data Identifier'
+        },
+        0x2E: {
+            None: 'Write Data By Identifier'
+        },
+        0x2F: {
+            None: 'Input Output Control By Identifier'
+        },
+        0x31: {
+            None: 'Routine Control'
+        },
+        0x34: {
+            None: 'Request Download'
+        },
+        0x35: {
+            None: 'Request Upload'
+        },
+        0x36: {
+            None: 'Transfer Data'
+        },
+        0x37: {
+            None: 'Request Transfer Exit'
+        },
+        0x38: {
+            None: 'Request File Transfer'
+        },
+        0x3D: {
+            None: 'Write Memory By Address'
+        },
+        0x3E: {
+            None: 'Tester',
+            0x01: 'Tester Present'
+        },
+        0x83: {
+            None: 'Access Timing Parameters'
+        },
+        0x84: {
+            None: 'Secured Data Transmission'
+        },
+        0x85: {
+            None: 'Control DTC Setting'
+        },
+        0x86: {
+            None: 'Response On Event'
+        },
+        0x87: {
+            None: 'Link Control'
+        }
     }
 
     error_responses = {
-        0x10: 'General reject',
-        0x11: 'Service not supported',
-        0x12: 'Subfunction not supported',
-        0x13: 'Incorrect message length or invalid format',
-        0x14: 'Response too long',
-        0x21: 'Busy repeat request',
-        0x22: 'Condition not correct',
-        0x24: 'Request sequence error',
-        0x25: 'No response from subnet component',
-        0x26: 'Failure prevents execution of requested action',
-        0x31: 'Request out of range',
-        0x33: 'Security access denied',
-        0x35: 'Invalid key',
-        0x36: 'Exceeded number of attempts',
-        0x37: 'Required time delay not expired',
-        0x39: 'Reserved by extended data link security document',
-        0x3A: 'Reserved by extended data link security document',
-        0x3B: 'Reserved by extended data link security document',
-        0x3C: 'Reserved by extended data link security document',
-        0x3D: 'Reserved by extended data link security document',
-        0x3E: 'Reserved by extended data link security document',
-        0x3F: 'Reserved by extended data link security document',
-        0x40: 'Reserved by extended data link security document',
-        0x41: 'Reserved by extended data link security document',
-        0x42: 'Reserved by extended data link security document',
-        0x43: 'Reserved by extended data link security document',
-        0x44: 'Reserved by extended data link security document',
-        0x45: 'Reserved by extended data link security document',
-        0x46: 'Reserved by extended data link security document',
-        0x47: 'Reserved by extended data link security document',
-        0x48: 'Reserved by extended data link security document',
-        0x49: 'Reserved by extended data link security document',
-        0x4A: 'Reserved by extended data link security document',
-        0x4B: 'Reserved by extended data link security document',
-        0x4C: 'Reserved by extended data link security document',
-        0x4D: 'Reserved by extended data link security document',
-        0x4E: 'Reserved by extended data link security document',
-        0x4F: 'Reserved by extended data link security document',
-        0x70: 'Upload/download not accepted',
-        0x71: 'Transfer data suspended',
-        0x72: 'General programming failure',
-        0x73: 'Wrong block sequence counter',
-        0x78: 'Request correctly received but response is pending',
-        0x7E: 'Subfunction not supported in active session',
-        0x7F: 'Service not supported in active session'
+        0x10: 'General Reject',
+        0x11: 'Service not Supported',
+        0x12: 'Sub-function not Supported',
+        0x13: 'Incorrect Message Length or Invalid Format',
+        0x14: 'Response Too Long',
+        0x21: 'Busy Repeat Request',
+        0x22: 'Conditions not Correct',
+        0x24: 'Request Sequence Error',
+        0x25: 'No Response from Sub-net Component',
+        0x26: 'Failure Prevents Execution of Requested Action',
+        0x31: 'Request Out of Range',
+        0x33: 'Security Access Denied',
+        0x35: 'Invalid Key',
+        0x36: 'Exceeded Number of Attempts',
+        0x37: 'Required Time Delay not Expired',
+        0x39: 'Reserved by Extended Data Link Security Document',
+        0x3A: 'Reserved by Extended Data Link Security Document',
+        0x3B: 'Reserved by Extended Data Link Security Document',
+        0x3C: 'Reserved by Extended Data Link Security Document',
+        0x3D: 'Reserved by Extended Data Link Security Document',
+        0x3E: 'Reserved by Extended Data Link Security Document',
+        0x3F: 'Reserved by Extended Data Link Security Document',
+        0x40: 'Reserved by Extended Data Link Security Document',
+        0x41: 'Reserved by Extended Data Link Security Document',
+        0x42: 'Reserved by Extended Data Link Security Document',
+        0x43: 'Reserved by Extended Data Link Security Document',
+        0x44: 'Reserved by Extended Data Link Security Document',
+        0x45: 'Reserved by Extended Data Link Security Document',
+        0x46: 'Reserved by Extended Data Link Security Document',
+        0x47: 'Reserved by Extended Data Link Security Document',
+        0x48: 'Reserved by Extended Data Link Security Document',
+        0x49: 'Reserved by Extended Data Link Security Document',
+        0x4A: 'Reserved by Extended Data Link Security Document',
+        0x4B: 'Reserved by Extended Data Link Security Document',
+        0x4C: 'Reserved by Extended Data Link Security Document',
+        0x4D: 'Reserved by Extended Data Link Security Document',
+        0x4E: 'Reserved by Extended Data Link Security Document',
+        0x4F: 'Reserved by Extended Data Link Security Document',
+        0x70: 'Upload/Download not Accepted',
+        0x71: 'Transfer Data Suspended',
+        0x72: 'General Programming Failure',
+        0x73: 'Wrong Block Sequence Counter',
+        0x78: 'Request Correctly Received but Response is Pending',
+        0x7E: 'Sub-function not Supported in Active Session',
+        0x7F: 'Service not Supported in Active Session'
     }
 
     def __init__(self, _shift=0x08, _padding=None):  # Init Session

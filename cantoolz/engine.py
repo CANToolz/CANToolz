@@ -78,7 +78,7 @@ class CANSploit:
                 module.thr_block.wait(3)
                 module.thr_block.clear()
                 pipe_name = params['pipe']
-                # If the pipe is newly created, initializ it with an empty CAN message. The CAN message will be further
+                # If the pipe is newly created, initialize it with an empty CAN message. The CAN message will be further
                 # processed by the loaded modules on the same pipe.
                 if pipe_name not in pipes:
                     pipes[pipe_name] = CANSploitMessage()
@@ -101,7 +101,7 @@ class CANSploit:
         """Call a module id `index` with the parameters supplied.
 
         :param int index: The index of the module to call, in the list of enabled modules.
-        :param str params: The parameters to pass to the madule.
+        :param str params: The parameters to pass to the module.
 
         :return: Result from the module call
         :rtype: str
@@ -126,7 +126,7 @@ class CANSploit:
         if self._stop.is_set() and not self.do_stop_e.is_set():
             self.do_stop_e.set()
             for name, module, params in self._actions:
-                self.dprint(2, "startingg " + name)
+                self.dprint(2, "starting " + name)
                 module.do_start(params)
                 module.thr_block.set()
 
@@ -198,7 +198,7 @@ class CANSploit:
         return True
 
     def _get_load_paths(self):
-        """Creates the paths where to look for modules based on CANToolz's strategy.
+        """Creates the paths where to look for modules based on CANToolz' strategy.
 
         :return: List of paths where to start looking for modules
         :rtype: list

@@ -205,7 +205,7 @@ class CAN232:
         :param bytes sentinel: Byte to wait for
         :param int max_tries: Maximum tries before giving up (default: -1 for infinite)
 
-        :returns: bytes -- Bytes read from the line. Empty if expected bytes not foun.
+        :returns: bytes -- Bytes read from the line. Empty if expected bytes not found.
         """
         ret = b''
         while max_tries:
