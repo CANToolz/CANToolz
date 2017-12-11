@@ -64,7 +64,6 @@ class hw_USBtin(CANModule):
         self.read_all()
 
     def set_speed(self, speed):
-        sjw_user = 3
         # This code ported from https://www.kvaser.com/wp-content/themes/kvaser/inc/vc/js/bittiming.js
         again = False
         if self._run:
@@ -91,11 +90,11 @@ class hw_USBtin(CANModule):
         ch_btr2 = None
 
         matches = 0
-        exactMatches = 0
-        maxPrescaler = 64
+        exact_matches = 0
+        max_prescaler = 64
 
         tmp = clock / bitrate / 2
-        for presc in range(1, maxPrescaler + 1):
+        for presc in range(1, max_prescaler + 1):
             tmp2 = tmp / presc
             btq = round(tmp2)
             if btq >= 4 and btq <= 32:
@@ -126,7 +125,7 @@ class hw_USBtin(CANModule):
                                 final_cnf2 = ch_btr1
                                 final_cnf3 = ch_btr2
 
-                            exactMatches += 1
+                            exact_matches += 1
 
         if final_cnf1 == 0 and final_cnf2 == 0 and final_cnf3 == 0 and ch_btr0 and ch_btr1 and ch_btr2:
             final_cnf1 = ch_btr0

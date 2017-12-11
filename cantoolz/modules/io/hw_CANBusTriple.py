@@ -241,15 +241,15 @@ class hw_CANBusTriple(CANModule):
     def do_read(self, can_msg, args):
         data = b""
         counter = 0
-        rBus = int(args.get("bus", 0))
+        r_bus = int(args.get("bus", 0))
 
-        if 0 < rBus < 4:
-            if len(self._queue[rBus - 1]) > 0:
+        if 0 < r_bus < 4:
+            if len(self._queue[r_bus - 1]) > 0:
                 if not can_msg.CANData and not can_msg.debugData:
-                    can_msg.CANFrame = self._queue[rBus - 1].pop(0)
-                    can_msg.bus = rBus
+                    can_msg.CANFrame = self._queue[r_bus - 1].pop(0)
+                    can_msg.bus = r_bus
                     can_msg.CANData = True
-                    print("BUS " + str(rBus))
+                    print("BUS " + str(r_bus))
                     print("POP: " + str(can_msg.CANFrame))
             elif self._serialPort.inWaiting() > 0:
                 while not can_msg.CANData and not can_msg.debugData:
@@ -269,16 +269,16 @@ class hw_CANBusTriple(CANModule):
                             _data = tmp_data[2:-1]
                             _length = tmp_data[-1]
                             bus = (struct.unpack("B", data[1:2])[0])
-                            if rBus == bus:
+                            if r_bus == bus:
                                 can_msg.CANFrame = CANMessage(_id, _length, _data, False, CANMessage.DataFrame)
                                 can_msg.bus = str(self._bus) + '_' + str(bus)
                                 can_msg.CANData = True
-                                print("BUS " + str(rBus))
+                                print("BUS " + str(r_bus))
                                 print("MESS:" + str(_id) + " " + str(_length) + " " + self.get_hex(_data))
                                 print(self.get_hex(tmp_data))
                             else:
                                 self._queue[bus - 1].append(CANMessage(_id, _length, _data, False, CANMessage.DataFrame))
-                                print("BUS " + str(rBus))
+                                print("BUS " + str(r_bus))
                                 print("QUEU:" + str(_id) + " " + str(_length) + " " + self.get_hex(_data))
                                 print(self.get_hex(tmp_data))
                         elif data[0:1] == b'{' and data[-3:-2] == b'}':  # Debug info
@@ -300,5 +300,5 @@ class hw_CANBusTriple(CANModule):
                     can_msg.CANFrame.frame_raw_length
                 print("NUL:" + str(8 - can_msg.CANFrame.frame_length))
                 print(str(can_msg.CANFrame.frame_raw_data))
-            self._serialPort.write(write_buf)
-            self.dprint(2, "WRITE: " + self.get_hex(write_buf))
+                self._serialPort.write(write_buf)
+                self.dprint(2, "WRITE: " + self.get_hex(write_buf))

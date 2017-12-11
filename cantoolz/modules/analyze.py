@@ -133,10 +133,10 @@ class analyze(CANModule):
             num_fid = int(fid.strip(), 0)  # Auto detect the base.
             if 'bits' not in self.meta_data:
                 self.meta_data['bits'] = {}
-            bitsX = []
+            bits_X = []
             for dsc in descr:
-                bitsX.append({dsc.split(":")[0].strip(): {int(dsc.split(":")[1]): dsc.split(":")[2].strip()}})
-            self.meta_data['bits'][(num_fid, int(leng))] = bitsX
+                bits_X.append({dsc.split(":")[0].strip(): {int(dsc.split(":")[1]): dsc.split(":")[2].strip()}})
+            self.meta_data['bits'][(num_fid, int(leng))] = bits_X
 
             return "Fields data has been added"
         except Exception as e:
@@ -482,8 +482,8 @@ class analyze(CANModule):
             rang = 8 * 256
 
         table1 = self.create_short_table(self.all_frames[idx1]['buf'])
-        tblDif = self.all_frames[idx2]['buf'] + self.all_frames[idx1]['buf']
-        table2 = self.create_short_table(tblDif)
+        tbl_dif = self.all_frames[idx2]['buf'] + self.all_frames[idx1]['buf']
+        table2 = self.create_short_table(tbl_dif)
         try:
             dump = Replay()
             dump.add_timestamp()

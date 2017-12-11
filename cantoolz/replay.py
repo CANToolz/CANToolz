@@ -128,8 +128,8 @@ class Replay:
             return Exception('No more messages!')
 
     def __add__(self, other):
-        newRep = Replay()
-        newRep._size = len(self) + len(other)
+        new_rep = Replay()
+        new_rep._size = len(self) + len(other)
         new = copy.deepcopy(other)
         if (len(self)) > 0:
             last_time = self.get_message(len(self) - 1)[0]
@@ -137,9 +137,9 @@ class Replay:
             last_time = 0
         for each in new._stream:
             each[0] += last_time
-        newRep._stream = self._stream + new._stream
+        new_rep._stream = self._stream + new._stream
 
-        return newRep
+        return new_rep
 
     def __len__(self):
         return self._size
