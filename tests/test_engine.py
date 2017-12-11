@@ -1,3 +1,5 @@
+import sleep
+
 from unittest.mock import Mock
 
 from .utils import TestCANToolz
@@ -9,12 +11,14 @@ class TestEngine(TestCANToolz):
         mock_module = Mock()
         self.CANEngine._actions = [['mock_module', mock_module, {'pipe': 42}]]
         self.CANEngine.start_loop()
+        sleep(1)
         mock_module.do_start.assert_called_once()
 
     def test_start_loop_several(self):
         mock_modules = [Mock() for _ in range(10)]
         self.CANEngine._actions = [['mock_module%d' % i, mock_module, {'pipe': 42}] for i, mock_module in enumerate(mock_modules)]
         self.CANEngine.start_loop()
+        sleep(1)
         for mock_module in mock_modules:
             mock_module.do_start.assert_called_once()
 
@@ -22,12 +26,14 @@ class TestEngine(TestCANToolz):
         mock_module = Mock()
         self.CANEngine._actions = [['mock_module', mock_module, {'pipe': 42}]]
         self.CANEngine.call_module(0, 'mock call')
+        sleep(1)
         mock_module.raw_write.assert_called_once_with('mock call')
 
     def test_call_module_valid_id_several(self):
         mock_modules = [Mock() for _ in range(10)]
         self.CANEngine._actions = [['mock_module%d' % i, mock_module, {'pipe': 42}] for i, mock_module in enumerate(mock_modules)]
         self.CANEngine.call_module(5, 'mock call')
+        sleep(1)
         for i, mock_module in enumerate(mock_modules):
             if i == 5:
                 mock_module.raw_write.assert_called_once_with('mock call')
@@ -113,11 +119,13 @@ class TestEngine(TestCANToolz):
         mock_module = Mock()
         self.CANEngine._actions = [['mock_module', mock_module, {'pipe': 42}]]
         self.CANEngine.exit()
+        sleep(1)
         mock_module.do_exit.assert_called_once()
 
     def test_exit_several(self):
         mock_modules = [Mock() for _ in range(10)]
         self.CANEngine._actions = [['mock_module%d' % i, mock_module, {'pipe': 42}] for i, mock_module in enumerate(mock_modules)]
         self.CANEngine.exit()
+        sleep(1)
         for mock_module in mock_modules:
             mock_module.do_exit.assert_called_once()
