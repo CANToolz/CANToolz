@@ -5,7 +5,7 @@ from ..utils import TestCANToolz
 
 class TestSimpleIO(TestCANToolz):
 
-    def test_send_recieve(self):
+    def test_send_receive(self):
         self.CANEngine.load_config('tests/configurations/conf_simple_io.py')
         self.CANEngine.start_loop()
         analyze = self.CANEngine.find_module('analyze')
