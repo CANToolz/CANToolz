@@ -10,14 +10,14 @@ class TestEngine(TestCANToolz):
         mock_module = Mock()
         self.CANEngine._actions = [['mock_module', mock_module, {'pipe': 42}]]
         self.CANEngine.start_loop()
-        sleep(1)
+        sleep(3)
         mock_module.do_start.assert_called_once()
 
     def test_start_loop_several(self):
         mock_modules = [Mock() for _ in range(10)]
         self.CANEngine._actions = [['mock_module%d' % i, mock_module, {'pipe': 42}] for i, mock_module in enumerate(mock_modules)]
         self.CANEngine.start_loop()
-        sleep(1)
+        sleep(3)
         for mock_module in mock_modules:
             mock_module.do_start.assert_called_once()
 
@@ -118,13 +118,13 @@ class TestEngine(TestCANToolz):
         mock_module = Mock()
         self.CANEngine._actions = [['mock_module', mock_module, {'pipe': 42}]]
         self.CANEngine.exit()
-        sleep(1)
+        sleep(3)
         mock_module.do_exit.assert_called_once()
 
     def test_exit_several(self):
         mock_modules = [Mock() for _ in range(10)]
         self.CANEngine._actions = [['mock_module%d' % i, mock_module, {'pipe': 42}] for i, mock_module in enumerate(mock_modules)]
         self.CANEngine.exit()
-        sleep(1)
+        sleep(3)
         for mock_module in mock_modules:
             mock_module.do_exit.assert_called_once()
