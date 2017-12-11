@@ -1,5 +1,4 @@
-import sleep
-
+from time import sleep
 from unittest.mock import Mock
 
 from .utils import TestCANToolz
