@@ -1,7 +1,7 @@
 modules = {
     'io/hw_USBtin':    {'port':'auto', 'debug':2, 'speed':500},  # IO hardware module
 
-    'ecu_controls':
+    'can_control':
         {'bus':'BMW_F10',
 
         'commands':[
@@ -39,6 +39,6 @@ modules = {
 
 # Now let's describe the logic of this test
 actions = [
-    {'ecu_controls'     : {}},
+    {'can_control'     : {}},
     {'hw_USBtin':    {'action':'write','pipe': 1}}
     ]
