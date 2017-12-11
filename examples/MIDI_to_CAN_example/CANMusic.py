@@ -28,7 +28,7 @@ except:
     print("gg hf")
 
 CANEngine.stop_loop()
-CANEngine.engine_exit()
+CANEngine.exit()
 
 while CANEngine.status_loop:
     time.sleep(0.000001)

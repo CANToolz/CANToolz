@@ -126,6 +126,6 @@ class CANToolzCLI(cmd.Cmd):
         """Quit CANToolz"""
         print('Exiting CANToolz. Please wait... ', end='')
         self.can_engine.stop_loop()
-        self.can_engine.engine_exit()
+        self.can_engine.exit()
         print('Done')
         raise SystemExit

@@ -109,15 +109,15 @@ class TestEngine(TestCANToolz):
         modules = self.CANEngine.modules
         self.assertTrue(modules == {'mock_module': 42})
 
-    def test_engine_exit(self):
+    def test_exit(self):
         mock_module = Mock()
         self.CANEngine._actions = [['mock_module', mock_module, {'pipe': 42}]]
-        self.CANEngine.engine_exit()
+        self.CANEngine.exit()
         mock_module.do_exit.assert_called_once()
 
-    def test_engine_exit_several(self):
+    def test_exit_several(self):
         mock_modules = [Mock() for _ in range(10)]
         self.CANEngine._actions = [['mock_module%d' % i, mock_module, {'pipe': 42}] for i, mock_module in enumerate(mock_modules)]
-        self.CANEngine.engine_exit()
+        self.CANEngine.exit()
         for mock_module in mock_modules:
             mock_module.do_exit.assert_called_once()

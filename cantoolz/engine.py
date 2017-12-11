@@ -110,7 +110,7 @@ class CANSploit:
             return 'Module {} not found!'.format(index)
         return self._actions[index][1].raw_write(params)
 
-    def engine_exit(self):
+    def exit(self):
         """Exit CANToolz engine by exiting all the loaded modules."""
         for name, module, params in self._actions:
             self.dprint(2, "exit for " + name)

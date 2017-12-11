@@ -94,7 +94,7 @@ def main():
         except KeyboardInterrupt:
             print("Please wait... (do not press ctr-c again!)")
             can_engine.stop_loop()
-            can_engine.engine_exit()
+            can_engine.exit()
             print("gg bb")
             exit()
 
