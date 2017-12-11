@@ -5,6 +5,7 @@ from cantoolz.stream.forced_sampler import ForcedSampler
 
 class TestForcedSampler(unittest.TestCase):
 
+    @unittest.skip('waiting for #7 to be fixed.')
     def test_process(self):
         sampler = ForcedSampler(1, lambda x: x)
 
