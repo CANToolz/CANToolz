@@ -125,10 +125,11 @@ class CAN:
 
     @property
     def raw(self):
-        """"Representation of CAN data in bits.
+        """"Representation of CAN data in bytes.
 
-        :return: Byte array representing the CAN frame
-        :rtype: bytearray"""
+        :return: Bytes representing the CAN frame (id + length + data)
+        :rtype: bytes
+        """
         if self._data is None:
             return self.raw_id + self.raw_length
         return self.raw_id + self.raw_length + self.raw_data
@@ -162,7 +163,8 @@ class CAN:
         """"Representation of CAN data in bits.
 
         :return: Bits representation of CAN data
-        :rtype: bitstring.BitArray"""
+        :rtype: bitstring.BitArray
+        """
         fill = 8 - self._length
         bits_array = '0b' + '0' * fill * 8
         for byte in self._data:
