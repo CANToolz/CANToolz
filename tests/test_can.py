@@ -10,15 +10,15 @@ class TestCan(unittest.TestCase):
     def test_init(self):
         # Init CAN without any parameters
         can = CAN()
-        self.assertTrue(can.id == 0 and can.length is None and can.data is None and can.mode == CAN.STANDARD and can.type == CAN.DATA and can.bus == 'Default' and can.debug == None)
+        self.assertTrue(can.id == 0 and can.length is None and can.data is None and can.mode == CAN.STANDARD and can.type == CAN.DATA and can.bus == 'Default' and can.debug is None)
         # Standard
         can = CAN(id=1, length=1, data=[1])
-        self.assertTrue(can.id == 1 and can.length == 1 and can.data == [1] and can.mode == CAN.STANDARD and can.type == CAN.DATA and can.bus == 'Default' and can.debug == None)
+        self.assertTrue(can.id == 1 and can.length == 1 and can.data == [1] and can.mode == CAN.STANDARD and can.type == CAN.DATA and can.bus == 'Default' and can.debug is None)
         # Extended
         can = CAN(id=1, length=1, data=[1], mode=CAN.EXTENDED)
         self.assertTrue(can.id == 1 and can.length == 1 and can.data == [1] and can.mode == CAN.EXTENDED)
         can = CAN(id=0x800, length=1, data=[1])
-        self.assertTrue(can.id == 0x800 and can.length == 1 and can.data == [1] and can.mode == CAN.EXTENDED and can.type == CAN.DATA and can.bus == 'Default' and can.debug == None)
+        self.assertTrue(can.id == 0x800 and can.length == 1 and can.data == [1] and can.mode == CAN.EXTENDED and can.type == CAN.DATA and can.bus == 'Default' and can.debug is None)
 
     def test_attributes(self):
         can = CAN()
