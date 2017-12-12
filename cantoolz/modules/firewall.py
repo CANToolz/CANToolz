@@ -8,15 +8,26 @@ class firewall(CANModule):
 
     This module block CAN messages by ID.
 
-    Init parameters:  None
+    Init parameters: None
 
     Module parameters:
+        - 'white_list': [0x1, 0x2]  # List of CAN IDs that should be let through
+        - 'black_list': [0x3, 0x4]  # List of CAN IDs that should be blocked
+        - 'white_body': [[1, 2, 3, 4, 5, 6, 7, 8]]  # List of CAN message body that should be let through
+        - 'black_body': [[8, 7, 6, 5, 4, 3, 2, 1]]  # List of CAN message body that should be blocked
+        - 'hex_white_body': ['1122334455667788']  # List of CAN message body (in hex) that should be let through
+        - 'hex_black_body': ['8877665544332211']  # List of CAN message body (in hex) that should be blocked
+        - 'white_bus': ['pipe1', 'pipe2']  # List of pipes that should be let through
+        - 'black_bus': ['pipe3', 'pipe4']  # List of pipes that should be blocked
 
-      'white_list' - list of ID that should be filtered
-      'black_list' - list of ID that should not be filtered
-      'pipe'       - integer, 1 or 2 - from which pipe to print, default 1
+    Example:
+        {'white_list': [133,111]}
 
-      Example: {'white_list':[133,111]}
+        {'black_body': [[42, 42, 42, 42], [11, 22, 33, 44, 55, 66, 77, 88]]}
+
+        {'hex_white_body': ['1011121314', '0102030405060708]}
+
+        {'black_bus': ['hw_USBTin']}
 
     """
 

@@ -8,20 +8,35 @@ from cantoolz.module import CANModule
 
 class ping(CANModule):
 
-    name = "Sending CAN pings"
+    name = "Sending CAN ping messages"
     help = """
 
-    This module doing ID buteforce.
-    (combine with analyze for example)
+    This module allows brute-forcing CAN messages by CAN ID (could be combined with `analyze` for example).
+
     Init parameters: None
+
     Module parameters:
-       body           -  data HEX that will be used in CAN for discovery (by default body is 0000000000000000)
-       mode           -  by default CAN, but also support ISOTP and UDS
-       range          -  [0,1000] - ID range
-       delay          - delay between frames (0 by default)
-         {'body':'0011223344556677889900aabbccddeeff','mode':'isotp'}  ; ISO-TP
-         {'body':'001122334455667788','mode':'CAN'}  ; ISO-TP
-         {'services':[{'service':0x01, 'sub':0x0d},{'service':0x09, 'sub':0x02},{'service':0x2F, 'sub':0x03, 'data':[7,3,0,0]}],'mode':'UDS'}  ; UDS
+        - 'mode': 'CAN'                   # CAN protocol to use ('CAN', 'ISOTP' or 'UDS')
+        - 'body': '1122334455667788'      # CAN frame hex data sent during the discovery (default: 0000000000000000)
+        - 'padding': '42'                 # Padding for CAN message data (default: no padding)
+        - 'shift': 0                      # UDS shift value (default: 0x8)
+        - 'services':                     # UDS services to brute-force
+            - 'service':                  # UDS service ID to brute-force
+            - 'sub':                      # UDS service's sub-function ID/range of IDs to brute-force
+            - 'data': '1122334455667788'  # CAN frame hex data for UDS service brute-force
+        - 'range': [0, 1000]              # CAN message ID range to brute-force
+        - 'delay': 0                      # Delay in second between each frame (0 by default)
+
+    Examples:
+        {'body': '0011223344556677889900aabbccddeeff', 'padding': '0', 'mode': 'isotp'}  # ISO-TP
+
+        {'body': '001122334455667788', 'range': [0, 0x7ff], 'mode': 'CAN'}  # CAN
+
+        {'services':[
+            {'service': 0x01, 'sub': '0x0 - 0xd'},
+            {'service': 0x09, 'sub': None},
+            {'service': 0x2F, 'sub': 3, 'data': [7,3,0,0]}],
+            'mode':'UDS'}  # UDS
     """
 
     queue_messages = []

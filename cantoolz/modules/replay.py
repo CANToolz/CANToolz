@@ -9,14 +9,18 @@ class replay(CANModule):
     name = "Replay module"
     help = """
 
-    This module doing replay of captured packets.
+    This module allows loading/saving CAN messages for replay.
 
     Init parameters:
-        load_from  - load packets from file (optional)
-        save_to    - save to file (mod_replay.save by default)
+        - 'load_from': 'filename'  # Load packets from file (optional)
+        - 'save_to': 'filename'    # Save to file (mod_replay.save by default)
 
     Module parameters: none
-        delay  - delay between frames (0 by default)
+        - 'delay': 0               # Delay in second between each frame (0 by default)
+        - 'ignore_time': False     # Ignore the CAN message timestamps during replay
+
+    Example:
+        {'delay': .2}
 
     """
 

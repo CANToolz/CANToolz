@@ -7,17 +7,15 @@ class pipe_switch(CANModule):
     name = "Switch between pipes"
     help = """
 
-    This module can read /write/store ONE can message.
+    This module can read/write/store one single CAN message.
 
-    Init parameters:  None
+    Init parameters: None
 
     Module parameters:
+        - 'action': 'read'  # Read ('read') or write ('write') on CAN message to the buffer
 
-      'action' - read or write
-            'read'  - read and store one CAN message to buffer
-            'write' - write one CAN message from buffer
-
-      Example: {'action':'read'}
+    Example:
+        {'action':'read'}
 
     """
 
