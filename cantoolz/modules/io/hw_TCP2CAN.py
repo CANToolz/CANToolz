@@ -77,7 +77,7 @@ class CustomTCPClient:
 
                 self._access_out.clear()
             except Exception as e:
-                self.self.set_error_text('TCPClient: recv response error:' + str(e))
+                self.selfx.set_error_text('TCPClient: recv response error:' + str(e))
                 traceback.print_exc()
 
     def write_can(self, can_frame):
