@@ -296,3 +296,4 @@ class hw_CANBusTriple(CANModule):
                 self.dprint(2, "WRITE: {}".format(can))
             else:
                 self.dprint(0, 'WRITE: Invalid bus id {}'.format(bus))
+        return can

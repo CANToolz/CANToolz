@@ -110,3 +110,4 @@ class hw_CANSocket(CANModule):
             buf += b'0' * (8 - can.length)
             self.socket.send(buf)
             self.dprint(2, "WRITE: " + self.get_hex(buf))
+        return can
