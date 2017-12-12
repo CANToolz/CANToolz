@@ -129,20 +129,19 @@ class replay(CANModule):
         return "Loaded packets: " + ret
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
-    def do_effect(self, can_msg, args):
-        if self._sniff and can_msg.CANData:
-            self.CANList.append(can_msg)
-        elif self._replay and not can_msg.CANData:
+    def do_effect(self, can, args):
+        if self._sniff and can.data is not None:
+            self.CANList.append(can)
+        elif self._replay and can.data is None:
             d_time = float(args.get('delay', 0))
             ignore = bool(args.get('ignore_time', False))
             try:
-                next_msg = self.CANList.next(d_time, ignore)
-                if next_msg and next_msg.CANData:
-                    can_msg.CANFrame = next_msg.CANFrame
+                next_can = self.CANList.next(d_time, ignore)
+                if next_can and next_can.data is not None:
+                    can = next_can
                     self._num1 += 1
-                    can_msg.CANData = True
                     self._last += 1
-                can_msg.bus = self._bus
+                can.bus = self._bus
                 self._status = self._last / (self._full / 100.0)
             except Exception:
                 self._replay = False
@@ -152,4 +151,4 @@ class replay(CANModule):
                 self._replay = False
                 self.commands['g'].is_enabled = True
                 self.CANList.reset()
-        return can_msg
+        return can

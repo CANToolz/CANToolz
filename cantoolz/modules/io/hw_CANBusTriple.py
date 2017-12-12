@@ -4,7 +4,7 @@ import struct
 import serial
 import serial.tools.list_ports
 
-from cantoolz.can import CANMessage
+from cantoolz.can import CAN
 from cantoolz.module import CANModule, Command
 
 
@@ -228,77 +228,72 @@ class hw_CANBusTriple(CANModule):
         self._serialPort.write(bytes.fromhex(data))
         return ""
 
-    def do_effect(self, can_msg, args):  # read full packet from serial port
+    def do_effect(self, can, args):  # read full packet from serial port
         if args.get('action') == 'read':
-            can_msg = self.do_read(can_msg, args)
+            can = self.do_read(can, args)
         elif args.get('action') == 'write':
-            self.do_write(can_msg, args)
+            can = self.do_write(can, args)
         else:
             self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
             self.set_error_text('Command ' + args['action'] + ' not implemented 8(')
-        return can_msg
+        return can
 
-    def do_read(self, can_msg, args):
+    def do_read(self, can, args):
         data = b""
         counter = 0
         r_bus = int(args.get("bus", 0))
 
         if 0 < r_bus < 4:
             if len(self._queue[r_bus - 1]) > 0:
-                if not can_msg.CANData and not can_msg.debugData:
-                    can_msg.CANFrame = self._queue[r_bus - 1].pop(0)
-                    can_msg.bus = r_bus
-                    can_msg.CANData = True
-                    print("BUS " + str(r_bus))
-                    print("POP: " + str(can_msg.CANFrame))
+                if can.data is None and not can.debug:
+                    can = self._queue[r_bus - 1].pop(0)
+                    can.bus = r_bus
+                    self.dprint(3, 'BUS: {}'.format(str(r_bus)))
+                    self.dprint(3, 'POP: {}'.format(str(can)))
             elif self._serialPort.inWaiting() > 0:
-                while not can_msg.CANData and not can_msg.debugData:
+                while can.data is None and not can.debug:
                     byte = self._serialPort.read(1)
                     if byte == b"":
                         break
-
                     data += byte
                     counter += 1
 
                     if data[-2:] == b"\r\n":  # End
                         if data[0:1] == b'\x03' and counter == 16:  # Packet received
-
                             tmp_data = data[2:-3]
 
-                            _id = struct.unpack("!H", tmp_data[0:2])[0]  # TODO: ADD SUPPORT EXTENDED and RTR
-                            _data = tmp_data[2:-1]
-                            _length = tmp_data[-1]
+                            id = struct.unpack("!H", tmp_data[0:2])[0]  # TODO: ADD SUPPORT EXTENDED and RTR
+                            data = tmp_data[2:-1]
+                            length = tmp_data[-1]
                             bus = (struct.unpack("B", data[1:2])[0])
                             if r_bus == bus:
-                                can_msg.CANFrame = CANMessage(_id, _length, _data, False, CANMessage.DataFrame)
-                                can_msg.bus = str(self._bus) + '_' + str(bus)
-                                can_msg.CANData = True
-                                print("BUS " + str(r_bus))
-                                print("MESS:" + str(_id) + " " + str(_length) + " " + self.get_hex(_data))
-                                print(self.get_hex(tmp_data))
+                                can.init(id=id, length=length, data=data, bus='{}_{}'.format(self._bus, bus))
+                                self.dprint(3, 'BUS: {}'.format(r_bus))
+                                self.dprint(3, 'MESS: {}'.format(can))
                             else:
-                                self._queue[bus - 1].append(CANMessage(_id, _length, _data, False, CANMessage.DataFrame))
-                                print("BUS " + str(r_bus))
-                                print("QUEU:" + str(_id) + " " + str(_length) + " " + self.get_hex(_data))
-                                print(self.get_hex(tmp_data))
+                                new_can = CAN(id=id, length=length, data=data, bus=bus)
+                                self._queue[bus - 1].append(new_can)
+                                self.dprint(3, 'BUS: {}'.format(r_bus))
+                                self.dprint(3, 'QUEUE: {}'.format(new_can))
                         elif data[0:1] == b'{' and data[-3:-2] == b'}':  # Debug info
-                            can_msg.debugData = True
-                            can_msg.debugText = {'text': data.decode("ISO-8859-1")}
+                            can.debug = {'text': data.decode("ISO-8859-1")}
                         else:
                             break
+                        self.dprint(2, "READ: {}".format(str(can)))
+        return can
 
-                        self.dprint(2, "READ: " + self.get_hex(data))
-        return can_msg
-
-    def do_write(self, can_msg, params):
-        if can_msg.CANData and not can_msg.CANFrame.frame_ext and can_msg.CANFrame.frame_type == CANMessage.DataFrame:  # Only 11 bit support now..., only DataFrame
-            bs = int(params.get('bus', '0'))
-            if 0 < bs < 4:
-                write_buf = b"\x02" + struct.pack("B", bs) + can_msg.CANFrame.frame_raw_id + \
-                    can_msg.CANFrame.frame_raw_data + \
-                    (b"\x00" * (8 - can_msg.CANFrame.frame_length)) + \
-                    can_msg.CANFrame.frame_raw_length
-                print("NUL:" + str(8 - can_msg.CANFrame.frame_length))
-                print(str(can_msg.CANFrame.frame_raw_data))
-                self._serialPort.write(write_buf)
-                self.dprint(2, "WRITE: " + self.get_hex(write_buf))
+    def do_write(self, can, params):
+        # Only 11 bit data frame are supported for now.
+        # TODO: Add support for other frame types/modes (remote, extended, etc.)
+        if can.data is not None and can.mode != CAN.EXTENDED and can.type == CAN.DATA:
+            bus = int(params.get('bus', '0'))
+            if 0 < bus < 4:
+                buf = b'\x02' + struct.pack('B', bus)
+                buf += can.raw_id + can.raw_data
+                buf += b'\x00' * (8 - can.length)
+                buf += can.raw_length
+                self._serialPort.write(buf)
+                self.dprint(2, "WRITE: {}".format(can))
+            else:
+                self.dprint(0, 'WRITE: Invalid bus id {}'.format(bus))
+        return can

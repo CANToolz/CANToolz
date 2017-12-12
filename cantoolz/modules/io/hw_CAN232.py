@@ -13,7 +13,7 @@ import struct
 import binascii
 
 from cantoolz import can232
-from cantoolz.can import CANMessage
+from cantoolz.can import CAN
 from cantoolz.module import CANModule, Command
 
 
@@ -125,7 +125,6 @@ class hw_CAN232(CANModule):
             frame = self._C232.read_frame()
             if not frame or not self._C232.is_valid_frame(frame):
                 continue
-            can.bus = self._bus
             self.dprint(1, 'New frame: {0} (hex: {1})'.format(frame, self.get_hex(frame)))
             if frame.startswith((can232.CMD_TRANSMIT_STD, can232.CMD_TRANSMIT_RTR_STD)):  # 11bit CAN frame
                 id = struct.unpack('!H', binascii.unhexlify(frame[1:4].zfill(4)))[0]
@@ -133,38 +132,36 @@ class hw_CAN232(CANModule):
                 if frame.startswith(can232.CMD_TRANSMIT_STD):  # RTR frames don't have data
                     # TODO: Handle timestamp in frame if timestamp enabled..
                     data = list(binascii.unhexlify(frame[5:]))
-                    type = CANMessage.DataFrame
+                    type = CAN.DATA
                 else:
                     # TODO: Handle timestamp in frame if timestamp enabled..
-                    type = CANMessage.RemoteFrame
-                can.CANFrame = CANMessage(id, length, data, False, type)
-                can.CANData = True
+                    type = CAN.REMOTE
+                can.init(id=id, length=length, data=data, mode=CAN.STANDARD, type=type, bus=self._bus)
             elif frame.startswith((can232.CMD_TRANSMIT_EXT, can232.CMD_TRANSMIT_RTR_EXT)):  # 29bit CAN frame
                 id = struct.unpack('!I', binascii.unhexlify(frame[1:9]))[0]
                 length = int(frame[9:10], 16)
                 if frame.startswith(can232.CMD_TRANSMIT_EXT):  # RTR frames don't have data
                     # TODO: Handle timestamp in frame if timestamp enabled..
                     data = list(binascii.unhexlify(frame[10:]))
-                    type = CANMessage.DataFrame
+                    type = CAN.DATA
                 else:
                     # TODO: Handle timestamp in frame if timestamp enabled..
-                    type = CANMessage.RemoteFrame
-                can.CANFrame = CANMessage(id, length, data, True, type)
-                can.CANData = True
+                    type = CAN.REMOTE
+                can.init(id=id, length=length, data=data, mode=CAN.EXTENDED, type=type, bus=self._bus)
         return can
 
     def do_write(self, can, params):
         """Write to the hardware."""
-        if can.CANFrame.frame_type == CANMessage.DataFrame:
-            if not can.CANFrame.frame_ext:  # 11bit frame
-                self._C232.transmit(can.CANFrame.to_hex(), mode=can232.CAN_STANDARD)
+        if can.type == CAN.DATA:
+            if can.mode == CAN.STANDARD:  # 11bit frame
+                self._C232.transmit(can.raw, mode=can232.CAN_STANDARD)
             else:  # 29bit frame
-                self._C232.transmit(can.CANFrame.to_hex(), mode=can232.CAN_EXTENDED)
-        elif can.CANFrame.frame_type == CANMessage.RemoteFrame:
-            if not can.CANFrame.frame_ext:  # 11bit RTR frame
-                self._C232.transmit(can.CANFrame.to_hex(), mode=can232.CAN_RTR_STANDARD)
-            else:  # 29bit RTR frame
-                self._C232.transmit(can.CANFrame.to_hex(), mode=can232.CAN_RTR_EXTENDED)
+                self._C232.transmit(can.raw, mode=can232.CAN_EXTENDED)
+        elif can.type == CAN.REMOTE:
+            if can.mode == CAN.STANDARD:  # 11bit remote standard frame
+                self._C232.transmit(can.raw, mode=can232.CAN_RTR_STANDARD)
+            else:  # 29bit remote extended frame
+                self._C232.transmit(can.raw, mode=can232.CAN_RTR_EXTENDED)
         return can
 
     def do_effect(self, can, params):
@@ -173,8 +170,8 @@ class hw_CAN232(CANModule):
         if action == 'read':
             can = self.do_read(can, params)
         elif action == 'write':
-            if can.CANData:
-                self.do_write(can, params)
+            if can.data is not None:
+                can = self.do_write(can, params)
         else:
             self.dprint(0, 'Action {0} not implemented'.format(action))
         return can

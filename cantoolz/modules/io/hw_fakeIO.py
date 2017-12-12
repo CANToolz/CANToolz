@@ -1,6 +1,4 @@
-import copy
-
-from cantoolz.can import CANMessage
+from cantoolz.can import CAN
 from cantoolz.module import CANModule, Command
 
 
@@ -42,28 +40,27 @@ class hw_fakeIO(CANModule):
         fid = line.split(":")[0]
         length = line.split(":")[1]
         data = line.split(":")[2]
-        self.CANList.append(CANMessage.init_data(int(fid), int(length), bytes.fromhex(data)[:int(length)]))
-        return ""
+        self.CANList.append(CAN(id=int(fid), length=int(length), data=bytes.fromhex(data)[:int(length)]))
+        return ''
 
-    def do_effect(self, can_msg, args):  # read full packet from serial port
+    def do_effect(self, can, args):  # read full packet from serial port
         if args.get('action') == 'read':
-            can_msg = self.do_read(can_msg)
+            can = self.do_read(can)
         elif args.get('action') == 'write':
-            self.do_write(can_msg)
+            can = self.do_write(can)
         else:
             self.dprint(1, 'Command ' + args['action'] + ' not implemented 8(')
-        return can_msg
+        return can
 
-    def do_write(self, can_msg):
+    def do_write(self, can):
         if len(self.CANList) > 0:
-            can_msg.CANData = True
-            can_msg.CANFrame = self.CANList.pop(0)
-            can_msg.bus = self._bus
-            self.dprint(2, "Got message!")
-        return can_msg
+            can = self.CANList.pop(0)
+            can.bus = self._bus
+            self.dprint(2, 'Got message: {}!'.format(can))
+        return can
 
-    def do_read(self, can_msg):
-        if can_msg.CANData:
-            self.CANList.append(copy.deepcopy(can_msg.CANFrame))
-            self.dprint(2, "Wrote message!")
-        return can_msg
+    def do_read(self, can):
+        if can.data is not None:
+            self.CANList.append(can)
+            self.dprint(2, 'Wrote message: {}'.format(can))
+        return can

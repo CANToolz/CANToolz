@@ -2,13 +2,14 @@ import os
 import sys
 import glob
 import time
+import copy
 import logging
 import threading
 import collections
 
 from importlib.machinery import SourceFileLoader
 
-from cantoolz.can import CANSploitMessage
+from cantoolz.can import CAN
 
 
 class CANSploit:
@@ -81,7 +82,13 @@ class CANSploit:
                 # If the pipe is newly created, initialize it with an empty CAN message. The CAN message will be further
                 # processed by the loaded modules on the same pipe.
                 if pipe_name not in pipes:
-                    pipes[pipe_name] = CANSploitMessage()
+                    pipes[pipe_name] = CAN()
+                else:
+                    # Create a copy of the CAN frame to avoid a module B modifying a CAN frame stored by module A. For
+                    # instance, if module B do can.data = None, module A will see the CAN frame it stored before become
+                    # can.data = None as well
+                    # FIXME: Does it have a great impact on performance? If so, what would be a better way to do that?
+                    pipes[pipe_name] = copy.deepcopy(pipes[pipe_name])
                 self.dprint(2, "DO EFFECT" + name)
                 # Call module processing method and store the modified CAN message back to its pipe, so that next
                 # module can continue processing the message.

@@ -1,7 +1,7 @@
 import copy
 import time
 
-from cantoolz.can import CANSploitMessage, CANMessage
+from cantoolz.can import CAN
 
 
 class Replay:
@@ -30,27 +30,27 @@ class Replay:
     def restart_time(self, shift=.0):
         self._last = time.clock() - shift
 
-    def append_time(self, times, can_msg):
-        if can_msg.CANData:
-            self._stream.append([times, copy.deepcopy(can_msg)])
+    def append_time(self, times, can):
+        if can.data is not None:
+            self._stream.append([times, copy.deepcopy(can)])
             self._size += 1
 
-    def append(self, can_msg):
-        if can_msg.CANData:
-            self._stream.append([self.passed_time(), copy.deepcopy(can_msg)])
+    def append(self, can):
+        if can.data is not None:
+            self._stream.append([self.passed_time(), copy.deepcopy(can)])
             self._size += 1
 
-        elif can_msg.debugData:
-            self._stream.append([0.0, copy.deepcopy(can_msg)])
+        elif can.debug:
+            self._stream.append([0.0, copy.deepcopy(can)])
 
     def set_index(self, i=0):
         if i < len(self):
             self._curr = 0
             curr_can = 0
             for x in self._stream:
-                if i == curr_can and x[1].CANData:
+                if i == curr_can and x[1].data:
                     break
-                elif x[1].CANData:
+                elif x[1].data:
                     curr_can += 1
                 self._curr += 1
 
@@ -58,22 +58,20 @@ class Replay:
         curr_can = 0
 
         for x in self._stream:
-            if cnt == curr_can and x[1].CANData:
-                return x[0], x[1].CANFrame
-            elif x[1].CANData:
+            if cnt == curr_can and x[1].data:
+                return x[0], x[1]
+            elif x[1].data:
                 curr_can += 1
 
         return None, None
 
     def add_timestamp(self, def_time=None):
-        msg = CANSploitMessage()
+        msg = CAN()
         if not def_time:
-            msg.debugText = str(time.time())
+            msg.debug = str(time.time())
         else:
-            msg.debugText = str(def_time)
-        msg.CANFrame = None
-        msg.CANData = False
-        msg.debugData = True
+            msg.debug = str(def_time)
+        msg.data = None
         msg.bus = "TIMESTAMP"
         self._pre_last = 0
         self.restart_time()
@@ -85,7 +83,7 @@ class Replay:
     def next(self, offset=0, notime=True):
         if self._curr < len(self._stream):
             if notime:
-                if self._stream[self._curr][1].CANData:
+                if self._stream[self._curr][1].data:
                     ret = self._stream[self._curr][1]
                     self._curr += 1
                     return copy.deepcopy(ret)
@@ -93,7 +91,7 @@ class Replay:
                     self._curr += 1
                     return None
             else:
-                if self._stream[self._curr][1].debugData:
+                if self._stream[self._curr][1].debug:
                     self.restart_time()
                     self._pre_last = 0
                     self._curr += 1
@@ -172,11 +170,8 @@ class Replay:
                             data = data[:-1]
                         if data[-1:] == "\r":
                             data = data[:-1]
-                        msg = CANSploitMessage()
-                        msg.CANFrame = CANMessage.init_data(num_fid, int(length), bytes.fromhex(data)[:8])
-                        msg.CANData = True
-                        msg.bus = _bus
-                        self._stream.append([time_stamp, msg])
+                        can = CAN(id=num_fid, length=int(length), data=bytes.fromhex(data)[:8], bus=_bus)
+                        self._stream.append([time_stamp, can])
                         self._size += 1
         except Exception as e:
             print(str(e))
@@ -185,18 +180,18 @@ class Replay:
 
     def remove_by_id(self, idf):
         i = 0
-        for times, msg in self._stream:
-            if msg.CANData and msg.CANFrame.frame_id == idf:
-                self._stream[i][1].CANData = False
+        for times, can in self._stream:
+            if can.data is not None and can.id == idf:
+                self._stream[i][1].data = None
                 self._size -= 1
             i += 1
 
     def search_messages_by_id(self, idf):
         i = 0
         ret = []
-        for times, msg in self._stream:
-            if msg.CANData and msg.CANFrame.frame_id == idf:
-                ret.append(msg.CANFrame.frame_raw_data)
+        for times, can in self._stream:
+            if can.data is not None and can.id == idf:
+                ret.append(can.raw_data)
             i += 1
         return ret
 
@@ -218,17 +213,17 @@ class Replay:
             try:
                 _file = open(fname, 'w')
                 curr = 0
-                for times, msg in self._stream:
+                for times, can in self._stream:
                     if curr < _num1:
                         continue
                     elif curr >= _num2:
                         break
 
-                    if not msg.debugData and msg.CANData:
-                        _file.write((("[" + str(times) + "]") if times >= 0.0 else "") + msg.CANFrame.get_text() + "\n")
+                    if not can.debug and can.data is not None:
+                        _file.write((("[" + str(times) + "]") if times >= 0.0 else "") + str(can) + "\n")
                         curr += 1
-                    elif msg.debugData:
-                        _file.write("<" + str(msg.debugText) + ">\n")
+                    elif can.debug:
+                        _file.write("<" + str(can.debug) + ">\n")
 
                 _file.close()
             except Exception as e:

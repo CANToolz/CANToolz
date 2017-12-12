@@ -1,6 +1,6 @@
 import time
 
-from cantoolz.can import CANMessage
+from cantoolz.can import CAN
 from cantoolz.uds import UDSMessage
 from cantoolz.isotp import ISOTPMessage
 from cantoolz.module import CANModule
@@ -120,7 +120,7 @@ class ping(CANModule):
                 iso_list.reverse()
                 self.queue_messages.extend(iso_list)
             elif iso_mode == 0:
-                self.queue_messages.append(CANMessage.init_data(i, len(data), data[:8]))
+                self.queue_messages.append(CAN(id=i, length=len(data), data=data[:8]))
             elif iso_mode == 2:
                 for service in args.get('services', []):
                     uds_m = UDSMessage(shift, padding)
@@ -138,23 +138,22 @@ class ping(CANModule):
         self._full = len(self.queue_messages)
         self._last = 0
 
-    def do_effect(self, can_msg, args):
+    def do_effect(self, can, args):
         d_time = float(args.get('delay', 0))
-        if not can_msg.CANData:
+        if can.data is None:
             if d_time > 0:
                 if time.clock() - self.last >= d_time:
                     self.last = time.clock()
-                    can_msg.CANFrame = self.do_ping(args)
-
+                    # Either get the last ping CAN message or pass along the current CAN message if no ping messages.
+                    can = self.do_ping(args) or can
                 else:
-                    can_msg.CANFrame = None
+                    can.data = None
             else:
-                can_msg.CANFrame = self.do_ping(args)
+                # Either get the last ping CAN message or pass along the current CAN message if no ping messages.
+                can = self.do_ping(args) or can
 
-            if can_msg.CANFrame and not can_msg.CANData:
-                can_msg.CANData = True
-                can_msg.bus = self._bus
+            if can and can.data is None:
+                can.bus = self._bus
                 self._last += 1
                 self._status = self._last / (self._full / 100.0)
-
-        return can_msg
+        return can

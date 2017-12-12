@@ -9,7 +9,7 @@ class Subnet(Processor):
         self._device_builder = device_builder
 
     def process(self, message) -> Iterable:
-        stream = str(message) + ":" + str(len(message))
+        stream = hex(message.id) + ":" + str(len(message))
         if stream not in self._devices:
             self._devices[stream] = self._device_builder(stream)
 

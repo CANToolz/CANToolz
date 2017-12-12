@@ -1,4 +1,4 @@
-from cantoolz.can import CANMessage
+from cantoolz.can import CAN
 from cantoolz.module import CANModule, Command
 
 
@@ -44,17 +44,15 @@ class simple_io(CANModule):
             length = int(frame[1].strip())
             data = bytes.fromhex(frame[2].strip())
         else:
-            return "Bad format"
-
-        self.can_buffer_write.append(CANMessage.init_data(fid, length, data))
-        return "Added to queue"
+            return 'Bad format'
+        self.can_buffer_write.append(CAN(id=fid, length=length, data=data))
+        return 'Added to queue'
 
     def cmd_read(self):
-        ret = "None"
+        ret = 'None'
         if len(self.can_buffer_read) > 0:
-            msg = self.can_buffer_read.pop(0)
-            ret = hex(msg.frame_id) + ":" + str(msg.frame_length) + ":" + self.get_hex(msg.frame_raw_data)
-
+            can = self.can_buffer_read.pop(0)
+            ret = hex(can.id) + ":" + str(can.length) + ":" + self.get_hex(can.raw_data)
         return ret
 
     def do_start(self, params):
@@ -62,12 +60,10 @@ class simple_io(CANModule):
         self.can_buffer_write = []
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
-    def do_effect(self, can_msg, args):
-        if can_msg.CANData:
-            self.can_buffer_read.append(can_msg.CANFrame)
+    def do_effect(self, can, args):
+        if can.data is not None:
+            self.can_buffer_read.append(can)
         elif len(self.can_buffer_write) > 0:
-            can_msg.CANData = True
-            can_msg.CANFrame = self.can_buffer_write.pop(0)
-            can_msg.bus = self._bus
-
-        return can_msg
+            can = self.can_buffer_write.pop(0)
+            can.bus = self._bus
+        return can

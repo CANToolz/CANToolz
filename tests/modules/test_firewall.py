@@ -15,7 +15,7 @@ class TestFirewall(TestCANToolz):
         time.sleep(1)
         mod = self.CANEngine.actions[index][1].CANList
         self.assertFalse(len(mod) == 0, "We should find message in PIPE")
-        self.assertTrue(mod[-1].frame_id == 4, "We should be able to find ID 4")
+        self.assertTrue(mod[-1].id == 4, "We should be able to find ID 4")
 
         self.CANEngine.actions[index][1].CANList = []
 
@@ -31,7 +31,7 @@ class TestFirewall(TestCANToolz):
         time.sleep(1)
         mod = self.CANEngine.actions[index][1].CANList
         self.assertFalse(len(mod) == 0, "We should find message in PIPE")
-        self.assertTrue(mod[-1].frame_id == 4, "We should be able to find ID 4")
+        self.assertTrue(mod[-1].id == 4, "We should be able to find ID 4")
         self.CANEngine.actions[index][1].CANList = []
 
         self.CANEngine.call_module(0, 't 4:6:010203060505')  # blocked
@@ -50,7 +50,7 @@ class TestFirewall(TestCANToolz):
         time.sleep(1)
         mod = self.CANEngine.actions[index][1].CANList
         self.assertFalse(len(mod) == 0, "We should find message in PIPE")
-        self.assertTrue(mod[-1].frame_id == 4, "We should be able to find ID 4")
+        self.assertTrue(mod[-1].id == 4, "We should be able to find ID 4")
         self.CANEngine.actions[index][1].CANList = []
 
         self.CANEngine.call_module(0, 't 4:5:0102030605')  # blocked
@@ -65,7 +65,7 @@ class TestFirewall(TestCANToolz):
         time.sleep(1)
         mod = self.CANEngine.actions[index][1].CANList
         self.assertFalse(len(mod) == 0, "We should find message in PIPE")
-        self.assertTrue(mod[-1].frame_id == 4, "We should be able to find ID 4")
+        self.assertTrue(mod[-1].id == 4, "We should be able to find ID 4")
         self.CANEngine.actions[index][1].CANList = []
 
         self.CANEngine.call_module(0, 't 4:6:010203060505')  # blocked
@@ -84,7 +84,7 @@ class TestFirewall(TestCANToolz):
         time.sleep(1)
         mod = self.CANEngine.actions[index][1].CANList
         self.assertFalse(len(mod) == 0, "We should find message in PIPE")
-        self.assertTrue(mod[-1].frame_id == 4, "We should be able to find ID 4")
+        self.assertTrue(mod[-1].id == 4, "We should be able to find ID 4")
         self.CANEngine.actions[index][1].CANList = []
 
         self.CANEngine.call_module(0, 't 1:4:11223344')
@@ -96,7 +96,7 @@ class TestFirewall(TestCANToolz):
         self.CANEngine.call_module(0, 't 7:4:11223344')  # pass
         time.sleep(1)
         mod = self.CANEngine.actions[index][1].CANList
-        self.assertTrue(mod[-1].frame_id == 7, "We should be able to find ID 7")
+        self.assertTrue(mod[-1].id == 7, "We should be able to find ID 7")
         self.CANEngine.actions[index][1].CANList = []
 
         self.CANEngine.call_module(0, 't 1:4:11223344')
@@ -113,5 +113,5 @@ class TestFirewall(TestCANToolz):
         self.CANEngine.call_module(0, 't 4:4:11223344')  # pass
         time.sleep(1)
         mod = self.CANEngine.actions[index][1].CANList
-        self.assertTrue(mod[-1].frame_id == 4, "We should be able to find ID 4")
+        self.assertTrue(mod[-1].id == 4, "We should be able to find ID 4")
         self.CANEngine.actions[index][1].CANList = []

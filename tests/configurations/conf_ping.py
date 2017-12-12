@@ -9,4 +9,5 @@ actions = [
     {'ping': {'pipe': 2}},
     {'ping~1': {'pipe': 1}},
     {'hw_fakeIO': {'action': 'write', 'pipe': 2}},
-    {'analyze': {'pipe': 2}}, {'analyze': {'pipe': 1}}]
+    {'analyze': {'pipe': 2}},
+    {'analyze': {'pipe': 1}}]
