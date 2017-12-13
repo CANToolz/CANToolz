@@ -215,7 +215,7 @@ class TestReplay(TestCANToolz):
         # Get current status of analyze
         st = self.CANEngine.call_module(1, 'S')
         print(st)
-        self.assertTrue(0 <= st.find("Sniffed frames (overall): 11"), "Should be 11 packets")
+        self.assertTrue(0 <= st.find('Total sniffed frames: 11'), 'Should be 11 packets')
         # Dump CAN packets sniffed by analyze to file.
         self.CANEngine.call_module(1, 'r tests/data/format.dump')
         self.assertTrue(13.99 < time2 - time1 < 15.99, "Should be around 14 seconds")
@@ -240,7 +240,7 @@ class TestReplay(TestCANToolz):
         self.assertTrue(13.99 < time2 - time1 < 15.99, "Should be around 14 seconds")
         # Get current status of analyze
         st = self.CANEngine.call_module(1, 'S')
-        self.assertTrue(0 <= st.find("Sniffed frames (overall): 11"), "Should be 11 packets")
+        self.assertTrue(0 <= st.find('Total sniffed frames: 11'), 'Should be 11 packets')
 
     def test_replay_meta_add(self):
         self.CANEngine.load_config("tests/configurations/conf_replay_uds.py")

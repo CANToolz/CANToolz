@@ -15,11 +15,11 @@ class TestTCP2CAN(TestCANToolz):
         # Get status of analyze module.
         ret = self.CANEngine.call_module(6, 'S')
         print(ret)
-        self.assertTrue(0 < ret.find("index: 0 sniffed: 12"), "Should be be 12 packets")
+        self.assertTrue(0 < ret.find("index: 0, name: 'start_buffer', sniffed: 12"), "Should be be 12 packets")
         # Replay CAN messages via replay~2.
         self.CANEngine.call_module(8, 'r')
         time.sleep(1)
         # Get status of analyze module.
         ret = self.CANEngine.call_module(1, 'S')
         print(ret)
-        self.assertTrue(0 < ret.find("index: 0 sniffed: 24"), "Should be be 12 packets")
+        self.assertTrue(0 < ret.find("index: 0, name: 'start_buffer', sniffed: 24"), "Should be be 24 packets")

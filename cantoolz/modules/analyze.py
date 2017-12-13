@@ -49,16 +49,20 @@ class analyze(CANModule):
         return "Active status: " + str(self._active)
 
     def get_status(self):
-        return "Current status: " + "\nActive STATCHECK running:" + str(self._active_check) + "\nSniffed frames (overall): " + str(self.get_num(-1)) + "\nCurrent BUFF: index - " + str(self._index) + " name - " + self.all_frames[self._index]['name'] + \
-               "\nAll buffers: \n\t" + \
-            '\n\t'.join([buf['name'] + "\n\t\tindex: " + str(cnt) + ' sniffed: ' + str(len(buf['buf'])) for buf, cnt in zip(self.all_frames, range(0, len(self.all_frames)))])
+        status = 'Current status:\n'
+        status += 'Active STATCHECK running: {}\n'.format(self._active_check)
+        status += 'Total sniffed frames: {}\n'.format(sum(len(buffer['buf']) for buffer in self.all_frames))
+        status += "Current BUFF: index: {}, name: '{}'\n".format(self._index, self.all_frames[self._index]['name'])
+        status += 'All buffers:\n\t'
+        status += '\n\t'.join("index: {}, name: '{}', sniffed: {}".format(index, buf['name'], len(buf['buf'])) for index, buf in enumerate(self.all_frames))
+        return status
 
     def do_init(self, params):
         self.all_frames = [{'name': 'start_buffer', 'buf': Replay()}]
         self.dump_stat = Replay()
         self._index = 0
         self._rep_index = None
-        self.meta_data = {}
+        self.metadata = {}
         self._bodyList = collections.OrderedDict()
         self.shift = params.get('uds_shift', 8)
         self.subnet = Subnet(lambda stream: Separator(SeparatedMessage.builder))
@@ -73,7 +77,7 @@ class analyze(CANModule):
         self._active_check = False
 
         if 'meta_file' in params:
-            self.dprint(1, self.do_load_meta(params['meta_file']))
+            self.dprint(1, self.cmd_load_metadata(params['meta_file']))
 
         self.commands['p'] = Command("Print current table", 1, "[index]", self.do_print, True)
 
@@ -102,10 +106,10 @@ class analyze(CANModule):
 
         self.commands['c'] = Command("Clean table, remove buffers", 0, "", self.do_clean, True)
 
-        self.commands['i'] = Command("Meta-data: add description for frames", 1, "<ID>, <data regex ASCII HEX>, <description>", self.do_add_meta_descr_data, True)
-        self.commands['bits'] = Command("Meta-data: bits fields description", 1, "<ID>, <LEN>, <TYPE>:<LAST BIT INDEX>:<DESCRIPTION>[,...]", self.do_add_meta_bit_data, True)
-        self.commands['l'] = Command("Load meta-data", 1, "<filename>", self.do_load_meta, True)
-        self.commands['z'] = Command("Save meta-data", 1, "<filename>", self.do_save_meta, True)
+        self.commands['i'] = Command("Metadata: add description for frames", 1, "<ID>, <data regex ASCII HEX>, <description>", self.cmd_metadata_frame, True)
+        self.commands['bits'] = Command("Metadata: bit fields description", 1, "<ID>, <LEN>, <TYPE>:<LAST BIT INDEX>:<DESCRIPTION>[,...]", self.cmd_metadata_bit_fields, True)
+        self.commands['l'] = Command("Load meta-data", 1, "<filename>", self.cmd_load_metadata, True)
+        self.commands['z'] = Command("Save meta-data", 1, "<filename>", self.cmd_save_metadata, True)
         self.commands['r'] = Command("Dump buffer (if index is empty then all) in replay format", 1, " <filename>, [index]", self.do_dump_replay, True)
         self.commands['d2'] = Command("Dump buffer (if index is empty then all) in CSV format", 1, " <filename>, [index]", self.do_dump_csv2, True)
         self.commands['d'] = Command("Dump STATS for buffer (if index is empty then all) in CSV format", 1, " <filename>, [index]", self.do_dump_csv, True)
@@ -126,67 +130,88 @@ class analyze(CANModule):
         self.shift = value
         return 'UDS shift: {}'.format(hex(value))
 
-    def do_add_meta_bit_data(self, input_params):
+    def cmd_metadata_bit_fields(self, params):
+        """Add metadata description for bit fields."""
         try:
-            fid, leng = input_params.split(',')[0:2]
-            descr = input_params.split(',')[2:]
-            num_fid = int(fid.strip(), 0)  # Auto detect the base.
-            if 'bits' not in self.meta_data:
-                self.meta_data['bits'] = {}
-            bits_X = []
-            for dsc in descr:
-                bits_X.append({dsc.split(":")[0].strip(): {int(dsc.split(":")[1]): dsc.split(":")[2].strip()}})
-            self.meta_data['bits'][(num_fid, int(leng))] = bits_X
+            fid, length, descriptions = map(str.strip, params.split(',', 2))
+            fid = int(fid, 0)  # Auto-detect base.
+            length = int(length)
+        except ValueError as e:
+            return "Fields data META '{}' error: {}".format(params, e)
+        if 'bits' not in self.metadata:
+            self.metadata['bits'] = {}
+        bits = []
+        for description in descriptions:
+            try:
+                type, index_last_bit, bit_description = description.split(':')[:2]
+                bits.append({type.strip(): {int(index_last_bit): bit_description.strip()}})
+            except ValueError as e:
+                return "Fields data META '{}' error: {}".format(params, e)
+        self.metadata['bits'][(fid, length)] = bits
+        return 'Fields data has been added successfully'
 
-            return "Fields data has been added"
-        except Exception as e:
-            return "Fields data META '{}' error: {}".format(input_params, e)
-
-    def do_add_meta_descr_data(self, input_params):
+    def cmd_metadata_frame(self, params):
+        """Add metadata description for a CAN frame."""
         try:
-            fid, body, descr = input_params.split(',')
-            num_fid = int(fid.strip(), 0)  # Auto detect the base.
-            if 'description' not in self.meta_data:
-                self.meta_data['description'] = {}
+            fid, body, description = map(str.strip, params.split(','))
+            fid = int(fid, 0)  # Auto-detect base.
+        except ValueError as e:
+            return "Description data META '{}' error: {}".format(params, e)
+        if 'description' not in self.metadata:
+            self.metadata['description'] = {}
+        self.metadata['description'][(fid, body.upper())] = description
+        return "Description data has been added"
 
-            self.meta_data['description'][(num_fid, body.strip().upper())] = descr.strip()
+    def get_metadata_description(self, fid, msg):
+        """Get the metadata description for a CAN frame.
 
-            return "Description data has been added"
-        except Exception as e:
-            return "Description data META '{}' error: {}".format(input_params, e)
+        :param int fid: CAN frame ID
+        :param str msg: CAN frame data
 
-    def get_meta_descr(self, fid, msg):
-        descrs = self.meta_data.get('description', {})
-        for (key, body) in list(descrs.keys()):
-            if fid == key:
-                if re.match(body, self.get_hex(msg), re.IGNORECASE):
-                    return str(descrs[(key, body)])
+        :return: Description matching the CAN frame. Two whitespaces ('  ') if no description found.
+        :rtype: str
+        """
+        description = self.metadata.get('description', {})
+        for key, body in description.keys():
+            if fid == key and re.match(body, self.get_hex(msg), re.IGNORECASE):
+                return str(description[(key, body)])
+        # TODO: Should it return an empty string instead?
         return "  "
 
     def get_meta_bits(self, fid, length):
-        return self.meta_data.get('bits', {}).get((fid, length), None)
+        return self.metadata.get('bits', {}).get((fid, length), None)
 
-    def get_meta_all_bits(self):
-        return self.meta_data.get('bits', {})
+    def cmd_load_metadata(self, filename):
+        """Load metadata from a file.
 
-    def do_load_meta(self, filename):
+        :param str filename: Filename where to store the metadata to.
+
+        :return: Result of the operation.
+        :rtype: str
+        """
         try:
-            data = ""
-            with open(filename.strip(), "r") as ins:
-                for line in ins:
-                    data += line
-            self.meta_data = ast.literal_eval(data)
-
-        except Exception as e:
+            with open(filename, 'r') as f:
+                data = f.read()
+        except (OSError, IOError) as e:
+            return "Cannot load META '{}': {}".format(filename, e)
+        try:
+            self.metadata = ast.literal_eval(data)
+        except (ValueError, SyntaxError) as e:
             return "Cannot load META '{}': {}".format(filename, e)
         return "Successfully loaded META from '{}'".format(filename)
 
-    def do_save_meta(self, filename):
+    def cmd_save_metadata(self, filename):
+        """Save current metadata to a file.
+
+        :param str filename: Filename where to store the metadata to.
+
+        :return: Result of the operation.
+        :rtype: str
+        """
         try:
-            _file = open(filename.strip(), 'w')
-            _file.write(str(self.meta_data))
-            _file.close()
-        except Exception as e:
+            with open(filename, 'w') as f:
+                f.write(str(self.metadata))
+        except (OSError, IOError) as e:
             return "Can't save META '{}': {}".format(filename, e)
         return "Successfully saved META to '{}'".format(filename)
 
@@ -225,16 +250,6 @@ class analyze(CANModule):
             bool_ascii = True
 
         return bool_ascii
-
-    def get_num(self, _index=-1):
-        count = 0
-        if _index == -1:
-            for buf in self.all_frames:
-                count += len(buf['buf'])
-        else:
-            count = len(self.all_frames[_index]['buf'])
-
-        return count
 
     @staticmethod
     def create_short_table(input_frames):
@@ -432,7 +447,7 @@ class analyze(CANModule):
                         data_ascii = self.ret_ascii(msg)
                     else:
                         data_ascii = "  "
-                    rows.append([str(bus), hex(idf), str(lenX), self.get_hex(msg), data_ascii, self.get_meta_descr(idf, msg), str(cnt)])
+                    rows.append([str(bus), hex(idf), str(lenX), self.get_hex(msg), data_ascii, self.get_metadata_description(idf, msg), str(cnt)])
         cols = list(zip(*rows))
         col_widths = [max(len(value) for value in col) for col in cols]
         format_table = '    '.join(['%%-%ds' % width for width in col_widths])
@@ -540,7 +555,7 @@ class analyze(CANModule):
         self._bodyList = self.create_short_table(temp_buf)
         try:
             descr = ""
-            bitzx = self.get_meta_all_bits()
+            bitzx = self.metadata.get('bits', {})
             for (fid, flen), body in bitzx.items():
                 for bt in body:
                     descr += "," + str(fid) + "_" + list(list(bt.values())[0].values())[0]
@@ -579,7 +594,7 @@ class analyze(CANModule):
                         str(data[6]) + ',' +
                         str(data[7]) + ',' +
                         data_ascii + ',' +
-                        self.get_meta_descr(can.id, can.raw_data) + filds + "\n"
+                        self.get_metadata_description(can.id, can.raw_data) + filds + "\n"
                     )
 
             _name.close()
@@ -619,7 +634,7 @@ class analyze(CANModule):
                             data_ascii = "  "
                         _name.write(
                             str(bus) + "," + hex(fid) + "," + str(lenX) + "," + self.get_hex(msg) + ',' + data_ascii + ',' +
-                            "\"" + self.escape_csv(self.get_meta_descr(fid, msg)) + "\"" + ',' + str(cnt) + "\n")
+                            "\"" + self.escape_csv(self.get_metadata_description(fid, msg)) + "\"" + ',' + str(cnt) + "\n")
                     else:
                         idx_0 = 0
                         msg_s = ""
@@ -631,7 +646,7 @@ class analyze(CANModule):
                             idx_0 = idx
                         _name.write(
                             str(bus) + "," + hex(fid) + "," + str(lenX) + "," + msg_s + ',' + " " + ',' +
-                            "\"" + self.escape_csv(self.get_meta_descr(fid, msg)) + "\"" + ',' + str(cnt) + "\n")
+                            "\"" + self.escape_csv(self.get_metadata_description(fid, msg)) + "\"" + ',' + str(cnt) + "\n")
             _name.close()
         except Exception as e:
             self.dprint(2, "Cannot open log '{}' error: {}".format(name, e))
@@ -679,7 +694,7 @@ class analyze(CANModule):
                         data_ascii = self.ret_ascii(msg)
                     else:
                         data_ascii = "  "
-                    rows.append([str(bus), hex(fid2), str(lenX), self.get_hex(msg), data_ascii, self.get_meta_descr(fid2, msg), str(cnt)])
+                    rows.append([str(bus), hex(fid2), str(lenX), self.get_hex(msg), data_ascii, self.get_metadata_description(fid2, msg), str(cnt)])
             elif mode == 0 and len(table3[fid2]) <= rang:
                 for (lenX, msg, bus, mod), cnt in lst2.items():
 
@@ -688,7 +703,7 @@ class analyze(CANModule):
                             data_ascii = self.ret_ascii(msg)
                         else:
                             data_ascii = "  "
-                        rows.append([str(bus), hex(fid2), str(lenX), self.get_hex(msg), data_ascii, self.get_meta_descr(fid2, msg), str(cnt)])
+                        rows.append([str(bus), hex(fid2), str(lenX), self.get_hex(msg), data_ascii, self.get_metadata_description(fid2, msg), str(cnt)])
 
         cols = list(zip(*rows))
         col_widths = [max(len(value) for value in col) for col in cols]
@@ -727,7 +742,7 @@ class analyze(CANModule):
                         data_ascii = self.ret_ascii(msg)
                     else:
                         data_ascii = "  "
-                    rows.append([str(bus), hex(fid), str(lenX), self.get_hex(msg), data_ascii, self.get_meta_descr(fid, msg), str(cnt)])
+                    rows.append([str(bus), hex(fid), str(lenX), self.get_hex(msg), data_ascii, self.get_metadata_description(fid, msg), str(cnt)])
                 else:
                     idx_0 = 0
                     msg_s = ""
@@ -737,7 +752,7 @@ class analyze(CANModule):
                         descr = list(list(bitz.values())[0].values())[0]
                         msg_s += descr + ": " + self.get_data_in_format(msg, idx_0, idx, fmt) + " "
                         idx_0 = idx
-                    rows.append([str(bus), hex(fid), str(lenX), msg_s, " ", self.get_meta_descr(fid, msg), str(cnt)])
+                    rows.append([str(bus), hex(fid), str(lenX), msg_s, " ", self.get_metadata_description(fid, msg), str(cnt)])
 
         cols = list(zip(*rows))
         col_widths = [max(len(value) for value in col) for col in cols]
