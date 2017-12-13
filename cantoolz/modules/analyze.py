@@ -119,12 +119,12 @@ class analyze(CANModule):
         diff = curr_2 - curr_1
         speed = int((diff * 80) / 3)
         delay = 1 / int((_speed - speed) / 80)
-        return "Avrg. delay: " + str(delay)
+        return 'Average delay: {}'.format(delay)
 
     def change_shift(self, val):
         value = int(val.strip(), 0)  # Auto detect the base.
         self.shift = value
-        return "UDS shift: " + hex(self.shift)
+        return 'UDS shift: {}'.format(hex(value))
 
     def do_add_meta_bit_data(self, input_params):
         try:
@@ -140,7 +140,7 @@ class analyze(CANModule):
 
             return "Fields data has been added"
         except Exception as e:
-            return "Fields data META error: " + str(e)
+            return "Fields data META '{}' error: {}".format(input_params, e)
 
     def do_add_meta_descr_data(self, input_params):
         try:
@@ -153,7 +153,7 @@ class analyze(CANModule):
 
             return "Description data has been added"
         except Exception as e:
-            return "Description data META error: " + str(e)
+            return "Description data META '{}' error: {}".format(input_params, e)
 
     def get_meta_descr(self, fid, msg):
         descrs = self.meta_data.get('description', {})
@@ -178,8 +178,8 @@ class analyze(CANModule):
             self.meta_data = ast.literal_eval(data)
 
         except Exception as e:
-            return "Can't load META: " + str(e)
-        return "Loaded META from " + filename
+            return "Cannot load META '{}': {}".format(filename, e)
+        return "Successfully loaded META from '{}'".format(filename)
 
     def do_save_meta(self, filename):
         try:
@@ -187,8 +187,8 @@ class analyze(CANModule):
             _file.write(str(self.meta_data))
             _file.close()
         except Exception as e:
-            return "Can't save META: " + str(e)
-        return "Saved META to " + filename
+            return "Can't save META '{}': {}".format(filename, e)
+        return "Successfully saved META to '{}'".format(filename)
 
     # Detect ASCII data
     @staticmethod
@@ -490,9 +490,9 @@ class analyze(CANModule):
                     tms = 0.0
             dump.save_dump(name)
         except Exception as e:
-            self.dprint(2, "can't open log")
+            self.dprint(2, "Cannot open log '{}' error: {}".format(name, e))
             return str(e)
-        return "Saved into " + name
+        return "Saved into '{}'".format(name)
 
     def do_dump_replay(self, name):
         inp = name.split(",")
@@ -513,9 +513,9 @@ class analyze(CANModule):
         try:
             temp_buf.save_dump(name)
         except Exception as e:
-            self.dprint(2, "can't open log")
+            self.dprint(2, "Cannot open log '{}' error: {}".format(name, e))
             return str(e)
-        return "Saved into " + name.strip()
+        return "Saved into '{}'".format(name)
 
     @staticmethod
     def escape_csv(_string):
@@ -584,9 +584,9 @@ class analyze(CANModule):
 
             _name.close()
         except Exception as e:
-            self.dprint(2, "can't open log")
+            self.dprint(2, "Cannot open log '{}' error: {}".format(name, e))
             return str(e)
-        return "Saved into " + name.strip()
+        return "Saved into '{}'".format(name)
 
     def do_dump_csv(self, name):
         inp = name.split(",")
@@ -634,9 +634,9 @@ class analyze(CANModule):
                             "\"" + self.escape_csv(self.get_meta_descr(fid, msg)) + "\"" + ',' + str(cnt) + "\n")
             _name.close()
         except Exception as e:
-            self.dprint(2, "can't open log")
+            self.dprint(2, "Cannot open log '{}' error: {}".format(name, e))
             return str(e)
-        return "Saved into " + name.strip()
+        return "Saved into '{}'".format(name)
 
     def print_diff(self, inp=""):
         inp = inp.split(",")
@@ -704,7 +704,7 @@ class analyze(CANModule):
         self._index += 1
         self.all_frames.append({'name': _name, 'buf': Replay()})
         self.all_frames[-1]['buf'].add_timestamp()
-        return "New buffer  " + _name + ", index: " + str(self._index) + " enabled and active"
+        return 'New buffer {}, index: {} enabled and active'.format(_name, self._index)
 
     def do_print(self, index="-1"):
         _index = int(index)
