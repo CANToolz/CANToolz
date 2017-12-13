@@ -24,131 +24,143 @@ class replay(CANModule):
 
     """
 
-    _fname = None
+    filename = None
 
     _active = True
     version = 1.0
 
-    _replay = False
-    _sniff = False
+    is_replaying = False
+    is_sniffing = False
 
     def get_status(self):
-        return "Current status: " + str(self._active) + "\nSniff mode: " + str(self._sniff) +\
-               "\nReplay mode: " + str(self._replay) + "\nFrames in memory: " + str(len(self.CANList)) +\
-               "\nFrames in queue: " + str(self._num2 - self._num1)
+        status = 'Current status: {}\n'.format(self._active)
+        status += 'Sniffing is: {}\n'.format(self.is_sniffing)
+        status += 'Replaying is: {}\n'.format(self.is_replaying)
+        status += 'CAN frames in memory: {}\n'.format(len(self.replay))
+        status += 'CAN frames in queue: {}'.format(self._num2 - self._num1)
+        return status
 
-    def cmd_load(self, name):
+    def cmd_load(self, filename):
+        """Load CAN messages from a file.
+
+        :param str filename: Filename containing the CAN messages to load.
+        """
         try:
-            self.CANList.parse_file(name, self._bus)
-            self.dprint(1, "Loaded " + str(len(self.CANList)) + " frames")
+            self.replay.parse_file(filename, self._bus)
+            self.dprint(1, 'Loaded {} CAN frames.'.format(len(self.replay)))
         except Exception as e:
-            self.dprint(2, "can't open files with CAN messages: " + str(e))
-        return "Loaded: " + str(len(self.CANList))
+            self.dprint(0, "Cannot open '{}' when trying to load CAN messages: {}".format(filename, e))
+        return 'Loaded {} CAN frames.'.format(len(self.replay))
 
     def do_init(self, params):
-        self.CANList = Replay()
+        self.replay = Replay()
         self.last = time.clock()
         self._last = 0
         self._full = 1
         self._num1 = 0
         self._num2 = 0
-        if 'save_to' in params:
-            self._fname = params['save_to']
-        else:
-            self._fname = "mod_replay.save"
+        self.filename = params.get('save_to', 'replay.save')
 
         if 'load_from' in params:
             self.cmd_load(params['load_from'])
 
-        self.commands['g'] = Command("Enable/Disable sniff mode to collect packets", 0, "", self.sniff_mode, True)
-        self.commands['p'] = Command("Print count of loaded packets", 0, "", self.cnt_print, True)
-        self.commands['l'] = Command("Load packets from file", 1, " <file> ", self.cmd_load, True)
-        self.commands['r'] = Command("Replay range from loaded, from number X to number Y", 1, " <X>-<Y> ", self.replay_mode, True)
-        self.commands['d'] = Command("Save range of loaded packets, from X to Y", 1, " <X>-<Y>, <filename>", self.save_dump, True)
-        self.commands['c'] = Command("Clean loaded table", 0, "", self.clean_table, True)
+        self.commands['g'] = Command("Enable/Disable sniffing to collect CAN packets", 0, "", self.cmd_sniff, True)
+        self.commands['p'] = Command("Print count of loaded CAN packets", 0, "", self.cmd_show_count, True)
+        self.commands['l'] = Command("Load CAN packets from file", 1, " <file> ", self.cmd_load, True)
+        self.commands['r'] = Command("Replay range from loaded CAN packets, from X to Y (numbers)", 1, " <X>-<Y> ", self.cmd_replay_range, True)
+        self.commands['d'] = Command("Save range of loaded CAN packets, from X to Y (numbers)", 1, " <X>-<Y>, <filename>", self.cmd_save_dump, True)
+        self.commands['c'] = Command("Reset loaded CAN packets", 0, "", self.cmd_reset, True)
 
-    def clean_table(self):
-        self.CANList = Replay()
+    def cmd_reset(self):
+        """Reset the replay session back to nothing."""
+        self.replay = Replay()
         self._last = 0
         self._full = 1
         self._num1 = 0
         self._num2 = 0
-        return "Replay buffer is clean!"
+        return 'Replay buffer has been reset!'
 
-    def save_dump(self, input_params):
-        fname = self._fname
-        indexes = input_params.split(',')[0].strip()
-        if len(input_params.split(',')) > 1:
-            fname = input_params.split(',')[1].strip()
+    def cmd_save_dump(self, params):
+        """Save a range of CAN messages from the loaded packets.
 
+        :param str params: Indexes of the first and last CAN message to replay; filename where to store the frames.
+        """
+        filename = self.filename
+        indexes, *chunks = map(str.strip, params.split(','))
+        if len(chunks) == 1:
+            filename = chunks[0]
         try:
-            _num1 = int(indexes.split("-")[0])
-            _num2 = int(indexes.split("-")[1])
-        except:
-            _num1 = 0
-            _num2 = len(self.CANList)
-        ret = self.CANList.save_dump(fname, _num1, _num2 - _num1)
-        return ret
+            start, end = map(int, indexes.split('-'))
+        except ValueError:
+            start = 0
+            end = len(self.replay)
+        return self.replay.save_dump(filename, start, end - start)
 
-    def sniff_mode(self):
-        self._replay = False
+    def cmd_sniff(self):
+        """Enable/Disable sniffing on the CAN bus."""
+        self.is_replaying = False
 
-        if self._sniff:
-            self._sniff = False
+        # Toggle sniffing to False.
+        if self.is_sniffing:
+            self.is_sniffing = False
             self.commands['r'].is_enabled = True
             self.commands['d'].is_enabled = True
+        # Toggle sniffing to True.
         else:
-            self._sniff = True
+            self.is_sniffing = True
             self.commands['r'].is_enabled = False
             self.commands['d'].is_enabled = False
-            self.CANList.restart_time()
-        return str(self._sniff)
+            self.replay.restart_time()
+        return 'Sniffing is now: {}'.format(self.is_sniffing)
 
-    def replay_mode(self, indexes=None):
-        self._replay = False
-        self._sniff = False
-        if not indexes:
-            indexes = "0-" + str(len(self.CANList))
+    def cmd_replay_range(self, indexes=None):
+        """Replay a range of CAN messages from the loaded frames.
+
+        :param str indexes: Indexes of the first and last CAN message to replay.
+        """
+        self.is_replaying = False
+        self.is_sniffing = False
+        if indexes is None:
+            indexes = '0-{}'.format(len(self.replay))
         try:
-            self._num1 = int(indexes.split("-")[0])
-            self._num2 = int(indexes.split("-")[1])
-            if self._num2 > self._num1 and self._num1 < len(self.CANList) and self._num2 <= len(
-                    self.CANList) and self._num1 >= 0 and self._num2 > 0:
-                self._replay = True
+            self._num1, self._num2 = map(int, indexes.split('-'))
+            if 0 <= self._num1 < self._num2 <= len(self.replay):
+                self.is_replaying = True
                 self._full = self._num2 - self._num1
                 self._last = 0
                 self.commands['g'].is_enabled = False
-                self.CANList.set_index(self._num1)
-        except:
-            self._replay = False
+                self.replay.set_index(self._num1)
+        except ValueError:
+            self.is_replaying = False
 
-        return "Replay mode changed to: " + str(self._replay)
+        return "Replay mode changed to: " + str(self.is_replaying)
 
-    def cnt_print(self):
-        ret = str(len(self.CANList))
-        return "Loaded packets: " + ret
+    def cmd_show_count(self):
+        """Show the number of loaded CAN messages."""
+        return 'Loaded packets: {}'.format(len(self.replay))
 
     # Effect (could be fuzz operation, sniff, filter or whatever)
     def do_effect(self, can, args):
-        if self._sniff and can.data is not None:
-            self.CANList.append(can)
-        elif self._replay and can.data is None:
+        if self.is_sniffing and can.data is not None:
+            self.replay.append(can)
+        elif self.is_replaying and can.data is None:
             d_time = float(args.get('delay', 0))
             ignore = bool(args.get('ignore_time', False))
             try:
-                next_can = self.CANList.next(d_time, ignore)
+                next_can = self.replay.next(d_time, ignore)
                 if next_can and next_can.data is not None:
                     can = next_can
                     self._num1 += 1
                     self._last += 1
                 can.bus = self._bus
                 self._status = self._last / (self._full / 100.0)
+            # TODO: Use less broad exception.
             except Exception:
-                self._replay = False
+                self.is_replaying = False
                 self.commands['g'].is_enabled = True
-                self.CANList.reset()
+                self.replay.reset()
             if self._num1 == self._num2:
-                self._replay = False
+                self.is_replaying = False
                 self.commands['g'].is_enabled = True
-                self.CANList.reset()
+                self.replay.reset()
         return can
