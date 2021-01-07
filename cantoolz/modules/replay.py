@@ -43,7 +43,7 @@ class replay(CANModule):
 
     def do_init(self, params):
         self.CANList = Replay()
-        self.last = time.clock()
+        self.last = time.process_time()
         self._last = 0
         self._full = 1
         self._num1 = 0

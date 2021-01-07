@@ -35,7 +35,7 @@ class anti_theft_2(CANModule):
         cmds = self._status2['stop_engine'].split(':')
         self.can_stop = CANMessage(int(cmds[0], 16) if cmds[0][0:2] == '0x' else int(cmds[0]), int(cmds[1]), bytes.fromhex(cmds[2]), False, CANMessage.DataFrame)
         self._try = 0
-        self.last = time.clock()
+        self.last = time.process_time()
 
     def do_stop(self, params):
         self._current = 1  # 1 - blocked, 2 - ALERT, 3 - authenticated
@@ -45,12 +45,12 @@ class anti_theft_2(CANModule):
     # Effect (could be fuzz operation, sniff, filter or whatever)
     def do_effect(self, can_msg, args):
 
-        if self.stop and not can_msg.CANData and time.clock() - self.last > 1.5 and args.get('action', '') == 'write' and self._current != 3:
+        if self.stop and not can_msg.CANData and time.process_time() - self.last > 1.5 and args.get('action', '') == 'write' and self._current != 3:
             can_msg.CANData = True
             can_msg.CANFrame = self.can_stop
             if self._current != 2:
                 self.stop = False
-            self.last = time.clock()
+            self.last = time.process_time()
 
         # FILTER
         elif can_msg.CANData and self._current != 3 and args.get('action', '') == 'read':
