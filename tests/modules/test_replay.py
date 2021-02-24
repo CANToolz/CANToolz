@@ -202,7 +202,7 @@ class TestReplay(TestCANToolz):
         # Get number of loaded CAN packets from replay.
         num = self.CANEngine.call_module(0, 'p')
         self.assertTrue(0 <= num.find("Loaded packets: 11"), "Should be 11 packets")
-        time1 = time.clock()
+        time1 = time.process_time()
         # Replay loaded CAN packets with replay.
         self.CANEngine.call_module(0, 'r')
         while self.CANEngine.actions[0][1]._status < 100.0:
@@ -210,7 +210,7 @@ class TestReplay(TestCANToolz):
         # Print table of CAN messages sniffed by analyze.
         ret = self.CANEngine.call_module(1, 'p')
         print(ret)
-        time2 = time.clock()
+        time2 = time.process_time()
         print("TIME: " + str(time2 - time1))
         # Get current status of analyze
         st = self.CANEngine.call_module(1, 'S')
@@ -227,7 +227,7 @@ class TestReplay(TestCANToolz):
         # Get number of loaded CAN packets from replay.
         num = self.CANEngine.call_module(0, 'p')
         self.assertTrue(0 <= num.find("Loaded packets: 11"), "Should be 11 packets")
-        time1 = time.clock()
+        time1 = time.process_time()
         # Replay loaded CAN packets with replay.
         self.CANEngine.call_module(0, 'r')
         while self.CANEngine.actions[0][1]._status < 100.0:
@@ -235,7 +235,7 @@ class TestReplay(TestCANToolz):
         # Print table of CAN messages sniffed by analyze.
         ret = self.CANEngine.call_module(1, 'p')
         print(ret)
-        time2 = time.clock()
+        time2 = time.process_time()
         print("TIME: " + str(time2 - time1))
         self.assertTrue(13.99 < time2 - time1 < 15.99, "Should be around 14 seconds")
         # Get current status of analyze

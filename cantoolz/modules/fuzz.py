@@ -59,7 +59,7 @@ class fuzz(CANModule):
 
     def do_start(self, args):
         self._i = 0
-        self.last = time.clock()
+        self.last = time.process_time()
         self.queue_messages = []
         iso_mode = 1 if args.get('mode') in ['ISO', 'iso', 'ISOTP', 'isotp'] else 0
         if 'id' in args:
@@ -100,8 +100,8 @@ class fuzz(CANModule):
         elif not can_msg.CANData:
             d_time = float(args.get('delay', 0))
             if d_time > 0:
-                if time.clock() - self.last >= d_time:
-                    self.last = time.clock()
+                if time.process_time() - self.last >= d_time:
+                    self.last = time.process_time()
                     can_msg.CANFrame = self.queue_messages.pop()
                     can_msg.CANData = True
                     can_msg.bus = self._bus

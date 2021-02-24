@@ -38,7 +38,7 @@ class ecu_light(CANModule):
         self._params = params
         self._params['status'] = 'Lights OFF'
         self._frames = []
-        self._last_sent = time.clock()
+        self._last_sent = time.process_time()
 
     def do_start(self, params):
         self._params['status'] = 'Lights OFF'
@@ -61,7 +61,7 @@ class ecu_light(CANModule):
                             self._last_sent -= self._params.get('reports_delay', 1.0)
 
         elif args['action'] == 'write' and not can_msg.CANData and self._params['status'] != 'Turned off':  # Write
-            if (time.clock() - self._last_sent) >= self._params.get('reports_delay', 1.0):
+            if (time.process_time() - self._last_sent) >= self._params.get('reports_delay', 1.0):
                 can_msg.CANFrame = CANMessage(
                     self._params.get('id_report', 0xffff),
                     len(self._params.get('reports', {}).get(self._params['status'], '')) / 2,
@@ -69,6 +69,6 @@ class ecu_light(CANModule):
                     CANMessage.DataFrame)
                 can_msg.CANData = True
                 can_msg.bus = self._bus
-                self._last_sent = time.clock()
+                self._last_sent = time.process_time()
 
         return can_msg

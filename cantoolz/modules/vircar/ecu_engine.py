@@ -54,8 +54,8 @@ class ecu_engine(CANModule):
         self.frames = []
         self.init_sess = None
         self.init_sess2 = None
-        self._last_sent = time.clock()
-        self.vin_gen = [time.clock(), time.clock(), 0.7, 2.9]
+        self._last_sent = time.process_time()
+        self.vin_gen = [time.process_time(), time.process_time(), 0.7, 2.9]
 
         left = len(self._vin)
         count = int(left / 7) + 1
@@ -93,17 +93,17 @@ class ecu_engine(CANModule):
         self.rpm_down = 0
 
         if self._status2['status'] in [2, 3, 1]:
-            if (time.clock() - self._last_sent) >= self._status2.get('reports_delay', 0.5):
+            if (time.process_time() - self._last_sent) >= self._status2.get('reports_delay', 0.5):
                 self.frames.append(
                     CANMessage(
                         self._status2.get('id_report', 0xffff),
                         3,
                         self._status2['status'].to_bytes(1, byteorder='big') + self._status2['rpm'].to_bytes(2, byteorder='big'), False,
                         CANMessage.DataFrame))
-                self._last_sent = time.clock()
+                self._last_sent = time.process_time()
 
     def generate_vin(self):
-        curr_t = time.clock()
+        curr_t = time.process_time()
         if self.vin_gen[0] == 0 or curr_t - self.vin_gen[0] > self.vin_gen[2]:
             if self.vin_gen[1] == 0 or curr_t - self.vin_gen[1] > self.vin_gen[3]:
                 self.frames.append(CANMessage.init_data(self._status2.get('vin_id', 1), len(self.vin[self.count_part]), self.vin[self.count_part]))

@@ -155,7 +155,7 @@ class hw_USBtin(CANModule):
                 self.dev_write("l")
             self._run = True
             self.wait_for = False
-            self.last = time.clock()
+            self.last = time.process_time()
         time.sleep(1)
 
     def init_port(self):
@@ -203,7 +203,7 @@ class hw_USBtin(CANModule):
         self._usbtin_loop = bool(params.get('usbtin_loop', False))
         self._restart = bool(params.get('auto_activate', False))
         self.act_time = float(params.get('auto_activate', 5.0))
-        self.last = time.clock()
+        self.last = time.process_time()
         self.wait_for = False
         self._run = True
         self.do_stop({})
@@ -249,9 +249,9 @@ class hw_USBtin(CANModule):
             can_msg = self.do_read(can_msg)
         elif args.get('action') == 'write':
             # KOSTYL: workaround for BMW f10 bus
-            # if self._restart and self._run and (time.clock() - self.last) >= self.act_time:
+            # if self._restart and self._run and (time.process_time() - self.last) >= self.act_time:
             #     self.dev_write("O")
-            #     self.last = time.clock()
+            #     self.last = time.process_time()
             self.do_write(can_msg)
         else:
             self.dprint(1, 'Command ' + args.get('action', 'NONE') + ' not implemented 8(')
@@ -271,10 +271,10 @@ class hw_USBtin(CANModule):
                        can_msg.debugText['please_send'] = True
                     self.wait_for = False
 
-                elif time.clock() - self.last >= self.act_time and not self.wait_for:
+                elif time.process_time() - self.last >= self.act_time and not self.wait_for:
                     self.dev_write("F")
                     self.wait_for = True
-                    self.last = time.clock()
+                    self.last = time.process_time()
         """
 
         return can_msg

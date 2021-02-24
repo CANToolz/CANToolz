@@ -8,7 +8,7 @@ class Replay:
 
     def __init__(self):
         self._stream = []
-        self._last = time.clock()
+        self._last = time.process_time()
         self._curr = 0
         self._pre_last = 0
         self._shift = 0
@@ -16,7 +16,7 @@ class Replay:
         self.add_timestamp()
 
     def reset(self):
-        self._last = time.clock()
+        self._last = time.process_time()
         self._curr = 0
         self._pre_last = 0
 
@@ -25,10 +25,10 @@ class Replay:
         return copy.deepcopy(self._stream)
 
     def passed_time(self):
-        return time.clock() + self._shift - self._last
+        return time.process_time() + self._shift - self._last
 
     def restart_time(self, shift=.0):
-        self._last = time.clock() - shift
+        self._last = time.process_time() - shift
 
     def append_time(self, times, can_msg):
         if can_msg.CANData:

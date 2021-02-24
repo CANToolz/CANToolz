@@ -82,7 +82,7 @@ class ping(CANModule):
 
     def do_start(self, args):
         self.queue_messages = []
-        self.last = time.clock()
+        self.last = time.process_time()
 
         data = [0, 0, 0, 0, 0, 0, 0, 0]
         if 'body' in args:
@@ -127,8 +127,8 @@ class ping(CANModule):
         d_time = float(args.get('delay', 0))
         if not can_msg.CANData:
             if d_time > 0:
-                if time.clock() - self.last >= d_time:
-                    self.last = time.clock()
+                if time.process_time() - self.last >= d_time:
+                    self.last = time.process_time()
                     can_msg.CANFrame = self.do_ping(args)
 
                 else:
