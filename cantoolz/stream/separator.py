@@ -1,4 +1,5 @@
-from collections import Counter, deque, Iterable
+from collections import Counter, deque
+from collections.abc import Iterable
 
 from cantoolz.stream.processor import Processor
 from cantoolz.utils import bits

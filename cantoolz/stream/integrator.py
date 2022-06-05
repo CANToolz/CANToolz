@@ -1,4 +1,5 @@
-from collections import Iterable, deque
+from collections import deque
+from collections.abc import Iterable
 
 from cantoolz.stream.processor import Processor
 
