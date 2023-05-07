@@ -13,7 +13,7 @@ setup(
     author_email='alex.sintsov@gmail.com',
     license='Apache 2.0',
     keywords='framework black-box CAN analysis security',
-    packages=find_packages(),
+    packages=find_packages(exclude=["tests*"]),
     scripts=['bin/cantoolz'],
     include_package_data=True,
     zip_safe=False,
